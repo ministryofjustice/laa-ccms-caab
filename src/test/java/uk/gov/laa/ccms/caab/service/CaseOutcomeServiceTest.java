@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -15,6 +16,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -30,12 +32,15 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.PreCertificateAndLegalHelpCostsFormData;
 import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeCostsRequest;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
@@ -54,6 +59,115 @@ class CaseOutcomeServiceTest {
   @Mock private CostAwardMapper costAwardMapper;
 
   @Spy @InjectMocks private CaseOutcomeService caseOutcomeService;
+
+  @Test
+  void requiredOutcomeReusesProviderScopedRetrievalWithoutWriting() {
+    final var outcome = new CaseOutcomeDetail().id(42);
+    when(caabApiClient.getCaseOutcomes("caseRef", 123))
+        .thenReturn(Mono.just(new CaseOutcomeDetails().content(List.of(outcome))));
+
+    assertSame(outcome, caseOutcomeService.requireCaseOutcome("caseRef", 123));
+
+    verify(caseOutcomeService).getCaseOutcome("caseRef", 123);
+    verify(caabApiClient).getCaseOutcomes("caseRef", 123);
+    verifyNoMoreInteractions(caabApiClient);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void requiredOutcomeRejectsMissingRecordOrIdWithoutWriting(boolean missingRecord) {
+    doReturn(missingRecord ? Optional.empty() : Optional.of(new CaseOutcomeDetail()))
+        .when(caseOutcomeService)
+        .getCaseOutcome("caseRef", 123);
+
+    assertThrows(
+        IllegalStateException.class, () -> caseOutcomeService.requireCaseOutcome("caseRef", 123));
+
+    verifyNoMoreInteractions(caabApiClient);
+  }
+
+  @Test
+  void costsSaveConvertsFormAndUpdatesOnlyScopedCostFields() {
+    final var outcome =
+        deletionOutcome()
+            .caseReferenceNumber("caseRef")
+            .providerId("123")
+            .preCertificateCosts(new BigDecimal("1"))
+            .dischargeReason("CD");
+    doReturn(Optional.of(outcome)).when(caseOutcomeService).getCaseOutcome("caseRef", 123);
+    final var form = new PreCertificateAndLegalHelpCostsFormData();
+    form.setPreCertificateCosts(" 12.50 ");
+    form.setLegalHelpCosts(" 7.25 ");
+    form.setOfficeCode(" 1A234B ");
+    form.setUniqueFileNumber(" 010124/001 ");
+    when(caabApiClient.updateCaseOutcomeCosts(eq(42), eq("user"), any())).thenReturn(Mono.empty());
+
+    caseOutcomeService.updatePreCertificateAndLegalHelpCosts("caseRef", 123, form, "user");
+
+    final var captor = ArgumentCaptor.forClass(CaseOutcomeCostsRequest.class);
+    verify(caabApiClient).updateCaseOutcomeCosts(eq(42), eq("user"), captor.capture());
+    final var details = captor.getValue();
+    assertThat(details.getCaseReferenceNumber()).isEqualTo("caseRef");
+    assertThat(details.getProviderId()).isEqualTo("123");
+    assertThat(details.getPreCertificateCosts().get()).isEqualByComparingTo("12.50");
+    assertThat(details.getLegalCosts().get()).isEqualByComparingTo("7.25");
+    assertThat(details.getOfficeCode().get()).isEqualTo("1A234B");
+    assertThat(details.getUniqueFileNo().get()).isEqualTo("010124/001");
+    assertThat(outcome.getPreCertificateCosts().get()).isEqualByComparingTo("1");
+    assertThat(outcome.getDischargeReason()).isEqualTo("CD");
+    verifyNoMoreInteractions(caabApiClient);
+  }
+
+  @Test
+  void emptyCostsAndReferencesAreExplicitlyClearedOnNext() {
+    doReturn(Optional.of(new CaseOutcomeDetail().id(42)))
+        .when(caseOutcomeService)
+        .getCaseOutcome("caseRef", 123);
+    final var form = new PreCertificateAndLegalHelpCostsFormData();
+    form.setPreCertificateCosts(" ");
+    form.setOfficeCode(" ");
+    when(caabApiClient.updateCaseOutcomeCosts(eq(42), eq("user"), any())).thenReturn(Mono.empty());
+    caseOutcomeService.updatePreCertificateAndLegalHelpCosts("caseRef", 123, form, "user");
+    final var captor = ArgumentCaptor.forClass(CaseOutcomeCostsRequest.class);
+    verify(caabApiClient).updateCaseOutcomeCosts(eq(42), eq("user"), captor.capture());
+    assertThat(captor.getValue().getPreCertificateCosts().get()).isEqualByComparingTo("0");
+    assertThat(captor.getValue().getLegalCosts().get()).isEqualByComparingTo("0");
+    assertThat(captor.getValue().getOfficeCode().isPresent()).isTrue();
+    assertThat(captor.getValue().getOfficeCode().get()).isNull();
+    assertThat(captor.getValue().getUniqueFileNo().isPresent()).isTrue();
+    assertThat(captor.getValue().getUniqueFileNo().get()).isNull();
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void missingCostsOutcomeOrIdNeverWritesOrBootstraps(boolean missingOutcome) {
+    doReturn(missingOutcome ? Optional.empty() : Optional.of(new CaseOutcomeDetail()))
+        .when(caseOutcomeService)
+        .getCaseOutcome("caseRef", 123);
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            caseOutcomeService.updatePreCertificateAndLegalHelpCosts(
+                "caseRef", 123, new PreCertificateAndLegalHelpCostsFormData(), "user"));
+    verifyNoMoreInteractions(caabApiClient);
+  }
+
+  @Test
+  void costsSavePropagatesBackendFailureToPage() {
+    doReturn(Optional.of(new CaseOutcomeDetail().id(42)))
+        .when(caseOutcomeService)
+        .getCaseOutcome("caseRef", 123);
+    final var failure = new CaabApiClientException("Save failed");
+    when(caabApiClient.updateCaseOutcomeCosts(eq(42), eq("user"), any()))
+        .thenReturn(Mono.error(failure));
+    assertSame(
+        failure,
+        assertThrows(
+            CaabApiClientException.class,
+            () ->
+                caseOutcomeService.updatePreCertificateAndLegalHelpCosts(
+                    "caseRef", 123, new PreCertificateAndLegalHelpCostsFormData(), "user")));
+  }
 
   @ParameterizedTest
   @ValueSource(strings = {"COST", "DAMAGE", "LAND", "ASSET"})

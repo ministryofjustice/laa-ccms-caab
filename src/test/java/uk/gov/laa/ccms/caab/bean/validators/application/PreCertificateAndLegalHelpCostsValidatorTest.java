@@ -51,6 +51,35 @@ class PreCertificateAndLegalHelpCostsValidatorTest {
   @Nested
   @DisplayName("validate() tests")
   class ValidateTests {
+    @Test
+    void positiveLegalHelpCostsRequireBothReferences() {
+      formData.setLegalHelpCosts("0.01");
+      validator.validate(formData, errors);
+      assertTrue(errors.hasFieldErrors("officeCode"));
+      assertTrue(errors.hasFieldErrors("uniqueFileNumber"));
+    }
+
+    @Test
+    void zeroLegalHelpCostsDoNotRequireReferences() {
+      formData.setLegalHelpCosts("0.00");
+      validator.validate(formData, errors);
+      assertFalse(errors.hasErrors());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"100000000", "-0.01", "1.001"})
+    void costsRejectOutOfRangeOrExcessPrecision(String amount) {
+      formData.setPreCertificateCosts(amount);
+      validator.validate(formData, errors);
+      assertTrue(errors.hasFieldErrors("preCertificateCosts"));
+    }
+
+    @Test
+    void maximumCostFitsStorage() {
+      formData.setPreCertificateCosts("99999999.99");
+      validator.validate(formData, errors);
+      assertFalse(errors.hasErrors());
+    }
 
     @Test
     @DisplayName("Should allow empty values")

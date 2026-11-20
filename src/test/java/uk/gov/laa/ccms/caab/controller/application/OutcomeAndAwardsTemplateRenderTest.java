@@ -208,8 +208,42 @@ class OutcomeAndAwardsTemplateRenderTest {
 
     assertThat(html)
         .contains("Proceeding 1")
+        .contains("preCertificateAndLegalHelpCostsLink")
         .doesNotContain("proceedingOutcomeSummaryLink-0")
         .doesNotContain("clearProceedingOutcomeLink-0");
+  }
+
+  @Test
+  void costsTableHasNoRowWhenNoOutcomeExists() {
+    final String html =
+        render(
+            List.of(),
+            true,
+            List.of(),
+            Map.of(),
+            Map.of(),
+            "application/outcome-and-awards",
+            null,
+            false);
+
+    assertThat(html)
+        .contains("id=\"preCertificateAndLegalHelpCostsTable\"")
+        .doesNotContain(
+            "id=\"preCertificateAndLegalHelpCostsType\"",
+            "id=\"preCertificateAndLegalHelpCostsLink\"",
+            "id=\"preCertificateAndLegalHelpCostsPreCertificateAmount\"",
+            "id=\"preCertificateAndLegalHelpCostsLegalHelpAmount\"");
+  }
+
+  @Test
+  void submitIsAPostFormAndIsHiddenWhenNotAllowed() {
+    assertThat(render(List.of()))
+        .contains(
+            "action=\"/case/outcome-and-awards/submit\"",
+            "method=\"post\"",
+            "id=\"submitOutcome\"");
+    assertThat(render(List.of(), false, List.of(), Map.of(), Map.of()))
+        .doesNotContain("id=\"submitOutcome\"", "action=\"/case/outcome-and-awards/submit\"");
   }
 
   private String render(final List<? extends BaseAwardDetail> awards) {
@@ -240,6 +274,26 @@ class OutcomeAndAwardsTemplateRenderTest {
       final Map<String, ProceedingOutcomeDetail> clearableOutcomes,
       final String template,
       final BaseAwardDetail award) {
+    return render(
+        awards,
+        awardEditAllowed,
+        proceedings,
+        resolvedOutcomes,
+        clearableOutcomes,
+        template,
+        award,
+        true);
+  }
+
+  private String render(
+      final List<? extends BaseAwardDetail> awards,
+      final boolean awardEditAllowed,
+      final List<ProceedingDetail> proceedings,
+      final Map<String, ProceedingOutcomeDetail> resolvedOutcomes,
+      final Map<String, ProceedingOutcomeDetail> clearableOutcomes,
+      final String template,
+      final BaseAwardDetail award,
+      final boolean costsOutcomeAvailable) {
     final MockServletContext servletContext = new MockServletContext();
     final JakartaServletWebApplication application =
         JakartaServletWebApplication.buildApplication(servletContext);
@@ -254,6 +308,8 @@ class OutcomeAndAwardsTemplateRenderTest {
       variables.put("awardId", award.getId());
     }
     variables.put("awardEditAllowed", awardEditAllowed);
+    variables.put("outcomeSubmitAllowed", awardEditAllowed);
+    variables.put("costsOutcomeAvailable", costsOutcomeAvailable);
     variables.put("proceedings", proceedings);
     variables.put("resolvedOutcomes", resolvedOutcomes);
     variables.put("clearableOutcomes", clearableOutcomes);

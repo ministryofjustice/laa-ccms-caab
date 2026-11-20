@@ -1,5 +1,8 @@
 package uk.gov.laa.ccms.caab.config;
 
+import static org.springframework.security.authorization.AuthorityAuthorizationManager.hasAuthority;
+import static org.springframework.security.authorization.AuthorizationManagers.allOf;
+
 import java.time.Duration;
 import java.util.Collection;
 import java.util.HashSet;
@@ -142,6 +145,15 @@ public class SecurityConfiguration {
                     .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
                     .requestMatchers("/case/overview")
                     .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode())
+                    .requestMatchers("/case/outcome-and-awards/submit")
+                    .hasAuthority(UserRole.SUBMIT_CASE_OUTCOME.getCode())
+                    // This discharge page is part of the submission journey; legacy additionally
+                    // requires POD, case eligibility and completed proceeding outcomes.
+                    .requestMatchers("/case/outcome-and-awards/discharge")
+                    .access(
+                        allOf(
+                            hasAuthority(UserRole.SUBMIT_CASE_OUTCOME.getCode()),
+                            hasAuthority(UserRole.REQUEST_CASE_DISCHARGE.getCode())))
                     .requestMatchers(HttpMethod.GET, "/case/details/costs/allocation")
                     .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode())
                     // Creating and deleting a payment on account both need the POA function, as
