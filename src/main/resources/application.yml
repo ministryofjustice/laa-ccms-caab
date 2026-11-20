@@ -12,7 +12,7 @@ submission:
   max-poll-count: 6
 
 portal:
-  logoutUrl: ${PORTAL_URL}/oam/server/logout?end_url=${PORTAL_URL}/LAALogin/pages/Logout.jsp
+  logoutUrl: https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/logout?post_logout_redirect_uri=${POST_LOGOUT_REDIRECT_URI}
 
 csp:
   report-enabled: ${CSP_REPORT_ENABLED:true}
@@ -26,19 +26,26 @@ spring:
     name: laa-ccms-caab
     version: "@version@"
   security:
-    saml2:
-      relyingparty:
+    oauth2:
+      client:
         registration:
-          idp:
-            entity-id: caab-provider-ui
-            assertingparty:
-              metadata-uri: ${PORTAL_URL}/oamfed/idp/metadata
-              singlesignon:
-                url: ${PORTAL_URL}/oamfed/idp/initiatesso?providerid=${spring.security.saml2.relyingparty.registration.idp.entity-id}
-            signing:
-              credentials:
-                private-key: ${SAML_PRIVATE_KEY}
-                certificate: ${SAML_CERTIFICATE}
+          # The registration id is the last segment of the redirect URI
+          # (/civil/login/oauth2/code/silas-identity), so it has to match the redirect URI
+          # registered against the EntraID app registration, and the one the local OIDC mock
+          # server registers for its client.
+          silas-identity:
+            # OIDC_* is whoever signs the user in, AZURE_* is this application's own identity.
+            # They are the same in a tenant-backed environment, and must differ where
+            # OIDC_ISSUER_URI points at a mock, which knows its own client and not ours.
+            client-id: ${OIDC_CLIENT_ID:${AZURE_CLIENT_ID}}
+            client-secret: ${OIDC_CLIENT_SECRET:${AZURE_CLIENT_SECRET}}
+            scope: openid,profile,email
+            authorization-grant-type: authorization_code
+        provider:
+          silas-identity:
+            # Overridable so a feature environment can point at an OIDC mock; every other
+            # environment leaves it unset and gets the tenant named by AZURE_TENANT_ID.
+            issuer-uri: ${OIDC_ISSUER_URI:https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0}
 
   thymeleaf: # Thymeleaf
     cache: false
@@ -76,6 +83,11 @@ server:
   servlet:
     session:
       timeout: 60m
+      cookie:
+        # Lax, not Strict: the IdP returns the user by a cross-site redirect, and Strict withholds
+        # the cookie on that hop, losing the authorization request mid sign-in.
+        same-site: lax
+        secure: ${SESSION_COOKIE_SECURE:true}
     # required to be on civil in order for OPA integration with OWD,
     # otherwise issues occur with the JSESSIONID cookie
     context-path: /civil
@@ -93,6 +105,24 @@ laa:
         document-bucket:
           name: ${S3_DOCUMENT_BUCKET}
           url-duration: 20 # (minutes) - How long generated URLs remain accessible.
+    session:
+      # Caps how long a session lives once the user has signed in, however active they have been;
+      # server.servlet.session.timeout only measures idle time.
+      absolute-timeout: ${SESSION_ABSOLUTE_TIMEOUT:12h}
+    entra:
+      # External (provider) users reach the service through SiLAS, which supplies the CCMS
+      # username in a custom claim; internal (caseworker) users are resolved through the EBS
+      # XXCCMS_ENTRA_ID_USERS mapping table.
+      # SiLAS emits claims unnamespaced, so this is a bare name: LAA_CCMS_USERNAME.
+      silas-enabled: ${IS_SILAS_ENABLED:false}
+      custom-user-id-claim: ${ENTRA_CUSTOM_USER_ID_CLAIM:}
+    # Every external sign-in is exchanged here, because the claim carries a SiLAS uuid rather
+    # than a username. USER_DETAILS_API_HOSTNAME carries the scheme, as the others here do.
+    # The token is sent as X-Authorization, not Authorization.
+    user-details-api:
+      hostname: ${USER_DETAILS_API_HOSTNAME:}
+      url: ${laa.ccms.user-details-api.hostname}
+      accessToken: ${USER_DETAILS_API_ACCESS_TOKEN:}
     ebs-api:
       hostname: ${CAAB_EBS_API_HOSTNAME}
       url: ${laa.ccms.ebs-api.hostname}

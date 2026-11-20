@@ -6,6 +6,7 @@
 
 # Home, provider switch and shared pages
 GET /
+GET /authentication-error
 POST /csp/report
 GET /home
 GET /provider-switch

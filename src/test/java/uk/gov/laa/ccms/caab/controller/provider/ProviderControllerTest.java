@@ -30,8 +30,8 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.saml2.provider.service.authentication.Saml2AssertionAuthentication;
-import org.springframework.security.saml2.provider.service.authentication.Saml2ResponseAssertionAccessor;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -43,6 +43,7 @@ import uk.gov.laa.ccms.caab.advice.GlobalBinderAdvice;
 import uk.gov.laa.ccms.caab.bean.provider.ProviderFirmFormData;
 import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
 import uk.gov.laa.ccms.caab.bean.validators.provider.ProviderFirmValidator;
+import uk.gov.laa.ccms.caab.security.CcmsOidcUser;
 import uk.gov.laa.ccms.caab.service.NotificationSearchOptionsCache;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
@@ -178,15 +179,16 @@ public class ProviderControllerTest {
             .functions(List.of("CA", "NOT"));
     ProviderFirmFormData providerFirmFormData = new ProviderFirmFormData();
     providerFirmFormData.setProviderFirmId(67890);
-    Saml2AssertionAuthentication authentication =
-        new Saml2AssertionAuthentication(
+    CcmsOidcUser principal =
+        new CcmsOidcUser(
+            mock(OidcUser.class),
             loginId,
-            mock(Saml2ResponseAssertionAccessor.class),
             List.of(
                 new SimpleGrantedAuthority("group1"),
                 new SimpleGrantedAuthority("CA"),
-                new SimpleGrantedAuthority("NOT")),
-            "idp");
+                new SimpleGrantedAuthority("NOT")));
+    OAuth2AuthenticationToken authentication =
+        new OAuth2AuthenticationToken(principal, principal.getAuthorities(), "silas-identity");
 
     when(userService.updateUserOptions(67890, loginId, "testUserType"))
         .thenReturn(Mono.just(new ClientTransactionResponse()));

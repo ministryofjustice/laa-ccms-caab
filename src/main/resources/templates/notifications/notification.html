@@ -91,7 +91,7 @@
                   <a class="govuk-link"
                      sec:authorize="hasAuthority(@roles.viewNotificationAttachment)"
                      th:text="#{site.download}"
-                     th:href="${documentLinks.get(attachment.getDocumentId)}"/>
+                     th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/download(notification_id=${notification.getNotificationId},attachment_id=${attachment.getDocumentId})}"/>
                   <span sec:authorize="!hasAuthority(@roles.viewNotificationAttachment)" th:text="#{site.download}"/>
                 </th:block>
                 <th:block th:if="${documentLinks.get(attachment.getDocumentId)} == null">

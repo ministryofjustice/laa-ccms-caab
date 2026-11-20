@@ -12,7 +12,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.saml2.provider.service.authentication.Saml2AssertionAuthentication;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -27,7 +28,7 @@ public final class UserFunctionAuthorities {
 
   /**
    * Swaps the functions in the authentication for the reloaded user's, keeping authorities that are
-   * not functions, such as the SAML groups. Only a SAML login is updated.
+   * not functions, such as the EntraID groups. Only an OIDC login is updated.
    *
    * @param authentication the logged-in authentication.
    * @param previousUser the user as loaded before.
@@ -39,7 +40,8 @@ public final class UserFunctionAuthorities {
       UserDetail previousUser,
       UserDetail reloadedUser,
       HttpSession session) {
-    if (!(authentication instanceof Saml2AssertionAuthentication saml2Authentication)) {
+    if (!(authentication instanceof OAuth2AuthenticationToken token)
+        || !(token.getPrincipal() instanceof OidcUser principal)) {
       return;
     }
     // The authentication and the previous user are loaded separately, so the authentication may
@@ -48,18 +50,19 @@ public final class UserFunctionAuthorities {
     Arrays.stream(UserRole.values()).map(UserRole::getCode).forEach(functionCodes::add);
 
     Set<GrantedAuthority> authorities = new LinkedHashSet<>();
-    saml2Authentication.getAuthorities().stream()
+    token.getAuthorities().stream()
         .filter(authority -> !functionCodes.contains(authority.getAuthority()))
         .forEach(authorities::add);
     functionsOf(reloadedUser).stream().map(SimpleGrantedAuthority::new).forEach(authorities::add);
 
     SecurityContext context = SecurityContextHolder.createEmptyContext();
+    OidcUser refreshedPrincipal =
+        principal instanceof CcmsOidcUser ccmsUser
+            ? ccmsUser.withAuthorities(authorities)
+            : new CcmsOidcUser(principal, token.getName(), authorities);
     context.setAuthentication(
-        new Saml2AssertionAuthentication(
-            saml2Authentication.getPrincipal(),
-            saml2Authentication.getCredentials(),
-            authorities,
-            saml2Authentication.getRelyingPartyRegistrationId()));
+        new OAuth2AuthenticationToken(
+            refreshedPrincipal, authorities, token.getAuthorizedClientRegistrationId()));
     SecurityContextHolder.setContext(context);
     session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
   }
