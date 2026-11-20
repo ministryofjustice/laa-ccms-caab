@@ -79,6 +79,8 @@ spring:
 server:
   forward-headers-strategy: native
   tomcat:
+    # Honor forwarded HTTPS before handling the context root.
+    redirect-context-root: false
     max-swallow-size: 50MB
     max-http-form-post-size: 2MB
   servlet:
