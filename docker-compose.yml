@@ -12,9 +12,7 @@ services:
       REDIRECT_BASE_URI: localhost:8010/civil
       # The mock's default post-logout URI is <base>/logged-out, which this application does not
       # serve, so register the page it returns to. The chart does the same for deployed mocks.
-      SPRING_APPLICATION_JSON: >-
-        {"spring":{"security":{"oauth2":{"authorizationserver":{"client":{"bulk-claim-client":
-        {"registration":{"post-logout-redirect-uris":["http://localhost:8010/civil"]}}}}}}}
+      SPRING_APPLICATION_JSON: '{"spring":{"security":{"oauth2":{"authorizationserver":{"client":{"bulk-claim-client":{"registration":{"post-logout-redirect-uris":["http://localhost:8010/civil"]}}}}}}}}'
 
   laa-ccms-mock-contracts:
     container_name: laa-ccms-caab-mock-contracts
