@@ -18,7 +18,7 @@ import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration
 import org.springframework.boot.security.autoconfigure.actuate.web.servlet.ManagementWebSecurityAutoConfiguration;
 import org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterAutoConfiguration;
 import org.springframework.boot.security.autoconfigure.web.servlet.ServletWebSecurityAutoConfiguration;
-import org.springframework.boot.security.saml2.autoconfigure.Saml2RelyingPartyAutoConfiguration;
+import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -85,7 +85,7 @@ class MultipartRequestLimitIntegrationTest {
         ManagementWebSecurityAutoConfiguration.class,
         SecurityFilterAutoConfiguration.class,
         ServletWebSecurityAutoConfiguration.class,
-        Saml2RelyingPartyAutoConfiguration.class
+        OAuth2ClientAutoConfiguration.class
       })
   @Import(MultipartBoundaryController.class)
   static class TestApplication {}
