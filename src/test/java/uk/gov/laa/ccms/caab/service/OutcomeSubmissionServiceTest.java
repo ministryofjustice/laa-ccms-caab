@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -291,6 +292,157 @@ class OutcomeSubmissionServiceTest {
   }
 
   @ParameterizedTest
+  @ValueSource(strings = {"", " ", "Not Available", " not available "})
+  void courtPlaceholdersDoNotCountAsChanges(String placeholder) {
+    final var original = completeOutcome().courtCode(placeholder).courtName(placeholder);
+    final var local = completeOutcome();
+    currentCase.setProceedings(
+        List.of(new ProceedingDetail().proceedingCaseId("p").outcome(original)));
+    draft.setProceedingOutcomes(List.of(local));
+    assertThat(service.hasChanges(currentCase, draft)).isFalse();
+    original.setCourtCode(null);
+    original.setCourtName(null);
+    local.setCourtCode(placeholder);
+    local.setCourtName(placeholder);
+    assertThat(service.hasChanges(currentCase, draft)).isFalse();
+    local.setCourtCode("COURT");
+    assertThat(service.hasChanges(currentCase, draft)).isTrue();
+    local.setCourtCode(null);
+    local.setCourtName("County Court");
+    assertThat(service.hasChanges(currentCase, draft)).isTrue();
+  }
+
+  @Test
+  void courtWhitespaceIsNormalisedWithoutIgnoringRealCourtChanges() {
+    currentCase.setProceedings(
+        List.of(
+            new ProceedingDetail()
+                .proceedingCaseId("p")
+                .outcome(completeOutcome().courtCode(" COURT ").courtName(" County Court "))));
+    final var local = completeOutcome().courtCode("COURT").courtName("County Court");
+    draft.setProceedingOutcomes(List.of(local));
+    assertThat(service.hasChanges(currentCase, draft)).isFalse();
+    local.setCourtName("Other Court");
+    assertThat(service.hasChanges(currentCase, draft)).isTrue();
+  }
+
+  @Test
+  void referenceOnlyCorrectionsDoNotCountAsChangesAsInLegacy() {
+    currentCase.setCaseOutcome(
+        new CaseOutcomeDetail().officeCode("123456").uniqueFileNo("1234567890"));
+    draft.officeCode("654321").uniqueFileNo("0987654321");
+    assertThat(service.hasChanges(currentCase, draft)).isFalse();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"COST", "DAMAGE", "LAND", "ASSET"})
+  void comparesAwardValuesByEbsIdentityWithoutCountingListOrder(String type) {
+    final var first = award(type);
+    first.setEbsId("first");
+    first.setDescription("First");
+    final var second = award(type);
+    second.setEbsId("second");
+    second.setDescription("Second");
+    final var localFirst = award(type);
+    localFirst.setEbsId("first");
+    localFirst.setId(100);
+    localFirst.setDescription("First");
+    final var localSecond = award(type);
+    localSecond.setEbsId("second");
+    localSecond.setId(200);
+    localSecond.setDescription("Second");
+    final var baseline = new CaseOutcomeDetail();
+    setAwards(baseline, first);
+    setAwards(draft, localSecond);
+    addAward(baseline, second);
+    addAward(draft, localFirst);
+    currentCase.setCaseOutcome(baseline);
+    assertThat(service.hasChanges(currentCase, draft)).isFalse();
+    localFirst.setDescription("Second");
+    localSecond.setDescription("First");
+    assertThat(service.hasChanges(currentCase, draft)).isTrue();
+  }
+
+  @Test
+  void detectsSwappedFinancialAmountsWithUnchangedLiableParties() {
+    final var first =
+        new FinancialAwardDetail()
+            .awardType("DAMAGE")
+            .ebsId("first")
+            .awardAmount(new BigDecimal("100"))
+            .liableParties(List.of(new LiablePartyDetail().opponentId(10)));
+    final var second =
+        new FinancialAwardDetail()
+            .awardType("DAMAGE")
+            .ebsId("second")
+            .awardAmount(new BigDecimal("200"))
+            .liableParties(List.of(new LiablePartyDetail().opponentId(10)));
+    final var localFirst =
+        new FinancialAwardDetail()
+            .id(1)
+            .awardType("DAMAGE")
+            .ebsId("first")
+            .awardAmount(new BigDecimal("100.00"))
+            .liableParties(List.of(new LiablePartyDetail().opponentId(20)));
+    final var localSecond =
+        new FinancialAwardDetail()
+            .id(2)
+            .awardType("DAMAGE")
+            .ebsId("second")
+            .awardAmount(new BigDecimal("200.00"))
+            .liableParties(List.of(new LiablePartyDetail().opponentId(20)));
+    final var party = new OpponentDetail().ebsId("10").surname("Party");
+    currentCase.setCaseOutcome(new CaseOutcomeDetail().financialAwards(List.of(first, second)));
+    currentCase.setOpponents(List.of(party));
+    draft.setFinancialAwards(List.of(localSecond, localFirst));
+    when(client.getAwardLiableParties(42, "DAMAGE", 1)).thenReturn(Mono.just(List.of(party)));
+    when(client.getAwardLiableParties(42, "DAMAGE", 2)).thenReturn(Mono.just(List.of(party)));
+    assertThat(service.hasChanges(currentCase, draft)).isFalse();
+    localFirst.setAwardAmount(new BigDecimal("200"));
+    localSecond.setAwardAmount(new BigDecimal("100"));
+    assertThat(service.hasChanges(currentCase, draft)).isTrue();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"legalAided", "courtOrderedMeansAssessment"})
+  void comparesNullablePartyAnswersByValueAndPreservesFalse(String field) {
+    final var original =
+        new FinancialAwardDetail()
+            .awardType("DAMAGE")
+            .ebsId("award")
+            .liableParties(List.of(new LiablePartyDetail().opponentId(10)));
+    final var local =
+        new FinancialAwardDetail()
+            .id(4)
+            .awardType("DAMAGE")
+            .ebsId("award")
+            .liableParties(List.of(new LiablePartyDetail().opponentId(20)));
+    final var originalParty = new OpponentDetail().ebsId("10");
+    final var localParty = new OpponentDetail().id(20).ebsId("10");
+    currentCase.setCaseOutcome(new CaseOutcomeDetail().financialAwards(List.of(original)));
+    currentCase.setOpponents(List.of(originalParty));
+    draft.setFinancialAwards(List.of(local));
+    when(client.getAwardLiableParties(42, "DAMAGE", 4)).thenReturn(Mono.just(List.of(localParty)));
+
+    setPartyAnswer(originalParty, field, JsonNullable.undefined());
+    setPartyAnswer(localParty, field, JsonNullable.of(null));
+    assertThat(service.hasChanges(currentCase, draft)).isFalse();
+    setPartyAnswer(originalParty, field, JsonNullable.of(null));
+    setPartyAnswer(localParty, field, JsonNullable.undefined());
+    assertThat(service.hasChanges(currentCase, draft)).isFalse();
+    setPartyAnswer(localParty, field, null);
+    assertThat(service.hasChanges(currentCase, draft)).isFalse();
+    setPartyAnswer(localParty, field, JsonNullable.of(false));
+    assertThat(service.hasChanges(currentCase, draft)).isTrue();
+    setPartyAnswer(originalParty, field, JsonNullable.of(false));
+    assertThat(service.hasChanges(currentCase, draft)).isFalse();
+    setPartyAnswer(localParty, field, JsonNullable.of(true));
+    assertThat(service.hasChanges(currentCase, draft)).isTrue();
+    setPartyAnswer(localParty, field, JsonNullable.of(null));
+    assertThat(service.hasChanges(currentCase, draft)).isTrue();
+  }
+
+  @ParameterizedTest
   @ValueSource(strings = {"COST", "DAMAGE", "LAND", "ASSET"})
   void detectsEachAwardTypeWithoutCountingTechnicalIds(String type) {
     final BaseAwardDetail original = award(type);
@@ -422,13 +574,33 @@ class OutcomeSubmissionServiceTest {
 
   private void setAwards(CaseOutcomeDetail outcome, BaseAwardDetail award) {
     if (award instanceof CostAwardDetail cost) {
-      outcome.setCostAwards(List.of(cost));
+      outcome.setCostAwards(new ArrayList<>(List.of(cost)));
     } else if (award instanceof FinancialAwardDetail financial) {
-      outcome.setFinancialAwards(List.of(financial));
+      outcome.setFinancialAwards(new ArrayList<>(List.of(financial)));
     } else if (award instanceof LandAwardDetail land) {
-      outcome.setLandAwards(List.of(land));
+      outcome.setLandAwards(new ArrayList<>(List.of(land)));
     } else if (award instanceof OtherAssetAwardDetail asset) {
-      outcome.setOtherAssetAwards(List.of(asset));
+      outcome.setOtherAssetAwards(new ArrayList<>(List.of(asset)));
+    }
+  }
+
+  private void addAward(CaseOutcomeDetail outcome, BaseAwardDetail award) {
+    if (award instanceof CostAwardDetail cost) {
+      outcome.addCostAwardsItem(cost);
+    } else if (award instanceof FinancialAwardDetail financial) {
+      outcome.addFinancialAwardsItem(financial);
+    } else if (award instanceof LandAwardDetail land) {
+      outcome.addLandAwardsItem(land);
+    } else if (award instanceof OtherAssetAwardDetail asset) {
+      outcome.addOtherAssetAwardsItem(asset);
+    }
+  }
+
+  private void setPartyAnswer(OpponentDetail party, String field, JsonNullable<Boolean> answer) {
+    if ("legalAided".equals(field)) {
+      party.setLegalAided(answer);
+    } else {
+      party.setCourtOrderedMeansAssessment(answer);
     }
   }
 }

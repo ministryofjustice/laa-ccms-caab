@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 import uk.gov.laa.ccms.caab.bean.CaseDischargeFormData;
+import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
@@ -155,7 +156,8 @@ public class OutcomeSubmissionService {
 
   /**
    * Compares business data, not generated ids, audit information, UI flags or lookup labels.
-   * Discharge fields are deliberately excluded, as in legacy's non-POD submission guard.
+   * Discharge fields and office/file references are deliberately excluded, as in legacy's non-POD
+   * submission guard.
    */
   public boolean hasChanges(final ApplicationDetail currentCase, final CaseOutcomeDetail draft) {
     final CaseOutcomeDetail baseline =
@@ -196,7 +198,7 @@ public class OutcomeSubmissionService {
         || !same(draft.getFinancialAwards(), baseline.getFinancialAwards(), this::awardValues)
         || !same(draft.getLandAwards(), baseline.getLandAwards(), this::awardValues)
         || !same(draft.getOtherAssetAwards(), baseline.getOtherAssetAwards(), this::awardValues)
-        || partiesChanged(currentCase, draft, baseline);
+        || matchedAwardsChanged(currentCase, draft, baseline);
   }
 
   private List<Object> proceedingValues(final ProceedingOutcomeDetail outcome) {
@@ -210,8 +212,8 @@ public class OutcomeSubmissionService {
         outcome.getAlternativeResolution(),
         outcome.getAdrInfo(),
         outcome.getWiderBenefits(),
-        outcome.getCourtCode(),
-        outcome.getCourtName(),
+        ProceedingOutcomeFormData.normaliseCourtValue(outcome.getCourtCode()),
+        ProceedingOutcomeFormData.normaliseCourtValue(outcome.getCourtName()),
         outcome.getOutcomeCourtCaseNo());
   }
 
@@ -323,7 +325,7 @@ public class OutcomeSubmissionService {
             recovery.getTimeRelatedRecoveryDetails());
   }
 
-  private boolean partiesChanged(
+  private boolean matchedAwardsChanged(
       final ApplicationDetail currentCase,
       final CaseOutcomeDetail draft,
       final CaseOutcomeDetail baseline) {
@@ -338,6 +340,7 @@ public class OutcomeSubmissionService {
               .findFirst()
               .orElse(null);
       if (original == null
+          || !awardValues(award).equals(awardValues(original))
           || list(award.getLiableParties()).size() != list(original.getLiableParties()).size()) {
         return true;
       }
@@ -404,9 +407,9 @@ public class OutcomeSubmissionService {
         opponent.getEmploymentStatus(),
         opponent.getEmployerName(),
         opponent.getEmployerAddress(),
-        opponent.getLegalAided(),
+        unwrap(opponent.getLegalAided()),
         opponent.getCertificateNumber(),
-        opponent.getCourtOrderedMeansAssessment(),
+        unwrap(opponent.getCourtOrderedMeansAssessment()),
         opponent.getAssessedIncome(),
         opponent.getAssessedIncomeFrequency(),
         opponent.getAssessedAssets(),
