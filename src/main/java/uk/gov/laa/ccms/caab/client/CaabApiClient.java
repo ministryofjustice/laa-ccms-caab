@@ -38,6 +38,7 @@ import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.LandAwardRequest;
+import uk.gov.laa.ccms.caab.model.LiablePartyDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
@@ -48,6 +49,7 @@ import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.RecoveryRequest;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 
@@ -70,6 +72,7 @@ public class CaabApiClient {
   public static final String RESOURCE_TYPE_SCOPE_LIMITATIONS = "scope limitations";
   public static final String RESOURCE_TYPE_CLIENT = "client";
   public static final String RESOURCE_TYPE_OPPONENTS = "opponents";
+  public static final String RESOURCE_TYPE_LIABLE_PARTY = "liable party";
   public static final String RESOURCE_TYPE_CASE_OUTCOME = "case outcome";
   public static final String RESOURCE_TYPE_COST_AWARD = "cost award";
   public static final String RESOURCE_TYPE_FINANCIAL_AWARD = "financial award";
@@ -834,6 +837,38 @@ public class CaabApiClient {
   }
 
   /**
+   * Links an existing opponent to an award as a liable or interested party. If the opponent is
+   * already linked, the CAAB API returns the existing link rather than creating a duplicate.
+   *
+   * @param caseOutcomeId the owning case outcome id
+   * @param awardType the API award type (COST, DAMAGE, LAND or ASSET)
+   * @param awardId the award id
+   * @param opponentId the existing opponent to link to the award
+   * @param loginId the ID associated with the user login
+   * @return the created, or already existing, liable party link
+   */
+  public Mono<LiablePartyDetail> addAwardLiableParty(
+      final Integer caseOutcomeId,
+      final String awardType,
+      final Integer awardId,
+      final Integer opponentId,
+      final String loginId) {
+    return caabApiWebClient
+        .post()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/liable-parties/{opponent-id}",
+            caseOutcomeId,
+            awardType,
+            awardId,
+            opponentId)
+        .header("Caab-User-Login-Id", loginId)
+        .retrieve()
+        .bodyToMono(LiablePartyDetail.class)
+        .onErrorResume(
+            e -> caabApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_LIABLE_PARTY));
+  }
+
+  /**
    * Fetches the case outcome with the specified id. This method communicates with the CAAB API
    * client to fetch the case outcome.
    *
@@ -1148,6 +1183,31 @@ public class CaabApiClient {
             e ->
                 caabApiClientErrorHandler.handleApiUpdateError(
                     e, RESOURCE_TYPE_LAND_AWARD, "id", String.valueOf(landAwardId)));
+  }
+
+  /** Creates or updates the selected cost or financial award's recovery. */
+  public Mono<Void> upsertRecovery(
+      final Integer caseOutcomeId,
+      final String awardType,
+      final Integer awardId,
+      final String loginId,
+      final RecoveryRequest recovery) {
+    return caabApiWebClient
+        .put()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/recovery",
+            caseOutcomeId,
+            awardType,
+            awardId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(recovery)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiUpdateError(
+                    e, "recovery", "id", String.valueOf(awardId)));
   }
 
   /** Creates or updates a time-related recovery on a land or other-asset award. */

@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -25,6 +27,7 @@ import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import org.thymeleaf.templatemode.TemplateMode;
 import uk.gov.laa.ccms.caab.model.sections.LiablePartiesDisplay;
 import uk.gov.laa.ccms.caab.model.sections.LiablePartyDisplay;
+import uk.gov.laa.ccms.caab.model.sections.PartyListRow;
 
 class LiablePartiesTemplateRenderTest {
 
@@ -76,8 +79,9 @@ class LiablePartiesTemplateRenderTest {
         .doesNotContain(">Outcome and awards</h1>", "<h2", "no-parties-message")
         .contains("Award Amount or Value", "1,234.50")
         .contains("Name</th>", "Party Type</th>", "Relationship to Case</th>", "Address</th>")
-        .contains("href=\"/case/outcome-and-awards/" + path + "/7/liable-parties/individual/add\"")
-        .doesNotContain("href=\"/case/outcome-and-awards/" + path + "/7/liable-parties/add\"");
+        .contains("href=\"/case/outcome-and-awards/" + path + "/7/liable-parties/add\"")
+        .doesNotContain(
+            "href=\"/case/outcome-and-awards/" + path + "/7/liable-parties/individual/add\"");
     assertSingleAddPartyButtonAboveNavigation(html);
     final String next =
         "recovery".equals(destination)
@@ -103,6 +107,8 @@ class LiablePartiesTemplateRenderTest {
         .contains("href=\"/case/outcome-and-awards/land/7/liable-parties/102/remove\"")
         .contains("<span>Imported party</span>")
         .contains("<span>Shared individual</span>")
+        .contains("<span>Party details unavailable</span>")
+        .contains("<span class=\"govuk-visually-hidden\"> Party details unavailable</span>")
         .contains("&lt;script&gt;alert(1)&lt;/script&gt;")
         .doesNotContain("<script>alert(1)</script>", "/individual/13/edit", "/individual/14/edit");
   }
@@ -120,6 +126,89 @@ class LiablePartiesTemplateRenderTest {
     assertThat(html.indexOf("id=\"no-parties-message\""))
         .isLessThan(html.indexOf("id=\"addPartyButton\""));
     assertSingleAddPartyButtonAboveNavigation(html);
+  }
+
+  @Test
+  void rendersPartyListSelectionScreen() throws Exception {
+    final String html = renderPartyList("empty", "false");
+
+    assertThat(html)
+        .contains("Party list")
+        .contains("Add selected parties")
+        .contains("Individual or Organisation not in the list")
+        .contains(
+            "If an individual or organisation is not in the list, you could add a new individual or organisation to the case")
+        .contains("Add Organisation")
+        .contains("Add Individual")
+        .contains(">Select</th>")
+        .contains("aria-label=\"Select Ms Jane Smith\"")
+        .contains("name=\"selectedPartyKeys\"", "value=\"id-11\"", "id=\"selected-party-id-11\"")
+        .doesNotContain("aria-label=\"Select Acme &amp; Co\"", "value=\"ebs-E12\"")
+        .containsPattern("class=\"govuk-tag govuk-tag--grey\">Added</strong>")
+        .containsPattern(
+            "href=\"/case/outcome-and-awards/land/7/liable-parties\"[^>]*>Cancel and return to liable / interested parties</a>")
+        .doesNotContain("TODO", "CCMSPUI", "govuk-error-summary");
+  }
+
+  @Test
+  void errorSummaryLinkTargetsTheFirstSelectableCheckbox() throws Exception {
+    assertThat(
+            renderPartyList(
+                "empty", "false", "error", "case.partyListScreen.selectionErrorMessage"))
+        .containsPattern(
+            "href=\"#selected-party-id-11\"[^>]*>Please select the Liable Parties[^<]*</a>");
+  }
+
+  @Test
+  void errorSummaryLinkFallsBackToAFocusableElementWhenNoPartiesAreSelectable() throws Exception {
+    assertThat(
+            renderPartyList(
+                "empty", "true", "error", "case.partyListScreen.unresolvedSelectionErrorMessage"))
+        .containsPattern(
+            "href=\"#addSelectedPartiesButton\"[^>]*>We could not add the selected party[^<]*</a>");
+  }
+
+  @Test
+  void errorSummaryNamesEachInvalidParty() throws Exception {
+    assertThat(renderPartyList("empty", "false", "invalid", "id-11"))
+        .containsPattern(
+            "href=\"#selected-party-id-11\"[^>]*>Ms Jane Smith cannot be added because some of"
+                + " their details are missing or invalid[^<]*</a>")
+        .doesNotContain("Acme &amp; Co cannot be added");
+  }
+
+  @Test
+  void reticksSubmittedSelections() throws Exception {
+    assertThat(renderPartyList("empty", "false", "selected", "id-11"))
+        .containsPattern("value=\"id-11\"[^>]*checked=\"checked\"");
+    assertThat(renderPartyList("empty", "false")).doesNotContain("checked=\"checked\"");
+  }
+
+  @Test
+  void unavailablePartyListHasNoSelectableRowsOrForm() throws Exception {
+    assertThat(
+            renderPartyList(
+                "empty",
+                "true",
+                "unavailable",
+                "true",
+                "error",
+                "case.partyListScreen.unavailableErrorMessage"))
+        .containsPattern("<span>We could not add all of the selected parties[^<]*</span>")
+        .doesNotContain("<form", "selectedPartyKeys", "addSelectedPartiesButton");
+  }
+
+  private String renderPartyList(final String... params) throws Exception {
+    final var request = get("/test/party-list").param("path", "land");
+    for (int i = 0; i < params.length; i += 2) {
+      request.param(params[i], params[i + 1]);
+    }
+    return mockMvc
+        .perform(request)
+        .andExpect(status().isOk())
+        .andReturn()
+        .getResponse()
+        .getContentAsString();
   }
 
   private void assertSingleAddPartyButtonAboveNavigation(String html) {
@@ -197,7 +286,8 @@ class LiablePartiesTemplateRenderTest {
                       false,
                       false),
                   new LiablePartyDisplay(
-                      104, 14, "Shared individual", "Individual", "", "", false, false));
+                      104, 14, "Shared individual", "Individual", "", "", false, false),
+                  new LiablePartyDisplay(105, 15, null, null, null, "", false, false));
       model.addAttribute(
           "award",
           new LiablePartiesDisplay(
@@ -211,6 +301,39 @@ class LiablePartiesTemplateRenderTest {
       model.addAttribute("awardId", 7);
       model.addAttribute("backUrl", backUrl);
       return "test/liable-parties-harness";
+    }
+
+    @GetMapping("/test/party-list")
+    String displayPartyList(
+        @RequestParam String path,
+        @RequestParam boolean empty,
+        @RequestParam(required = false) String error,
+        @RequestParam(required = false) Set<String> invalid,
+        @RequestParam(required = false) Boolean unavailable,
+        @RequestParam(required = false) Set<String> selected,
+        final Model model) {
+      final List<PartyListRow> parties =
+          empty
+              ? List.of()
+              : List.of(
+                  new PartyListRow(
+                      "id-11",
+                      "Ms Jane Smith",
+                      "Individual",
+                      "Owner",
+                      "1 High Street AB1 2CD",
+                      false),
+                  new PartyListRow("ebs-E12", "Acme & Co", "Organisation", "Owner", "", true));
+      model.addAttribute("parties", parties);
+      model.addAttribute("awardPath", path);
+      model.addAttribute("awardId", 7);
+      model.addAttribute("user", Map.of("functions", List.of()));
+      model.addAttribute("firstSelectablePartyKey", empty ? null : "id-11");
+      model.addAttribute("partyListErrorMessage", error);
+      model.addAttribute("invalidPartyKeys", invalid);
+      model.addAttribute("partyListUnavailable", unavailable);
+      model.addAttribute("selectedPartyKeys", selected);
+      return "application/party-list-screen";
     }
   }
 }

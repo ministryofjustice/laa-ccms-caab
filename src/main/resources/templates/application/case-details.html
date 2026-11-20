@@ -83,7 +83,7 @@
                 <a class="govuk-link govuk-link--no-visited-state"
                    th:id="'linked-case-reference-link-'+${idx.index}"
                    th:text="${linkedCase.lscCaseReference()}"
-                   href="#"/>
+                   th:href="@{/application/{case-reference-number}/view(case-reference-number=${linkedCase.lscCaseReference()})}"/>
               </td>
               <td class="govuk-table__cell"
                   th:id="'linked-case-relation-'+${idx.index}"
