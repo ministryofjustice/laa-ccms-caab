@@ -973,6 +973,9 @@ public class ApplicationSubmissionController {
 
     session.removeAttribute(SUBMISSION_RESULT);
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
+    // A sent application is no longer a draft, whether or not its polling is seen through.
+    activeCase.setDraftApplication(false);
+    session.setAttribute(ACTIVE_CASE, activeCase);
 
     return "redirect:/application/%s".formatted(SUBMISSION_SUBMIT_CASE);
   }

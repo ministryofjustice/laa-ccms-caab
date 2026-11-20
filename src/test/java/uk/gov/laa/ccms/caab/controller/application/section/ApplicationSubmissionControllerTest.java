@@ -362,6 +362,7 @@ class ApplicationSubmissionControllerTest {
             .applicationId(1)
             .caseReferenceNumber("caseRef123")
             .clientReferenceNumber("clientRef456")
+            .draftApplication(true)
             .build();
 
     // Mock evidence service behavior
@@ -408,6 +409,8 @@ class ApplicationSubmissionControllerTest {
     verify(applicationService, times(1)).getApplication(anyString());
     verify(assessmentService, times(2)).getAssessments(anyList(), anyString(), anyString());
     verify(applicationService, times(1)).createCase(any(), any(), any(), any(), any());
+    // Once sent, the application is no longer treated as a draft.
+    assertFalse(mockActiveCase.isDraftApplication());
 
     // Ensure no other interactions occur
     Mockito.verifyNoMoreInteractions(applicationService, evidenceService, assessmentService);
