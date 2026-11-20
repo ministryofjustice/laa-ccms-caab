@@ -23,6 +23,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -47,6 +50,7 @@ import uk.gov.laa.ccms.caab.service.OutcomeSubmissionService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.springboot.dialect.GovUkDialect;
 
 @ExtendWith(MockitoExtension.class)
 class OutcomeSubmissionControllerTest {
@@ -213,11 +217,12 @@ class OutcomeSubmissionControllerTest {
             .getContentAsString();
     assertThat(html)
         .contains(
-            "Request Case Discharge",
+            "<h1 class=\"govuk-heading-l\">Request Case Discharge</h1>",
             "Client Death",
             "action=\"/case/outcome-and-awards/discharge\"",
             "href=\"/case/outcome-and-awards\"",
             "maxlength=\"950\"")
+        .doesNotContainPattern("<h[1-6][^>]*>Outcome and awards</h[1-6]>")
         .containsPattern("(?s)<input[^>]*type=\"radio\"[^>]*value=\"true\"[^>]*checked=\"checked\"")
         .containsPattern(
             "(?s)<input[^>]*type=\"radio\"[^>]*value=\"false\"[^>]*checked=\"checked\"");
@@ -259,6 +264,35 @@ class OutcomeSubmissionControllerTest {
             "Discharge Reason");
   }
 
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(booleans = {true, false})
+  void labelsOptionalFieldsConsistently(Boolean dischargeCaseInd) throws Exception {
+    eligibleDischarge();
+    draft.setDischargeCaseInd(dischargeCaseInd);
+    renderTemplates();
+    final String html =
+        mvc.perform(get("/case/outcome-and-awards/discharge").session(session))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    assertThat(html)
+        .containsPattern(
+            "<label[^>]*for=\"dischargeReason\"[^>]*>\\s*"
+                + "Discharge Reason \\(optional\\)\\s*</label>")
+        .contains(
+            ">Client Continuing Privately (optional)",
+            "Any other Discharge Information (Maximum 950 characters allowed) (optional)")
+        .containsPattern(
+            "<label[^>]*class=\"govuk-fieldset__legend govuk-label\"[^>]*>\\s*"
+                + "Client Continuing Privately \\(optional\\)\\s*</label>")
+        .doesNotContainPattern(
+            "<h[1-6][^>]*>\\s*Client Continuing Privately \\(optional\\)\\s*</h[1-6]>")
+        .doesNotContain("Discharge Case (optional)");
+  }
+
   private void renderTemplates() {
     final var resolver = new ClassLoaderTemplateResolver();
     resolver.setPrefix("templates/");
@@ -268,6 +302,7 @@ class OutcomeSubmissionControllerTest {
     final var engine = new SpringTemplateEngine();
     engine.setTemplateResolver(resolver);
     engine.setTemplateEngineMessageSource(messages);
+    engine.addDialect(new GovUkDialect());
     final var views = new ThymeleafViewResolver();
     views.setTemplateEngine(engine);
     mvc =

@@ -12,8 +12,7 @@
        th:text="#{case.discharge.cancel}"></a>
   </div>
   <div id="main-content">
-    <h1 class="govuk-heading-l" th:text="#{case.outcomeAndAwards.title}"></h1>
-    <h2 class="govuk-heading-m" th:text="#{case.discharge.title}"></h2>
+    <h1 class="govuk-heading-l" th:text="#{case.discharge.title}"></h1>
     <p class="govuk-body" th:text="#{case.discharge.intro}"></p>
     <form th:action="@{/case/outcome-and-awards/discharge}" th:object="${discharge}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
@@ -21,10 +20,10 @@
         <div th:replace="~{partials/forms :: radios('dischargeCaseInd', #{case.discharge.dischargeCase}, ${yesNoOptions}, 'code', 'description', true)}"></div>
       </div>
       <th:block th:replace="~{partials/forms :: autocompleteSelect(field='dischargeReason',
-          label=#{case.discharge.reason}, items=${dischargeReasons},
+          label=#{site.optional(#{case.discharge.reason})}, items=${dischargeReasons},
           itemValue='code', itemLabel='description')}"></th:block>
       <div id="clientContinueInd">
-        <div th:replace="~{partials/forms :: radios('clientContinueInd', #{case.discharge.clientContinuing}, ${yesNoOptions}, 'code', 'description', true)}"></div>
+        <div th:replace="~{partials/forms :: radios('clientContinueInd', #{site.optional(#{case.discharge.clientContinuing})}, ${yesNoOptions}, 'code', 'description', false)}"></div>
       </div>
       <div th:replace="~{partials/forms :: largeTextInput('otherDetails', #{case.discharge.otherDetails}, 950)}"></div>
       <button class="govuk-button" type="submit" th:text="#{site.next}"></button>
