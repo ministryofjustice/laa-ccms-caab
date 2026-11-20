@@ -44,6 +44,7 @@ import uk.gov.laa.ccms.caab.model.LandAwardRequest;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.RecoveryRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 
 @ExtendWith(MockitoExtension.class)
@@ -556,7 +557,8 @@ class CaseOutcomeServiceTest {
     assertEquals(
         "Other asset award 7 does not belong to case reference number: 300000001",
         exception.getMessage());
-    verify(caabApiClient, never()).updateOtherAssetAward(any(), any(), any(), any());
+    verify(caabApiClient, never())
+        .updateOtherAssetAward(any(), any(), any(), any(OtherAssetAwardRequest.class));
   }
 
   @Test
@@ -676,7 +678,8 @@ class CaseOutcomeServiceTest {
             caseOutcomeService.updateLandAward(
                 caseReferenceNumber, providerId, landAwardId, request, "user1"));
 
-    verify(caabApiClient, never()).updateLandAward(any(), any(), any(), any());
+    verify(caabApiClient, never())
+        .updateLandAward(any(), any(), any(), any(LandAwardRequest.class));
   }
 
   @ParameterizedTest
@@ -692,6 +695,34 @@ class CaseOutcomeServiceTest {
     caseOutcomeService.upsertTimeRecovery("300000001", 123, awardType, 7, request, "user1");
 
     verify(caabApiClient).upsertTimeRecovery(42, awardType, 7, "user1", request);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"COST", "DAMAGE"})
+  void upsertRecoveryUsesProviderOutcomeAndVerifiesAwardOwnership(String type) {
+    final var outcome =
+        new CaseOutcomeDetail()
+            .id(42)
+            .costAwards(List.of(new CostAwardDetail().id(7).awardType("COST")))
+            .financialAwards(List.of(new FinancialAwardDetail().id(7).awardType("DAMAGE")));
+    doReturn(Optional.of(outcome)).when(caseOutcomeService).getCaseOutcome("300000001", 123);
+    final var request = new RecoveryRequest();
+    when(caabApiClient.upsertRecovery(42, type, 7, "user1", request)).thenReturn(Mono.empty());
+    caseOutcomeService.upsertRecovery("300000001", 123, type, 7, request, "user1");
+    verify(caabApiClient).upsertRecovery(42, type, 7, "user1", request);
+  }
+
+  @Test
+  void upsertRecoveryRejectsAwardOutsideTheProviderOutcome() {
+    doReturn(Optional.of(new CaseOutcomeDetail().id(42).costAwards(List.of())))
+        .when(caseOutcomeService)
+        .getCaseOutcome("300000001", 123);
+    assertThrows(
+        CaabApplicationException.class,
+        () ->
+            caseOutcomeService.upsertRecovery(
+                "300000001", 123, "COST", 7, new RecoveryRequest(), "user1"));
+    verify(caabApiClient, never()).upsertRecovery(any(), any(), any(), any(), any());
   }
 
   @ParameterizedTest

@@ -1,5 +1,5 @@
 plugins {
-    id 'uk.gov.justice.service.laa.laa-spring-boot-gradle-plugin' version '3.1.4'
+    id 'uk.gov.justice.service.laa.laa-spring-boot-gradle-plugin' version '4.0.0'
     id 'com.diffplug.spotless' version '8.11.0'
 }
 
@@ -106,6 +106,11 @@ configurations.configureEach {
     }
 }
 
+// The Dockerfile copies the boot jar from build/libs, so do not build a plain jar alongside it.
+tasks.named('jar') {
+    enabled = false
+}
+
 // Replaces application.yml @version@ with the project version
 processResources {
     inputs.property('applicationVersion', project.version.toString())
@@ -128,7 +133,7 @@ dependencies {
     // 0.1.3 carries GetInvoiceData, needed to copy a rejected bill.
     implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.1.3'
 
-    implementation 'uk.gov.laa.ccms.caab:caab-api:0.14.0'
+    implementation 'uk.gov.laa.ccms.caab:caab-api:0.24.1'
 
     implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.57'
 
@@ -157,7 +162,7 @@ dependencies {
     implementation 'org.springframework.data:spring-data-commons'
 
 	// AWS S3 Integration
-	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.2.1')
+	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.2.2')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
 	implementation 'software.amazon.awssdk:sts'
