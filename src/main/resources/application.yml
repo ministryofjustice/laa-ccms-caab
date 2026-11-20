@@ -80,6 +80,7 @@ server:
       cookie:
         secure: true
         http-only: true
+        same-site: strict
     # required to be on civil in order for OPA integration with OWD,
     # otherwise issues occur with the JSESSIONID cookie
     context-path: /civil
