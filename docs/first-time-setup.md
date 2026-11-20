@@ -8,28 +8,39 @@ Clone this repository, along with the following repositories into the same direc
 - [laa-ccms-caab-ebs-api](https://github.com/ministryofjustice/laa-ccms-data-api)
 - [laa-ccms-caab-soa-api](https://github.com/ministryofjustice/laa-ccms-soa-gateway-api)
 - [laa-ccms-caab-assessment-api](https://github.com/ministryofjustice/laa-ccms-caab-assessment-api)
-- [laa-ccms-caab-saml-mock](https://github.com/ministryofjustice/laa-ccms-caab-saml-mock)
 - [laa-ccms-mock-contracts](https://github.com/ministryofjustice/laa-ccms-mock-contracts)
+- [laa-oidc-mock-server](https://github.com/ministryofjustice/laa-oidc-mock-server)
 
 ## 2. Install Java
 
-Follow the steps [here](https://ministryofjustice.github.io/laa-java-community-technical-guidance/java-setup.html#get-started-with-java-versions-and-intellij) (SDKMAN! recommended). You will need both the latest LTS version for this project, and Java 11 for Saml Mock.
+Follow the steps [here](https://ministryofjustice.github.io/laa-java-community-technical-guidance/java-setup.html#get-started-with-java-versions-and-intellij) (SDKMAN! recommended).
 
-## 3. Build and run dependency images
+## 3. Build the OIDC mock jar
 
-For first time setup, you only need to follow the manual build steps for saml mock below (up to and including copying the `.jar`). Then you can run to build and run all required containers.
+docker-compose builds the mock's image from the clone alongside this repository, and its
+`Dockerfile` copies in a jar rather than building one, so the jar has to exist first. `assemble`
+rather than `build`: that repository's `checkstyleMain` task currently fails on a missing config
+file. See [authentication](./authentication.md) for what the mock is for.
+
+```shell
+cd ../laa-oidc-mock-server
+./gradlew clean assemble
+cd -
+```
+
+## 4. Build and run dependency images
 
 ```shell
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build
 ```
 
-## 4. Complete AWS SSO setup
+## 5. Complete AWS SSO setup
 
 Follow [AWS SSO Setup](https://dsdmoj.atlassian.net/wiki/spaces/CCMS/pages/6045630839/PUI+Developer+Onboarding).
 
 This is required to connect to the development EBS database and SOA instances.
 
-## 5. Run the APIs
+## 6. Run the APIs
 
 Follow the README for the following APIs to get them running locally
 
@@ -42,32 +53,49 @@ You can now [run the application](../README.md#3-run-the-application).
 
 Below is further information about all dependencies.
 
-## Set up laa-ccms-caab-saml-mock
+## Set up laa-oidc-mock-server
 
-This step requires maven to be installed on your machine. You can
-use [homebrew](https://formulae.brew.sh/formula/maven) to install it.
+Authentication is via OIDC. Locally this runs against the
+[OIDC mock server](https://github.com/ministryofjustice/laa-oidc-mock-server), which replaces the
+SAML mock used before the migration to EntraID. docker-compose builds its image from the clone
+alongside this repository and serves it on port 9000.
 
-```shell
-brew install maven
-```
-
-You will also need to switch to Java 11 to build the application.
-
-Next steps:
+Step 3 builds its jar, which its `Dockerfile` copies in rather than building. To rebuild just the
+mock afterwards:
 
 ```shell
-cd ../laa-ccms-caab-saml-mock
-
-mvn -B package --file pom.xml
-
-cp mujina-idp/target/laa-ccms-caab-saml-mock-1.0.0.jar laa-ccms-caab-saml-mock-1.0.0.jar
+cd ../laa-oidc-mock-server && ./gradlew clean assemble && cd -
+docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-oidc-mock
 ```
 
-### Run laa-ccms-caab-saml-mock standalone
+The mock has to be running **before** this application starts. `issuer-uri` makes spring fetch the
+provider's discovery document while it builds the client registration, so the application will not
+start if the IdP is unreachable.
 
-```shell
-docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-saml-mock
-```
+Sign in as `provider.user@provider.com` with password `password`.
+
+The mock registers one redirect URI, `http://localhost:8010/civil/login/oauth2/code/silas-identity`,
+which is why `REDIRECT_BASE_URI` in `docker-compose.yml` carries this application's context path.
+
+### Switching local authentication
+
+Every setting below is a `${VAR:default}` whose default is the local mock, so each switch is a
+variable to set or leave unset. There is no need to edit or comment out anything in
+`application-secret.yml`, and driving it this way means local behaves as a deployed environment
+does - a wrong default is wrong on your machine too, rather than only in a cluster.
+
+| To run against | Set |
+|---|---|
+| The mock, signing in as a provider | nothing - the defaults are the mock's client and `http://localhost:9000` |
+| A real EntraID tenant for sign-in | `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `OIDC_ISSUER_URI`, and `PORTAL_LOGOUTURL` - without the last one you are signed out against the mock and the EntraID session stays open |
+| Bearer tokens to the four APIs | add `api-oauth2` to `SPRING_PROFILES_ACTIVE`, plus `AZURE_TENANT_ID` and `EBS_API_SCOPE`, `SOA_API_SCOPE`, `CAAB_API_SCOPE`, `ASSESSMENT_API_SCOPE` |
+| An external (SiLAS) identity rather than the internal mapping table | `IS_SILAS_ENABLED=true`, `ENTRA_CUSTOM_USER_ID_CLAIM=LAA_CCMS_USERNAME`, `USER_DETAILS_API_HOSTNAME`, `USER_DETAILS_API_ACCESS_TOKEN` |
+
+`application-secret.yml` is for values with no safe default - the OPA password, the OS API key, a
+real client secret - rather than for switching between configurations.
+
+See [authentication](authentication.md) for how a signed-in identity is turned into a CCMS user,
+and for running against a real EntraID tenant instead.
 
 ## Wiremock standalone
 

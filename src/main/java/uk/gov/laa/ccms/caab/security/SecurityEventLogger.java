@@ -3,23 +3,26 @@ package uk.gov.laa.ccms.caab.security;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
+import org.slf4j.spi.LoggingEventBuilder;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.event.AbstractAuthenticationFailureEvent;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.authorization.event.AuthorizationDeniedEvent;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.saml2.provider.service.authentication.Saml2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
 import uk.gov.laa.ccms.caab.bean.metric.PuiMetricService;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.logging.RequestRoute;
+import uk.gov.laa.ccms.caab.logging.SearchCriteriaFields;
 import uk.gov.laa.ccms.caab.logging.UserIdentifier;
 
 /** Writes authentication and authorisation outcomes as structured security events. */
@@ -223,30 +226,99 @@ public class SecurityEventLogger {
    */
   public void dataAccessed(
       String action, boolean succeeded, String caseReference, String clientReference, String path) {
-    Outcome outcome = succeeded ? Outcome.SUCCESS : Outcome.FAILURE;
-    count(EventType.DATA_ACCESS, outcome);
-    AUDIT_LOG
-        .atInfo()
-        .addKeyValue(EVENT_TYPE, EventType.DATA_ACCESS.name())
-        .addKeyValue("action", action)
-        .addKeyValue(OUTCOME, outcome.name())
-        .addKeyValue("session_case_reference", caseReference)
-        .addKeyValue("session_client_reference", clientReference)
-        .addKeyValue("path", path)
-        .log("Case or client data accessed");
+    dataAccessed(action, succeeded, caseReference, clientReference, Map.of(), path);
   }
 
   /**
-   * Records a failed sign-in that Spring Security does not publish an event for, such as a SAML
-   * response that cannot be read or verified. Only an error code or the exception class is logged,
-   * as the exception message can carry the user's details.
+   * Records which case, client and other records a request touched, as identifiers only.
+   *
+   * @param action whether the request viewed or changed the data
+   * @param succeeded whether the request completed without an error
+   * @param caseReference the case reference from the session, which may be null
+   * @param clientReference the client reference from the session, which may be null
+   * @param resources identifiers taken from the request path, such as a notification or document
+   *     id, keyed by the log field name
+   * @param path the matched route or redacted path
+   */
+  public void dataAccessed(
+      String action,
+      boolean succeeded,
+      String caseReference,
+      String clientReference,
+      Map<String, String> resources,
+      String path) {
+    Outcome outcome = succeeded ? Outcome.SUCCESS : Outcome.FAILURE;
+    count(EventType.DATA_ACCESS, outcome);
+    LoggingEventBuilder event =
+        AUDIT_LOG
+            .atInfo()
+            .addKeyValue(EVENT_TYPE, EventType.DATA_ACCESS.name())
+            .addKeyValue("action", action)
+            .addKeyValue(OUTCOME, outcome.name());
+    if (caseReference != null) {
+      event = event.addKeyValue("session_case_reference", caseReference);
+    }
+    if (clientReference != null) {
+      event = event.addKeyValue("session_client_reference", clientReference);
+    }
+    for (var resource : resources.entrySet()) {
+      event = event.addKeyValue(resource.getKey(), resource.getValue());
+    }
+    event.addKeyValue("path", path).log("Case or client data accessed");
+  }
+
+  /**
+   * Records a search for people's records. Only the names of the criteria the user filled in are
+   * logged, never their values, because the values are the personal data being searched for.
+   *
+   * @param searchType the kind of record searched for, such as CLIENT, CASE or NOTIFICATION
+   * @param criteriaFields the names of the criteria the user filled in, from {@link
+   *     SearchCriteriaFields#populated}
+   * @param resultCount the number of results, or null when it is not known
+   * @param page the page fetched, or null when the search is not paged
+   * @param succeeded whether the search completed without an error
+   * @param detail why the search ended unusually, such as TOO_MANY_RESULTS, or null
+   */
+  public void searched(
+      String searchType,
+      Collection<String> criteriaFields,
+      Integer resultCount,
+      Integer page,
+      boolean succeeded,
+      String detail) {
+    Outcome outcome = succeeded ? Outcome.SUCCESS : Outcome.FAILURE;
+    count(EventType.DATA_ACCESS, outcome);
+    LoggingEventBuilder event =
+        AUDIT_LOG
+            .atInfo()
+            .addKeyValue(EVENT_TYPE, EventType.DATA_ACCESS.name())
+            .addKeyValue("action", "SEARCH")
+            .addKeyValue(OUTCOME, outcome.name())
+            .addKeyValue("search_type", searchType)
+            .addKeyValue("criteria_fields", String.join(",", criteriaFields));
+    if (resultCount != null) {
+      event = event.addKeyValue("result_count", resultCount);
+    }
+    if (page != null) {
+      event = event.addKeyValue("page", page);
+    }
+    if (detail != null) {
+      event = event.addKeyValue("event_detail", detail);
+    }
+    event.log("Records searched");
+  }
+
+  /**
+   * Records a failed sign-in that Spring Security does not publish an event for, such as a callback
+   * that cannot be matched to an authorization request. Only an error code or the exception class
+   * is logged, as the exception message can carry the user's details.
    *
    * @param exception the authentication failure
    */
   public void authenticationFailed(AuthenticationException exception) {
     String detail =
-        exception instanceof Saml2AuthenticationException saml2Exception
-            ? saml2Exception.getSaml2Error().getErrorCode()
+        exception instanceof OAuth2AuthenticationException oauth2Exception
+            ? oauth2Exception.getError().getErrorCode()
             : exception.getClass().getSimpleName();
     log(EventType.AUTHENTICATION_FAILURE, null, Outcome.FAILURE, "Authentication failed", detail);
   }

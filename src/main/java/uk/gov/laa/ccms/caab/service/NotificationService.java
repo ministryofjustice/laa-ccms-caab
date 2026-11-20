@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -430,6 +431,26 @@ public class NotificationService {
             .map(String::valueOf)
             .toList();
     return getDocumentLinks(documentIds, true);
+  }
+
+  /**
+   * Generates a signed URL for a submitted document held in S3.
+   *
+   * @param documentId The document identifier.
+   * @return the signed URL, or empty if the document is not in S3.
+   */
+  public Optional<String> getDocumentLink(String documentId) {
+    return s3ApiClient.getDocumentUrl(documentId);
+  }
+
+  /**
+   * Generates a signed URL for a draft document held in S3.
+   *
+   * @param documentId The draft document identifier.
+   * @return the signed URL, or empty if the draft document is not in S3.
+   */
+  public Optional<String> getDraftDocumentLink(String documentId) {
+    return s3ApiClient.getDraftDocumentUrl(documentId);
   }
 
   /**

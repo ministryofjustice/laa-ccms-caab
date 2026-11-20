@@ -1,0 +1,43 @@
+# Opt an environment into OAuth2 for the backend APIs. Declaring a registration is what switches
+# that API from its static access token to a bearer token, so this profile is only enabled once the
+# matching Entra app role has been granted to this application.
+#
+# These registrations use their own provider rather than silas-identity. That one is the browser
+# login, and a feature, development or test environment points it at the OIDC mock - tokens the
+# APIs would reject, because they validate against the real tenant. Service tokens therefore
+# always come from EntraID, whoever signs the user in.
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          ebs-api:
+            provider: entra-api
+            client-id: ${AZURE_CLIENT_ID}
+            client-secret: ${AZURE_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            # Entra issues app roles only against the API's own <audience>/.default scope.
+            scope: ${EBS_API_SCOPE}
+          soa-api:
+            provider: entra-api
+            client-id: ${AZURE_CLIENT_ID}
+            client-secret: ${AZURE_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            scope: ${SOA_API_SCOPE}
+          caab-api:
+            provider: entra-api
+            client-id: ${AZURE_CLIENT_ID}
+            client-secret: ${AZURE_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            scope: ${CAAB_API_SCOPE}
+          assessment-api:
+            provider: entra-api
+            client-id: ${AZURE_CLIENT_ID}
+            client-secret: ${AZURE_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            scope: ${ASSESSMENT_API_SCOPE}
+        provider:
+          entra-api:
+            # The token endpoint directly: app-only tokens need no discovery, and this must not
+            # follow OIDC_ISSUER_URI, which may be a mock.
+            token-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/token

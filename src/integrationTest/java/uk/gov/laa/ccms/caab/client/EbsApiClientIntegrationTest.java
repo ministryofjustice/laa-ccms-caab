@@ -74,6 +74,8 @@ import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
+import uk.gov.laa.ccms.data.model.ProceedingDetail;
+import uk.gov.laa.ccms.data.model.ProceedingDetails;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -300,6 +302,51 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
+  @DisplayName("An email address with a plus is sent as the address, not as a space")
+  public void entraMappingEncodesAPlusInTheAddress() {
+    final String address = "a.user+tag@justice.gov.uk";
+    wiremock.stubFor(
+        get(urlPathEqualTo("/users/entra-mapping"))
+            .willReturn(okJson("{\"ccms_login_id\":\"A-USER\"}")));
+
+    StepVerifier.create(ebsApiClient.getEntraUserMapping(address))
+        .expectNextMatches(mapping -> "A-USER".equals(mapping.getCcmsLoginId()))
+        .verifyComplete();
+
+    wiremock.verify(
+        getRequestedFor(urlPathEqualTo("/users/entra-mapping"))
+            .withQueryParam("entra-email", equalTo(address)));
+  }
+
+  @Test
+  @DisplayName("An unmapped address is empty even when the 404 carries a body")
+  public void entraMappingIsEmptyForANotFoundWithABody() {
+    wiremock.stubFor(
+        get(urlPathEqualTo("/users/entra-mapping"))
+            .willReturn(
+                aResponse()
+                    .withStatus(404)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"error\":\"no mapping\"}")));
+
+    StepVerifier.create(ebsApiClient.getEntraUserMapping("nobody@justice.gov.uk")).verifyComplete();
+  }
+
+  @Test
+  @DisplayName("An unmapped address is empty even when the 404 body is not JSON")
+  public void entraMappingIsEmptyForANotFoundWithAnHtmlBody() {
+    wiremock.stubFor(
+        get(urlPathEqualTo("/users/entra-mapping"))
+            .willReturn(
+                aResponse()
+                    .withStatus(404)
+                    .withHeader("Content-Type", "text/html")
+                    .withBody("<html><body>Not found</body></html>")));
+
+    StepVerifier.create(ebsApiClient.getEntraUserMapping("nobody@justice.gov.uk")).verifyComplete();
+  }
+
+  @Test
   public void testGetUser_notFound() {
     final Integer userId = 1;
     final String expectedMessage = USER_ERROR_MESSAGE.formatted(userId);
@@ -374,6 +421,39 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
     assertNotNull(result);
     assertEquals(providerJson, objectMapper.writeValueAsString(result));
+  }
+
+  @Test
+  void proceedingSelectionSendsScopeContextAndUsesTheScopedQuery() {
+    final ProceedingDetail criteria =
+        new ProceedingDetail()
+            .categoryOfLawCode("CON")
+            .matterType("NIGDS")
+            .amendmentOnly(Boolean.FALSE)
+            .enabled(Boolean.TRUE);
+
+    wiremock.stubFor(
+        get(urlPathEqualTo("/proceedings"))
+            .withQueryParam("category-of-law", equalTo("CON"))
+            .withQueryParam("matter-type", equalTo("NIGDS"))
+            .withQueryParam("amendment-only", equalTo("false"))
+            .withQueryParam("enabled", equalTo("true"))
+            .withQueryParam("lar-scope-flag", equalTo("false"))
+            .withQueryParam("application-type", equalTo("ECF"))
+            .withQueryParam("lead", equalTo("true"))
+            .willReturn(okJson("{\"content\":[]}")));
+
+    final ProceedingDetails result =
+        ebsApiClient.getProceedings(criteria, Boolean.FALSE, "ECF", Boolean.TRUE).block();
+
+    assertNotNull(result);
+    assertThat(result.getContent()).isEmpty();
+    wiremock.verify(
+        1,
+        getRequestedFor(urlPathEqualTo("/proceedings"))
+            .withQueryParam("lar-scope-flag", equalTo("false"))
+            .withQueryParam("application-type", equalTo("ECF"))
+            .withQueryParam("lead", equalTo("true")));
   }
 
   @Test
