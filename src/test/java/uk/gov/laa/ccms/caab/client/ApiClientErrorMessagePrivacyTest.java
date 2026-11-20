@@ -60,6 +60,19 @@ class ApiClientErrorMessagePrivacyTest {
   }
 
   @Test
+  void anEntraEmailIsNotLoggedOrPutInTheExceptionEither() {
+    var result =
+        handler.handleApiRetrieveError(
+            new RuntimeException("boom"),
+            "Entra user mapping",
+            "entra email",
+            "jane.doe@test.gov.uk");
+
+    assertThatThrownBy(result::block).hasMessageNotContaining("jane.doe");
+    assertThat(appender.list.getFirst().getFormattedMessage()).doesNotContain("jane.doe");
+  }
+
+  @Test
   void anOpaqueIdentifierIsStillNamedSoSupportCanFindTheRecord() {
     var result =
         handler.handleApiRetrieveError(new RuntimeException("boom"), "Document", "id", "12345");

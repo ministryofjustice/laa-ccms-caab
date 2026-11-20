@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='SUBDOC')}"
-      xmlns:th="http://www.thymeleaf.org">
+      xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
   <title th:text="|#{service.name} - #{notifications.documents.heading}|"/>
 </head>
@@ -105,8 +105,17 @@
                      th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/remove(notification_id=${notification.getNotificationId},attachment_id=${attachment.getId})}"
                      class="govuk-link"
                      th:text="#{site.remove}"/>
-                  <a th:if="${documentLinks.get(attachment.getId?.toString())} != null"
-                     th:href="${documentLinks.get(attachment.getId.toString())}"
+                  <a th:if="${documentLinks.get(attachment.getId?.toString())} != null and ${attachment.status} == 'Submitted'"
+                     sec:authorize="hasAuthority(@roles.viewNotificationAttachment)"
+                     th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/download(notification_id=${notification.getNotificationId},attachment_id=${attachment.getId})}"
+                     th:target="_blank" class="govuk-link"
+                     th:text="${attachment.sendBy} == 'P' ? #{notifications.documents.downloadCoverSheet} : #{site.download}">
+                  </a>
+                  <span th:if="${documentLinks.get(attachment.getId?.toString())} != null and ${attachment.status} == 'Submitted'"
+                        sec:authorize="!hasAuthority(@roles.viewNotificationAttachment)"
+                        th:text="${attachment.sendBy} == 'P' ? #{notifications.documents.downloadCoverSheet} : #{site.download}"></span>
+                  <a th:if="${documentLinks.get(attachment.getId?.toString())} != null and ${attachment.status} != 'Submitted'"
+                     th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/downloadDraft(notification_id=${notification.getNotificationId},attachment_id=${attachment.getId})}"
                      th:target="_blank" class="govuk-link"
                      th:text="${attachment.sendBy} == 'P' ? #{notifications.documents.downloadCoverSheet} : #{site.download}">
                   </a>

@@ -110,7 +110,7 @@ public class OpponentMapperTest {
         new SimpleDateFormat("dd/MM/yyyy").format(result.getDateOfBirth()));
     assertEquals(
         opponentFormData.getNationalInsuranceNumber(), result.getNationalInsuranceNumber());
-    assertEquals(opponentFormData.getLegalAided(), result.getLegalAided());
+    assertEquals(opponentFormData.getLegalAided(), result.getLegalAided().get());
     assertEquals(opponentFormData.getCertificateNumber(), result.getCertificateNumber());
 
     assertEquals(opponentFormData.getPartyId(), result.getPartyId());

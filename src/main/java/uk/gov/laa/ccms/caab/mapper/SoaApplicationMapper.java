@@ -111,7 +111,7 @@ import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
 
 /** Mapper class to convert a SoaApi Case into a CAAB ApplicationDetail. */
 @Mapper(componentModel = "spring")
-public interface SoaApplicationMapper {
+public interface SoaApplicationMapper extends NullableBooleanMapper {
 
   ApplicationDetails toApplicationDetails(Page<BaseApplicationDetail> applicationPage);
 
