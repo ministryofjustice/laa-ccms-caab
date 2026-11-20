@@ -86,4 +86,17 @@ class CcmsOidcUserTest {
   void acceptsNoAuthorities() {
     assertEquals(List.of(), List.copyOf(ccmsOidcUser().getAuthorities()));
   }
+
+  @Test
+  void repeatedRefreshKeepsClaimsWithoutAnUnboundedDelegateChain() {
+    Map<String, Object> claims = Map.of("sub", "a-subject");
+    when(delegate.getClaims()).thenReturn(claims);
+    OidcUser user = ccmsOidcUser(new SimpleGrantedAuthority("CA"));
+    for (int i = 0; i < 10000; i++) {
+      user = new CcmsOidcUser(user, "CCMSUSER", Set.of(new SimpleGrantedAuthority("NOT")));
+    }
+    assertSame(claims, user.getClaims());
+    assertEquals("CCMSUSER", user.getName());
+    assertEquals(Set.of(new SimpleGrantedAuthority("NOT")), Set.copyOf(user.getAuthorities()));
+  }
 }

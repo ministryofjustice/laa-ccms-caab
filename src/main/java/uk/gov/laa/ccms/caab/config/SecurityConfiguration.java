@@ -18,6 +18,7 @@ import org.springframework.security.authorization.AllAuthoritiesAuthorizationMan
 import org.springframework.security.authorization.AuthorityAuthorizationManager;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.authorization.AuthorizationManagers;
+import org.springframework.security.config.ObjectPostProcessor;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.core.GrantedAuthority;
@@ -32,6 +33,7 @@ import org.springframework.security.web.access.intercept.RequestAuthorizationCon
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
 import uk.gov.laa.ccms.caab.logging.UserContextFilter;
 import uk.gov.laa.ccms.caab.security.AbsoluteSessionTimeoutFilter;
@@ -107,7 +109,18 @@ public class SecurityConfiguration {
               authorizeUserFunctions(authorize);
               authorize.anyRequest().authenticated();
             })
-        .csrf(csrf -> csrf.ignoringRequestMatchers("/csp/report"))
+        .csrf(
+            csrf ->
+                csrf.ignoringRequestMatchers("/csp/report")
+                    .withObjectPostProcessor(
+                        new ObjectPostProcessor<CsrfFilter>() {
+                          @Override
+                          public <O extends CsrfFilter> O postProcess(O filter) {
+                            filter.setAccessDeniedHandler(
+                                new CsrfLoggingAccessDeniedHandler(securityEventLogger));
+                            return filter;
+                          }
+                        }))
         .exceptionHandling(
             exceptions ->
                 exceptions.accessDeniedHandler(
@@ -227,6 +240,10 @@ public class SecurityConfiguration {
             "/means-reassessment/**")
         .access(caseAction())
         // Every notification page is reached by opening the notification, which needs NOT.
+        .requestMatchers(HttpMethod.POST, "/notifications/*/attachments/*/remove")
+        .access(notificationAction(UserRole.UPLOAD_EVIDENCE))
+        .requestMatchers("/notifications/*/attachments/*/remove")
+        .denyAll()
         .requestMatchers(
             "/notifications/*/attachments/*/retrieve", "/notifications/*/attachments/*/download")
         .access(notificationAction(UserRole.VIEW_NOTIFICATION_ATTACHMENT))

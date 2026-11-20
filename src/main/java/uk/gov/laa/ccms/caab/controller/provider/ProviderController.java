@@ -98,8 +98,10 @@ public class ProviderController {
     // functions apply to the very next request. Without them the old provider's functions would
     // apply to the new provider, so the session is ended and the user logs in again.
     UserDetail reloadedUser = reloadUser(user.getLoginId());
-    if (reloadedUser == null) {
-      log.error("User {} could not be reloaded after switching provider", user.getLoginId());
+    if (reloadedUser == null
+        || reloadedUser.getProvider() == null
+        || !newProvider.getId().equals(reloadedUser.getProvider().getId())) {
+      log.error("User {} could not be reloaded for the selected provider", user.getLoginId());
       SecurityContextHolder.clearContext();
       session.invalidate();
       return "redirect:/home";

@@ -22,16 +22,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.MethodIntrospector;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Controller;
 import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 /**
  * Fails when a controller route can be reached without any user function and is not listed in
@@ -44,7 +45,7 @@ class UnrestrictedRoutesTest {
 
   private static final String CONTROLLER_PACKAGE = "uk.gov.laa.ccms.caab";
   private static final String ALLOWLIST = "/security/unrestricted-routes.txt";
-  private static final Pattern PATH_VARIABLE = Pattern.compile("\\{([^}:]+)(?::[^}]*)?}");
+  private static final Pattern PATH_VARIABLE = Pattern.compile("\\{([^}:]+)(?::([^}]+))?}");
 
   /** Values a path variable can take, where the rules treat them differently. */
   private static final Map<String, List<String>> VARIABLE_VALUES =
@@ -99,9 +100,25 @@ class UnrestrictedRoutesTest {
         == 404;
   }
 
-  private record Route(HttpMethod method, String path) {}
+  record Route(
+      HttpMethod method,
+      String path,
+      List<String> parameters,
+      List<String> headers,
+      List<String> consumes,
+      List<String> produces) {
+    String key(String expandedPath) {
+      return method
+          + " "
+          + displayPath(path, expandedPath)
+          + (parameters.isEmpty() ? "" : " [" + String.join(",", parameters) + "]")
+          + (headers.isEmpty() ? "" : " [headers:" + String.join(",", headers) + "]")
+          + (consumes.isEmpty() ? "" : " [consumes:" + String.join(",", consumes) + "]")
+          + (produces.isEmpty() ? "" : " [produces:" + String.join(",", produces) + "]");
+    }
+  }
 
-  private static List<Route> controllerRoutes() throws ClassNotFoundException {
+  static List<Route> controllerRoutes() throws ClassNotFoundException {
     ClassPathScanningCandidateComponentProvider scanner =
         new ClassPathScanningCandidateComponentProvider(false);
     scanner.addIncludeFilter(new AnnotationTypeFilter(Controller.class));
@@ -114,28 +131,41 @@ class UnrestrictedRoutesTest {
       if (!isProductionClass(controller)) {
         continue;
       }
-      RequestMapping classMapping =
-          AnnotatedElementUtils.findMergedAnnotation(controller, RequestMapping.class);
-      String[] prefixes =
-          classMapping == null || classMapping.path().length == 0
-              ? new String[] {""}
-              : classMapping.path();
-
-      for (Method method : controller.getDeclaredMethods()) {
-        RequestMapping mapping =
-            AnnotatedElementUtils.findMergedAnnotation(method, RequestMapping.class);
-        if (mapping == null) {
-          continue;
+      MethodIntrospector.MetadataLookup<RequestMappingInfo> lookup =
+          method -> new MappingInspector().mapping(method, controller);
+      for (RequestMappingInfo mapping :
+          MethodIntrospector.selectMethods(controller, lookup).values()) {
+        var methods = mapping.getMethodsCondition().getMethods();
+        if (methods.isEmpty()) {
+          methods = java.util.Set.of(RequestMethod.values());
         }
-        String[] paths = mapping.path().length == 0 ? new String[] {""} : mapping.path();
-        RequestMethod[] methods =
-            mapping.method().length == 0
-                ? new RequestMethod[] {RequestMethod.GET}
-                : mapping.method();
-        for (String prefix : prefixes) {
-          for (String path : paths) {
-            for (RequestMethod requestMethod : methods) {
-              routes.add(new Route(requestMethod.asHttpMethod(), prefix + path));
+        List<String> parameters =
+            mapping.getParamsCondition().getExpressions().stream()
+                .map(Object::toString)
+                .sorted()
+                .toList();
+        List<String> headers =
+            mapping.getHeadersCondition().getExpressions().stream()
+                .map(Object::toString)
+                .sorted()
+                .toList();
+        List<String> consumes =
+            mapping.getConsumesCondition().getExpressions().stream()
+                .map(Object::toString)
+                .sorted()
+                .toList();
+        List<String> produces =
+            mapping.getProducesCondition().getExpressions().stream()
+                .map(Object::toString)
+                .sorted()
+                .toList();
+        for (String path : mapping.getPatternValues()) {
+          for (RequestMethod requestMethod : methods) {
+            routes.add(
+                new Route(
+                    requestMethod.asHttpMethod(), path, parameters, headers, consumes, produces));
+            if (requestMethod == RequestMethod.GET && !methods.contains(RequestMethod.HEAD)) {
+              routes.add(new Route(HttpMethod.HEAD, path, parameters, headers, consumes, produces));
             }
           }
         }
@@ -144,18 +174,38 @@ class UnrestrictedRoutesTest {
     return routes;
   }
 
+  private static class MappingInspector extends RequestMappingHandlerMapping {
+    RequestMappingInfo mapping(Method method, Class<?> controller) {
+      return getMappingForMethod(method, controller);
+    }
+  }
+
   /** Test sources declare their own controllers in the same packages; only the app's count. */
   private static boolean isProductionClass(Class<?> type) {
-    return !type.getProtectionDomain().getCodeSource().getLocation().getPath().contains("/test/");
+    return type.getProtectionDomain()
+        .getCodeSource()
+        .getLocation()
+        .equals(
+            uk.gov.laa.ccms.caab.CaabApplication.class
+                .getProtectionDomain()
+                .getCodeSource()
+                .getLocation());
   }
 
   /** Concrete request paths for a route, one per combination of significant variable values. */
-  private static List<String> expand(String template) {
+  static List<String> expand(String template) {
     Matcher matcher = PATH_VARIABLE.matcher(template);
     if (!matcher.find()) {
       return List.of(template);
     }
-    List<String> values = VARIABLE_VALUES.getOrDefault(matcher.group(1), List.of("1"));
+    if (matcher.group(2) != null
+        && !matcher.group(2).matches("[A-Za-z0-9_-]+(?:\\|[A-Za-z0-9_-]+)*")) {
+      throw new AssertionError("Add explicit request samples for constrained route " + template);
+    }
+    List<String> values =
+        VARIABLE_VALUES.getOrDefault(
+            matcher.group(1),
+            matcher.group(2) == null ? List.of("1") : List.of(matcher.group(2).split("\\|")));
     List<String> expanded = new ArrayList<>();
     for (String value : values) {
       String next =
@@ -166,7 +216,7 @@ class UnrestrictedRoutesTest {
   }
 
   /** The route as listed: variables the rules distinguish written out, others as placeholders. */
-  private static String displayPath(String template, String path) {
+  static String displayPath(String template, String path) {
     String[] templateSegments = template.split("/", -1);
     String[] pathSegments = path.split("/", -1);
     for (int i = 0; i < templateSegments.length; i++) {
@@ -185,6 +235,11 @@ class UnrestrictedRoutesTest {
           .lines()
           .map(String::strip)
           .filter(line -> !line.isEmpty() && !line.startsWith("#"))
+          .flatMap(
+              line ->
+                  line.startsWith("GET ")
+                      ? java.util.stream.Stream.of(line, "HEAD " + line.substring(4))
+                      : java.util.stream.Stream.of(line))
           .toList();
     }
   }

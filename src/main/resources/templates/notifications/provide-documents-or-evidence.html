@@ -101,10 +101,11 @@
                      th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/edit(notification_id=${notification.getNotificationId},attachment_id=${attachment.getId})}"
                      class="govuk-link"
                      th:text="#{site.edit}"/>
-                  <a th:if="${attachment.status == 'Ready to Submit'}"
-                     th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/remove(notification_id=${notification.getNotificationId},attachment_id=${attachment.getId})}"
-                     class="govuk-link"
-                     th:text="#{site.remove}"/>
+                  <button th:if="${attachment.status == 'Ready to Submit'}"
+                          type="submit" th:form="|remove-attachment-${attachment.id}|"
+                          class="govuk-button govuk-button--secondary"
+                          sec:authorize="hasAuthority(@roles.uploadEvidence)"
+                          th:text="#{site.remove}"></button>
                   <a th:if="${documentLinks.get(attachment.getId?.toString())} != null and ${attachment.status} == 'Submitted'"
                      sec:authorize="hasAuthority(@roles.viewNotificationAttachment)"
                      th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/download(notification_id=${notification.getNotificationId},attachment_id=${attachment.getId})}"
@@ -165,6 +166,12 @@
           </div>
         </div>
       </div>
+    </form>
+    <form th:each="attachment : ${notificationAttachments}"
+          th:if="${attachment.status == 'Ready to Submit'}"
+          th:id="|remove-attachment-${attachment.id}|" method="post"
+          th:action="@{/notifications/{notification_id}/attachments/{attachment_id}/remove(notification_id=${notification.getNotificationId},attachment_id=${attachment.id})}"
+          sec:authorize="hasAuthority(@roles.uploadEvidence)">
     </form>
   </div>
 </div>

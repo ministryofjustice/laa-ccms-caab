@@ -142,7 +142,12 @@ public class ProviderControllerTest {
     when(userService.updateUserOptions(67890, loginId, userType))
         .thenReturn(Mono.just(new ClientTransactionResponse()));
     when(userService.getUserByLoginId(loginId))
-        .thenReturn(Mono.just(new UserDetail().loginId(loginId).functions(List.of("CA", "VC"))));
+        .thenReturn(
+            Mono.just(
+                new UserDetail()
+                    .loginId(loginId)
+                    .provider(providerFirm2)
+                    .functions(List.of("CA", "VC"))));
 
     HttpSession session =
         this.mockMvc
@@ -192,7 +197,12 @@ public class ProviderControllerTest {
     when(userService.updateUserOptions(67890, loginId, "testUserType"))
         .thenReturn(Mono.just(new ClientTransactionResponse()));
     when(userService.getUserByLoginId(loginId))
-        .thenReturn(Mono.just(new UserDetail().loginId(loginId).functions(List.of("NOT", "VC"))));
+        .thenReturn(
+            Mono.just(
+                new UserDetail()
+                    .loginId(loginId)
+                    .provider(providerFirm2)
+                    .functions(List.of("NOT", "VC"))));
 
     try {
       this.mockMvc
@@ -249,8 +259,11 @@ public class ProviderControllerTest {
         .andExpect(model().attribute("providerFirms", List.of(providerFirm)));
   }
 
-  @Test
-  public void switchingProviderEndsTheSessionWhenTheUserCannotBeReloaded() throws Exception {
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(
+      strings = {"missing", "oldProvider", "missingProvider"})
+  public void switchingProviderEndsTheSessionWhenTheUserCannotBeReloaded(String response)
+      throws Exception {
     String loginId = "testLoginId";
     BaseProvider providerFirm1 = new BaseProvider().id(12345).name("providerFirm1");
     BaseProvider providerFirm2 = new BaseProvider().id(67890).name("providerFirm2");
@@ -267,7 +280,14 @@ public class ProviderControllerTest {
 
     when(userService.updateUserOptions(67890, loginId, "testUserType"))
         .thenReturn(Mono.just(new ClientTransactionResponse()));
-    when(userService.getUserByLoginId(loginId)).thenReturn(Mono.empty());
+    when(userService.getUserByLoginId(loginId))
+        .thenReturn(
+            switch (response) {
+              case "oldProvider" ->
+                  Mono.just(new UserDetail().provider(providerFirm1).functions(List.of("CA")));
+              case "missingProvider" -> Mono.just(new UserDetail().functions(List.of("CA")));
+              default -> Mono.empty();
+            });
 
     MockHttpSession session = new MockHttpSession();
     session.setAttribute("user", userDetails);

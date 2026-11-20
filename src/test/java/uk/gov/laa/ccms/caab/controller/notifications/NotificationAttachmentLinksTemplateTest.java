@@ -106,6 +106,30 @@ class NotificationAttachmentLinksTemplateTest {
     assertThat(html)
         .contains("href=\"/notifications/234/attachments/567/download\"")
         .contains("href=\"/notifications/234/attachments/31/downloadDraft\"")
+        .contains("form=\"remove-attachment-31\"")
+        .doesNotContain("href=\"/notifications/234/attachments/31/remove\"")
         .doesNotContain(SIGNED_URL);
+  }
+
+  @Test
+  void aDraftRemovalControlTargetsItsOwnPostForm() {
+    WebContext context = webContext();
+    context.setVariable("notification", new Notification().notificationId("234"));
+    context.setVariable(
+        "notificationAttachments",
+        List.of(new BaseNotificationAttachmentDetail().id(31).status("Ready to Submit")));
+    String html =
+        engine.process(
+            new TemplateSpec(
+                "notifications/provide-documents-or-evidence",
+                Set.of("form[th:each]"),
+                TemplateMode.HTML,
+                null),
+            context);
+    assertThat(html)
+        .contains(
+            "id=\"remove-attachment-31\"",
+            "method=\"post\"",
+            "action=\"/notifications/234/attachments/31/remove\"");
   }
 }

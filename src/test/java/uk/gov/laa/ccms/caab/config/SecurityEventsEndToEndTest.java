@@ -139,6 +139,42 @@ class SecurityEventsEndToEndTest {
     assertThat(status).isEqualTo(302);
   }
 
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "GET,valid",
+    "HEAD,valid",
+    "POST,missing",
+    "POST,invalid"
+  })
+  void attachmentRemovalRefusesReadMethodsAndInvalidCsrf(String method, String token)
+      throws Exception {
+    var request =
+        org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request(
+                org.springframework.http.HttpMethod.valueOf(method),
+                "/notifications/234/attachments/567/remove")
+            .header("Sec-Fetch-Mode", "cors")
+            .with(
+                user("user")
+                    .authorities(
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                            "NOT"),
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                            "EVID")));
+    if ("valid".equals(token)) {
+      request.with(
+          org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+              .csrf());
+    } else if ("invalid".equals(token)) {
+      request.with(
+          org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+              .csrf()
+              .useInvalidToken());
+    }
+    assertThat(mockMvc.perform(request).andReturn().getResponse().getStatus()).isEqualTo(403);
+    assertThat(eventTypes())
+        .contains("POST".equals(method) ? "CSRF_REJECTED" : "AUTHORIZATION_DENIED");
+  }
+
   @Test
   void aCallbackWithoutAnAuthorizationRequestIsLoggedAsAFailedSignIn() throws Exception {
     MvcResult result =

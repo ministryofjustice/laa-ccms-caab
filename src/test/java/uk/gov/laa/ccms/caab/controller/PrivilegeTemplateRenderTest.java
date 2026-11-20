@@ -7,10 +7,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -23,19 +26,27 @@ import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.FilterInvocation;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.DefaultCsrfToken;
+import org.springframework.security.web.servlet.support.csrf.CsrfRequestDataValueProcessor;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.GenericWebApplicationContext;
+import org.springframework.web.servlet.support.RequestContext;
+import org.thymeleaf.TemplateSpec;
 import org.thymeleaf.context.WebContext;
 import org.thymeleaf.extras.springsecurity6.dialect.SpringSecurityDialect;
 import org.thymeleaf.spring6.SpringTemplateEngine;
+import org.thymeleaf.spring6.context.webmvc.SpringWebMvcThymeleafRequestContext;
 import org.thymeleaf.spring6.expression.ThymeleafEvaluationContext;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.thymeleaf.web.IWebExchange;
 import org.thymeleaf.web.servlet.JakartaServletWebApplication;
 import uk.gov.laa.ccms.caab.config.UserRoleProvider;
+import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.util.UserRoleUtil;
 import uk.gov.laa.ccms.data.model.BaseProvider;
+import uk.gov.laa.ccms.data.model.Notification;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -56,6 +67,8 @@ class PrivilegeTemplateRenderTest {
     applicationContext = new GenericWebApplicationContext(servletContext);
     applicationContext.registerBean("roles", UserRoleProvider.class);
     applicationContext.registerBean(FilterInvocationExpressionHandler.class);
+    applicationContext.registerBean(
+        "requestDataValueProcessor", CsrfRequestDataValueProcessor.class);
     applicationContext.refresh();
     servletContext.setAttribute(
         WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, applicationContext);
@@ -86,14 +99,20 @@ class PrivilegeTemplateRenderTest {
   }
 
   private String renderHome(final Map<String, Object> extraVariables, final String... authorities) {
+    return render(new TemplateSpec("home", TemplateMode.HTML), extraVariables, authorities);
+  }
+
+  private String render(
+      TemplateSpec template, Map<String, Object> extraVariables, String... authorities) {
     SecurityContextHolder.getContext()
         .setAuthentication(new TestingAuthenticationToken("user", null, authorities));
 
     final JakartaServletWebApplication application =
         JakartaServletWebApplication.buildApplication(servletContext);
-    final IWebExchange exchange =
-        application.buildExchange(
-            new MockHttpServletRequest(servletContext), new MockHttpServletResponse());
+    MockHttpServletRequest request = new MockHttpServletRequest(servletContext);
+    request.setAttribute(
+        CsrfToken.class.getName(), new DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", "test-csrf"));
+    final IWebExchange exchange = application.buildExchange(request, new MockHttpServletResponse());
 
     final Map<String, Object> variables = new HashMap<>();
     variables.put(
@@ -112,8 +131,40 @@ class PrivilegeTemplateRenderTest {
     variables.put("notificationsMsg", "View Notifications (2 outstanding)");
 
     variables.putAll(extraVariables);
+    variables.put(
+        "thymeleafRequestContext",
+        new SpringWebMvcThymeleafRequestContext(new RequestContext(request, variables), request));
 
-    return engine.process("home", new WebContext(exchange, Locale.UK, variables));
+    return engine.process(template, new WebContext(exchange, Locale.UK, variables));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"EVID,true", "NOT,false"})
+  void attachmentRemovalFormsAreAuthorisedPostsWithCsrf(String function, boolean permitted) {
+    String html =
+        render(
+            new TemplateSpec(
+                "notifications/provide-documents-or-evidence",
+                Set.of("form[th:each]"),
+                TemplateMode.HTML,
+                null),
+            Map.of(
+                "notification",
+                new Notification().notificationId("234"),
+                "notificationAttachments",
+                List.of(new BaseNotificationAttachmentDetail().id(31).status("Ready to Submit"))),
+            function);
+    if (permitted) {
+      assertThat(html)
+          .contains(
+              "id=\"remove-attachment-31\"",
+              "method=\"post\"",
+              "action=\"/notifications/234/attachments/31/remove\"",
+              "name=\"_csrf\"",
+              "value=\"test-csrf\"");
+    } else {
+      assertThat(html).doesNotContain("<form");
+    }
   }
 
   @Test

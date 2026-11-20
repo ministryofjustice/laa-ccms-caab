@@ -203,7 +203,7 @@ class UserFunctionAuthorizationTest {
             UserRole.UPLOAD_EVIDENCE,
             UserRole.VIEW_NOTIFICATIONS),
         route(
-            "GET",
+            "POST",
             "/notifications/7/attachments/3/remove",
             UserRole.UPLOAD_EVIDENCE,
             UserRole.VIEW_NOTIFICATIONS),

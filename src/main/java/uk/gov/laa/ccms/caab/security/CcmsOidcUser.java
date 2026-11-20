@@ -40,7 +40,7 @@ public class CcmsOidcUser implements OidcUser {
       final OidcUser delegate,
       final String ccmsLoginId,
       final Collection<? extends GrantedAuthority> authorities) {
-    this.delegate = delegate;
+    this.delegate = delegate instanceof CcmsOidcUser ccmsUser ? ccmsUser.delegate : delegate;
     this.ccmsLoginId = ccmsLoginId;
     this.authorities = Collections.unmodifiableSet(Set.copyOf(authorities));
   }

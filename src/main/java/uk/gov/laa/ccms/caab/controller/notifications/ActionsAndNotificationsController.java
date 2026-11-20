@@ -52,7 +52,6 @@ import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationSearchValid
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.constants.SendBy;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
-import uk.gov.laa.ccms.caab.logging.ChangesData;
 import uk.gov.laa.ccms.caab.mapper.NotificationAttachmentMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
@@ -555,15 +554,14 @@ public class ActionsAndNotificationsController {
    * @param attachmentId the ID of the notification attachment to remove.
    * @return the provide documents or evidence page.
    */
-  @ChangesData
-  @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/remove")
+  @PostMapping("/notifications/{notification_id}/attachments/{attachment_id}/remove")
   public String removeDraftNotificationAttachment(
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @PathVariable(NOTIFICATION_ID) String notificationId,
       @PathVariable(ATTACHMENT_ID) Integer attachmentId) {
 
     notificationService.removeDraftNotificationAttachment(
-        notificationId, attachmentId, user.getLoginId(), user.getUserId());
+        notificationId, attachmentId, user.getLoginId(), user.getProvider().getId());
     return "redirect:/notifications/%s/provide-documents-or-evidence".formatted(notificationId);
   }
 

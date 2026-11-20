@@ -12,7 +12,6 @@ import uk.gov.laa.ccms.caab.controller.application.AmendCaseController;
 import uk.gov.laa.ccms.caab.controller.application.section.EditProceedingsAndCostsSectionController;
 import uk.gov.laa.ccms.caab.controller.application.section.EvidenceSectionController;
 import uk.gov.laa.ccms.caab.controller.billing.BillingController;
-import uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController;
 import uk.gov.laa.ccms.caab.controller.submission.CaseSubmissionController;
 import uk.gov.laa.ccms.caab.controller.submission.ClientSubmissionsInProgressController;
 import uk.gov.laa.ccms.caab.logging.ChangesData;
@@ -28,7 +27,6 @@ class ChangesDataRoutesTest {
         Arguments.of(EditProceedingsAndCostsSectionController.class, "proceedingsMakeLead"),
         Arguments.of(BillingController.class, "createPoa"),
         Arguments.of(BillingController.class, "createBill"),
-        Arguments.of(ActionsAndNotificationsController.class, "removeDraftNotificationAttachment"),
         Arguments.of(CaseSubmissionController.class, "addCaseSubmission"),
         Arguments.of(ClientSubmissionsInProgressController.class, "clientUpdateSubmission"));
   }
