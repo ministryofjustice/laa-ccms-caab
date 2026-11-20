@@ -17,6 +17,7 @@ public class CaseDischargeValidator extends AbstractValidator {
   @Override
   public void validate(final Object target, final Errors errors) {
     final CaseDischargeFormData form = (CaseDischargeFormData) target;
+    form.normaliseLegacyFields();
     if (form.getDischargeCaseInd() == null && !errors.hasFieldErrors("dischargeCaseInd")) {
       errors.rejectValue(
           "dischargeCaseInd", "case.discharge.required", "Please complete 'Discharge Case'.");

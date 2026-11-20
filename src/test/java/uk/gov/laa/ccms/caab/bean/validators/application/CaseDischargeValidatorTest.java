@@ -43,6 +43,18 @@ class CaseDischargeValidatorTest {
     assertThat(validate(form).hasFieldErrors("otherDetails")).isTrue();
   }
 
+  @ParameterizedTest
+  @ValueSource(ints = {950, 951})
+  void textareaLimitCountsCrLfAsOneCharacter(int length) {
+    final var form = new CaseDischargeFormData();
+    form.setDischargeCaseInd(false);
+    final String normalised = "a".repeat(length - 2) + "\nb";
+    form.setOtherDetails(normalised.replace("\n", "\r\n"));
+
+    assertThat(validate(form).hasFieldErrors("otherDetails")).isEqualTo(length > 950);
+    assertThat(form.getOtherDetails()).isEqualTo(normalised);
+  }
+
   private BeanPropertyBindingResult validate(CaseDischargeFormData form) {
     final var errors = new BeanPropertyBindingResult(form, "discharge");
     validator.validate(form, errors);

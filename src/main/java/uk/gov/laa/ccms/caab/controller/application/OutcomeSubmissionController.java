@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -64,7 +65,7 @@ public class OutcomeSubmissionController {
   public String saveDischarge(
       @SessionAttribute(CASE) final ApplicationDetail currentCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @ModelAttribute("discharge") final CaseDischargeFormData form,
+      @Validated @ModelAttribute("discharge") final CaseDischargeFormData form,
       final BindingResult errors,
       final Model model) {
     submissionService.requireSubmissionPermission(currentCase, user);

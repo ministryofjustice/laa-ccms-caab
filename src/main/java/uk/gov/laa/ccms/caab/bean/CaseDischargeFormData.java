@@ -9,4 +9,11 @@ public class CaseDischargeFormData {
   private String dischargeReason;
   private Boolean clientContinueInd;
   private String otherDetails;
+
+  /** Matches legacy's textarea character counting. */
+  public void normaliseLegacyFields() {
+    if (otherDetails != null) {
+      otherDetails = otherDetails.replace("\r\n", "\n");
+    }
+  }
 }

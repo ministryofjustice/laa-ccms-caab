@@ -38,8 +38,10 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.advice.GlobalBinderAdvice;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.CaseDischargeFormData;
+import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseDischargeValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -69,7 +71,10 @@ class OutcomeSubmissionControllerTest {
     controller =
         new OutcomeSubmissionController(service, outcomes, lookup, new CaseDischargeValidator());
     org.mockito.Mockito.doCallRealMethod().when(service).requireSubmissionPermission(any(), any());
-    mvc = MockMvcBuilders.standaloneSetup(controller).build();
+    mvc =
+        MockMvcBuilders.standaloneSetup(controller)
+            .setControllerAdvice(new GlobalBinderAdvice(new BaselineTextValidator()))
+            .build();
     user = ApplicationTestUtils.buildUser();
     user.setFunctions(List.of("POD", "SUBOUT"));
     currentCase =
@@ -172,6 +177,68 @@ class OutcomeSubmissionControllerTest {
                 .session(session)
                 .param("dischargeCaseInd", "not-a-boolean"))
         .andExpect(model().attributeHasFieldErrors("discharge", "dischargeCaseInd"));
+    verify(service, never()).saveDischarge(any(), any(), any());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"Details < text", "Details > text"})
+  void baselineValidationRejectsAngleBracketsWithoutSaving(String details) throws Exception {
+    eligibleDischarge();
+    final var result =
+        mvc.perform(
+                post("/case/outcome-and-awards/discharge")
+                    .session(session)
+                    .param("dischargeCaseInd", "false")
+                    .param("otherDetails", details))
+            .andExpect(view().name("application/request-case-discharge"))
+            .andExpect(model().attributeHasFieldErrors("discharge", "otherDetails"))
+            .andReturn();
+    final var errors =
+        (org.springframework.validation.BindingResult)
+            result
+                .getModelAndView()
+                .getModel()
+                .get("org.springframework.validation.BindingResult.discharge");
+    assertThat(errors.getFieldError("otherDetails").getCode()).isEqualTo("invalid.character");
+    verify(service, never()).saveDischarge(any(), any(), any());
+  }
+
+  @Test
+  void baselineValidationPreservesPermittedPunctuationAndNewlines() throws Exception {
+    eligibleDischarge();
+    final String details = "O'Brien & Co.\nClient continuing privately.";
+    mvc.perform(
+            post("/case/outcome-and-awards/discharge")
+                .session(session)
+                .param("dischargeCaseInd", "false")
+                .param("otherDetails", details))
+        .andExpect(redirectedUrl("/case/outcome-and-awards/summary"));
+    verify(service).saveDischarge(draft, form(false, null, null, details), user.getLoginId());
+  }
+
+  @Test
+  void accepts950CharacterTextareaWithCrLfAndSavesLf() throws Exception {
+    eligibleDischarge();
+    final String details = "a".repeat(948) + "\nb";
+    mvc.perform(
+            post("/case/outcome-and-awards/discharge")
+                .session(session)
+                .param("dischargeCaseInd", "false")
+                .param("otherDetails", details.replace("\n", "\r\n")))
+        .andExpect(redirectedUrl("/case/outcome-and-awards/summary"));
+    verify(service).saveDischarge(draft, form(false, null, null, details), user.getLoginId());
+  }
+
+  @Test
+  void rejects951CharacterTextareaAfterCrLfNormalisation() throws Exception {
+    eligibleDischarge();
+    mvc.perform(
+            post("/case/outcome-and-awards/discharge")
+                .session(session)
+                .param("dischargeCaseInd", "false")
+                .param("otherDetails", "a".repeat(949) + "\r\nb"))
+        .andExpect(view().name("application/request-case-discharge"))
+        .andExpect(model().attributeHasFieldErrors("discharge", "otherDetails"));
     verify(service, never()).saveDischarge(any(), any(), any());
   }
 
@@ -308,7 +375,9 @@ class OutcomeSubmissionControllerTest {
     mvc =
         MockMvcBuilders.standaloneSetup(controller)
             .setViewResolvers(views)
-            .setControllerAdvice(new CaseControllerTest.TestUserModelAdvice())
+            .setControllerAdvice(
+                new CaseControllerTest.TestUserModelAdvice(),
+                new GlobalBinderAdvice(new BaselineTextValidator()))
             .build();
   }
 
