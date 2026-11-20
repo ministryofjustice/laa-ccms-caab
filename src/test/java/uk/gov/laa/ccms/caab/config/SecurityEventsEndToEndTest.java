@@ -70,14 +70,13 @@ class SecurityEventsEndToEndTest {
 
   @Test
   void aRouteTheUserLacksTheFunctionForIsRefusedAndLoggedAsADenial() throws Exception {
-    int status =
-        mockMvc
-            .perform(get("/case/overview").with(user("jane").authorities()))
-            .andReturn()
-            .getResponse()
-            .getStatus();
+    // A refused page load is returned to a page the user may see, as the legacy PUI does, so the
+    // refusal shows as a redirect rather than a 403.
+    MvcResult refused =
+        mockMvc.perform(get("/case/overview").with(user("jane").authorities())).andReturn();
 
-    assertThat(status).isEqualTo(403);
+    assertThat(refused.getResponse().getStatus()).isEqualTo(302);
+    assertThat(refused.getResponse().getRedirectedUrl()).isEqualTo("/home");
     assertThat(eventTypes()).contains("AUTHORIZATION_DENIED");
     assertThat(keyValue("AUTHORIZATION_DENIED", "event_detail")).isEqualTo("GET /case/overview");
     org.mockito.Mockito.verify(puiMetricService)
@@ -95,27 +94,27 @@ class SecurityEventsEndToEndTest {
   })
   void theNotificationDownloadRoutesNeedTheirOwnFunction(
       String path, String function, boolean refused) throws Exception {
-    var authorities =
-        function == null
-            ? new org.springframework.security.core.GrantedAuthority[0]
-            : new org.springframework.security.core.GrantedAuthority[] {
-              new org.springframework.security.core.authority.SimpleGrantedAuthority(
-                  uk.gov.laa.ccms.caab.config.UserRole.valueOf(
-                          "ATT".equals(function) ? "VIEW_NOTIFICATION_ATTACHMENT" : function)
-                      .getCode())
-            };
+    // Every notification page also needs NOT, which opens the notification.
+    var authorities = new java.util.ArrayList<org.springframework.security.core.GrantedAuthority>();
+    authorities.add(
+        new org.springframework.security.core.authority.SimpleGrantedAuthority(
+            uk.gov.laa.ccms.caab.config.UserRole.VIEW_NOTIFICATIONS.getCode()));
+    if (function != null) {
+      authorities.add(
+          new org.springframework.security.core.authority.SimpleGrantedAuthority(
+              uk.gov.laa.ccms.caab.config.UserRole.valueOf(
+                      "ATT".equals(function) ? "VIEW_NOTIFICATION_ATTACHMENT" : function)
+                  .getCode()));
+    }
 
-    int status =
-        mockMvc
-            .perform(get(path).with(user("jane").authorities(authorities)))
-            .andReturn()
-            .getResponse()
-            .getStatus();
+    MvcResult result =
+        mockMvc.perform(get(path).with(user("jane").authorities(authorities))).andReturn();
 
+    // A refused page load is returned to a page the user may see rather than given a 403.
     if (refused) {
-      assertThat(status).isEqualTo(403);
+      assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/home");
     } else {
-      assertThat(status).isNotEqualTo(403);
+      assertThat(result.getResponse().getRedirectedUrl()).isNotEqualTo("/home");
     }
   }
 
@@ -127,16 +126,14 @@ class SecurityEventsEndToEndTest {
       })
   void aHeadRequestToTheDownloadRoutesIsRefusedLikeAGetWithoutTheFunction(String path)
       throws Exception {
-    int status =
+    MvcResult result =
         mockMvc
             .perform(
                 org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head(path)
                     .with(user("jane").authorities()))
-            .andReturn()
-            .getResponse()
-            .getStatus();
+            .andReturn();
 
-    assertThat(status).isEqualTo(403);
+    assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/home");
   }
 
   @Test
