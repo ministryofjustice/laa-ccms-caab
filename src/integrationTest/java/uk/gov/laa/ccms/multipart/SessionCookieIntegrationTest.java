@@ -36,7 +36,7 @@ class SessionCookieIntegrationTest {
   void secureHttpOnlyCookieAndForwardedHttps() throws Exception {
     var plain = request(port, contextPath, false);
     String cookie = plain.headers().firstValue("set-cookie").orElseThrow();
-    assertThat(cookie).contains("Secure", "HttpOnly").doesNotContain("SameSite");
+    assertThat(cookie).contains("Secure", "HttpOnly", "SameSite=Strict");
     assertThat(plain.headers().firstValue("strict-transport-security")).isEmpty();
     var forwarded = request(port, contextPath, true);
     assertThat(forwarded.headers().firstValue("strict-transport-security")).isPresent();
@@ -92,6 +92,8 @@ class LocalSessionCookieIntegrationTest {
             .headers()
             .firstValue("set-cookie")
             .orElseThrow();
-    assertThat(cookie).contains("CAAB_JSESSIONID", "HttpOnly").doesNotContain("Secure", "SameSite");
+    assertThat(cookie)
+        .contains("CAAB_JSESSIONID", "HttpOnly", "SameSite=Strict")
+        .doesNotContain("Secure");
   }
 }
