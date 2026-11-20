@@ -86,6 +86,61 @@ class SecurityEventsEndToEndTest {
         .incrementSecurityEvents("AUTHORIZATION_DENIED", "DENIED");
   }
 
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "/notifications/234/attachments/567/download,ATT,false",
+    "/notifications/234/attachments/567/download,UPLOAD_EVIDENCE,true",
+    "/notifications/234/attachments/567/download,,true",
+    "/notifications/234/attachments/31/downloadDraft,UPLOAD_EVIDENCE,false",
+    "/notifications/234/attachments/31/downloadDraft,ATT,true",
+    "/notifications/234/attachments/31/downloadDraft,,true"
+  })
+  void theNotificationDownloadRoutesNeedTheirOwnFunction(
+      String path, String function, boolean refused) throws Exception {
+    var authorities =
+        function == null
+            ? new org.springframework.security.core.GrantedAuthority[0]
+            : new org.springframework.security.core.GrantedAuthority[] {
+              new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                  uk.gov.laa.ccms.caab.config.UserRole.valueOf(
+                          "ATT".equals(function) ? "VIEW_NOTIFICATION_ATTACHMENT" : function)
+                      .getCode())
+            };
+
+    int status =
+        mockMvc
+            .perform(get(path).with(user("jane").authorities(authorities)))
+            .andReturn()
+            .getResponse()
+            .getStatus();
+
+    if (refused) {
+      assertThat(status).isEqualTo(403);
+    } else {
+      assertThat(status).isNotEqualTo(403);
+    }
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(
+      strings = {
+        "/notifications/234/attachments/567/download",
+        "/notifications/234/attachments/31/downloadDraft"
+      })
+  void aHeadRequestToTheDownloadRoutesIsRefusedLikeAGetWithoutTheFunction(String path)
+      throws Exception {
+    int status =
+        mockMvc
+            .perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head(path)
+                    .with(user("jane").authorities()))
+            .andReturn()
+            .getResponse()
+            .getStatus();
+
+    assertThat(status).isEqualTo(403);
+  }
+
   @Test
   void aSamlResponseThatCannotBeReadIsLoggedAsAFailedSignIn() throws Exception {
     MvcResult result =
