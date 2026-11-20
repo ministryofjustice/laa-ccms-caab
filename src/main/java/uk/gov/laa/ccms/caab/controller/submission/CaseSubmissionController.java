@@ -149,8 +149,10 @@ public class CaseSubmissionController {
       // ClearSubmittedData for a CASE_ADD submission) - otherwise the obsolete draft is left in
       // XXCCMS_APPLICATION, where it can interfere with a later amendment of the same case.
       applicationService.removeSubmittedApplication(caseReferenceNumber, user);
-      // The active case stays for the confirmation page's banner, but is no longer a draft.
-      if (session.getAttribute(ACTIVE_CASE) instanceof ActiveCase activeCase) {
+      // The active case stays for the confirmation page's banner, but is no longer a draft. Another
+      // draft may have been opened since this submission started, so only this case is changed.
+      if (session.getAttribute(ACTIVE_CASE) instanceof ActiveCase activeCase
+          && caseReferenceNumber.equals(activeCase.getCaseReferenceNumber())) {
         activeCase.setDraftApplication(false);
         session.setAttribute(ACTIVE_CASE, activeCase);
       }
