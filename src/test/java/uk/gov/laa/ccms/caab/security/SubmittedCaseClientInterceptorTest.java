@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 
@@ -10,6 +11,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Controller;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.bind.annotation.GetMapping;
+import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 
@@ -61,9 +70,8 @@ class SubmittedCaseClientInterceptorTest {
     session.setAttribute(CASE, new ApplicationDetail().caseReferenceNumber("SUBMITTED"));
     session.setAttribute(ACTIVE_CASE, submitted());
 
-    assertThat(interceptor.preHandle(request, response, new Object())).isFalse();
-    assertThat(response.getRedirectedUrl()).isEqualTo("/home");
-    assertThat(RefusedActionSession.consumeNotAuthorised(session)).isTrue();
+    assertThatThrownBy(() -> interceptor.preHandle(request, response, new Object()))
+        .isInstanceOf(AccessDeniedException.class);
   }
 
   @Test
@@ -71,7 +79,8 @@ class SubmittedCaseClientInterceptorTest {
   void refusesSubmittedActiveCaseWithoutCase() throws Exception {
     session.setAttribute(ACTIVE_CASE, submitted());
 
-    assertThat(interceptor.preHandle(request, response, new Object())).isFalse();
+    assertThatThrownBy(() -> interceptor.preHandle(request, response, new Object()))
+        .isInstanceOf(AccessDeniedException.class);
   }
 
   @Test
@@ -79,6 +88,36 @@ class SubmittedCaseClientInterceptorTest {
   void refusesSubmittedCaseWithoutActiveCase() throws Exception {
     session.setAttribute(CASE, new ApplicationDetail().caseReferenceNumber("SUBMITTED"));
 
-    assertThat(interceptor.preHandle(request, response, new Object())).isFalse();
+    assertThatThrownBy(() -> interceptor.preHandle(request, response, new Object()))
+        .isInstanceOf(AccessDeniedException.class);
+  }
+
+  @Test
+  @DisplayName("A refusal reaches GlobalExceptionHandler and returns the user with the message")
+  void refusalIsHandledByTheExceptionAdvice() throws Exception {
+    session.setAttribute(CASE, new ApplicationDetail().caseReferenceNumber("SUBMITTED"));
+    MockMvc mockMvc =
+        MockMvcBuilders.standaloneSetup(new ClientPage())
+            .addInterceptors(interceptor)
+            .setControllerAdvice(new GlobalExceptionHandler())
+            .build();
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                MockMvcRequestBuilders.get("/application/sections/client/details/summary")
+                    .session(session))
+            .andReturn();
+
+    assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/home");
+    assertThat(RefusedActionSession.consumeNotAuthorised(session)).isTrue();
+  }
+
+  @Controller
+  static class ClientPage {
+    @GetMapping("/application/sections/client/details/summary")
+    String summary() {
+      return "client-summary";
+    }
   }
 }

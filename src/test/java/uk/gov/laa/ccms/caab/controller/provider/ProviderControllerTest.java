@@ -44,6 +44,7 @@ import uk.gov.laa.ccms.caab.bean.provider.ProviderFirmFormData;
 import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
 import uk.gov.laa.ccms.caab.bean.validators.provider.ProviderFirmValidator;
 import uk.gov.laa.ccms.caab.security.CcmsOidcUser;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.service.NotificationSearchOptionsCache;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
@@ -60,6 +61,8 @@ public class ProviderControllerTest {
   @Mock UserService userService;
 
   @Mock NotificationSearchOptionsCache notificationSearchOptionsCache;
+
+  @Mock SecurityEventLogger securityEventLogger;
 
   @InjectMocks ProviderController providerController;
 
@@ -207,6 +210,7 @@ public class ProviderControllerTest {
       assertThat(SecurityContextHolder.getContext().getAuthentication().getAuthorities())
           .extracting(GrantedAuthority::getAuthority)
           .containsExactlyInAnyOrder("group1", "NOT", "VC");
+      verify(securityEventLogger).privilegesReloaded(List.of("CA", "NOT"), List.of("NOT", "VC"));
     } finally {
       SecurityContextHolder.clearContext();
     }

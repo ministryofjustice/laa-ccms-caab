@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.provider.ProviderFirmFormData;
 import uk.gov.laa.ccms.caab.bean.validators.provider.ProviderFirmValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.security.UserFunctionAuthorities;
 import uk.gov.laa.ccms.caab.service.NotificationSearchOptionsCache;
 import uk.gov.laa.ccms.caab.service.UserService;
@@ -34,6 +35,7 @@ public class ProviderController {
   private final UserService userService;
   private final ProviderFirmValidator providerFirmValidator;
   private final NotificationSearchOptionsCache notificationSearchOptionsCache;
+  private final SecurityEventLogger securityEventLogger;
 
   /**
    * Loads the provider switch view, where the current user can select a firm to act on behalf on.
@@ -107,6 +109,7 @@ public class ProviderController {
 
     user.setProvider(newProvider);
     UserFunctionAuthorities.replace(authentication, user, reloadedUser, session);
+    securityEventLogger.privilegesReloaded(user.getFunctions(), reloadedUser.getFunctions());
     user.setFunctions(reloadedUser.getFunctions());
     notificationSearchOptionsCache.clear();
 

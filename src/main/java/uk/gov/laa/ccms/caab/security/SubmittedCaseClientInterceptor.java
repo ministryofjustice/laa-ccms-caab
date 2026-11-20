@@ -7,18 +7,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.web.servlet.HandlerInterceptor;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 
 /**
  * Refuses the application's client pages for a submitted case, whose client is amended through the
- * amendment pages, which need CD. A draft application has no submitted case behind it.
+ * amendment pages, which need CD. A draft application has no submitted case behind it. The refusal
+ * is handled by {@code GlobalExceptionHandler}, which logs it as a denial.
  */
 public class SubmittedCaseClientInterceptor implements HandlerInterceptor {
-
-  private final AccessDeniedHandler refusal = new NotAuthorisedAccessDeniedHandler();
 
   @Override
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
@@ -34,12 +32,8 @@ public class SubmittedCaseClientInterceptor implements HandlerInterceptor {
     } else if (!submittedCaseInSession(session)) {
       return true;
     }
-    refusal.handle(
-        request,
-        response,
-        new AccessDeniedException(
-            "A submitted case's client is amended through the amendment pages"));
-    return false;
+    throw new AccessDeniedException(
+        "A submitted case's client is amended through the amendment pages");
   }
 
   /** With no active case, ActiveCaseModelAdvice builds one from a submitted case in the session. */
