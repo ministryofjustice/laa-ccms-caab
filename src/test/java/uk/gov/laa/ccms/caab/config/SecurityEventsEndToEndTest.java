@@ -70,14 +70,13 @@ class SecurityEventsEndToEndTest {
 
   @Test
   void aRouteTheUserLacksTheFunctionForIsRefusedAndLoggedAsADenial() throws Exception {
-    int status =
-        mockMvc
-            .perform(get("/case/overview").with(user("jane").authorities()))
-            .andReturn()
-            .getResponse()
-            .getStatus();
+    // A refused page load is returned to a page the user may see, as the legacy PUI does, so the
+    // refusal shows as a redirect rather than a 403.
+    MvcResult refused =
+        mockMvc.perform(get("/case/overview").with(user("jane").authorities())).andReturn();
 
-    assertThat(status).isEqualTo(403);
+    assertThat(refused.getResponse().getStatus()).isEqualTo(302);
+    assertThat(refused.getResponse().getRedirectedUrl()).isEqualTo("/home");
     assertThat(eventTypes()).contains("AUTHORIZATION_DENIED");
     assertThat(keyValue("AUTHORIZATION_DENIED", "event_detail")).isEqualTo("GET /case/overview");
     org.mockito.Mockito.verify(puiMetricService)
@@ -99,6 +98,7 @@ class SecurityEventsEndToEndTest {
         function == null
             ? new org.springframework.security.core.GrantedAuthority[0]
             : new org.springframework.security.core.GrantedAuthority[] {
+              new org.springframework.security.core.authority.SimpleGrantedAuthority("NOT"),
               new org.springframework.security.core.authority.SimpleGrantedAuthority(
                   uk.gov.laa.ccms.caab.config.UserRole.valueOf(
                           "ATT".equals(function) ? "VIEW_NOTIFICATION_ATTACHMENT" : function)
@@ -113,9 +113,9 @@ class SecurityEventsEndToEndTest {
             .getStatus();
 
     if (refused) {
-      assertThat(status).isEqualTo(403);
+      assertThat(status).isEqualTo(302);
     } else {
-      assertThat(status).isNotEqualTo(403);
+      assertThat(status).isEqualTo(404);
     }
   }
 
@@ -136,7 +136,43 @@ class SecurityEventsEndToEndTest {
             .getResponse()
             .getStatus();
 
-    assertThat(status).isEqualTo(403);
+    assertThat(status).isEqualTo(302);
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "GET,valid",
+    "HEAD,valid",
+    "POST,missing",
+    "POST,invalid"
+  })
+  void attachmentRemovalRefusesReadMethodsAndInvalidCsrf(String method, String token)
+      throws Exception {
+    var request =
+        org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request(
+                org.springframework.http.HttpMethod.valueOf(method),
+                "/notifications/234/attachments/567/remove")
+            .header("Sec-Fetch-Mode", "cors")
+            .with(
+                user("user")
+                    .authorities(
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                            "NOT"),
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                            "EVID")));
+    if ("valid".equals(token)) {
+      request.with(
+          org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+              .csrf());
+    } else if ("invalid".equals(token)) {
+      request.with(
+          org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+              .csrf()
+              .useInvalidToken());
+    }
+    assertThat(mockMvc.perform(request).andReturn().getResponse().getStatus()).isEqualTo(403);
+    assertThat(eventTypes())
+        .contains("POST".equals(method) ? "CSRF_REJECTED" : "AUTHORIZATION_DENIED");
   }
 
   @Test

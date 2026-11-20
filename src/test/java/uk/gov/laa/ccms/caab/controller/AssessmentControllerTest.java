@@ -13,6 +13,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -37,11 +38,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -67,6 +71,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.opa.context.ContextToken;
 import uk.gov.laa.ccms.caab.opa.util.SecurityUtils;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.BillingService;
@@ -75,6 +80,7 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryAttributeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
+import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -94,6 +100,7 @@ public class AssessmentControllerTest {
 
   @Mock private SecurityUtils contextSecurityUtil;
   @Mock private MessageSource messageSource;
+  @Mock private SecurityEventLogger securityEventLogger;
 
   @InjectMocks private AssessmentController assessmentController;
 
@@ -118,6 +125,14 @@ public class AssessmentControllerTest {
   }
 
   private static final UserDetail userDetails = buildUserDetail();
+
+  /** Holds what /case/billing/bill requires, so the bill interview is reachable. */
+  private static final UserDetail billUser =
+      buildUserDetail().functions(List.of("VC", "CB", FunctionConstants.ADD_UPDATE_BILL));
+
+  /** Holds what /case/billing/poa requires. */
+  private static final UserDetail poaUser =
+      buildUserDetail().functions(List.of("VC", "CB", FunctionConstants.ADD_UPDATE_POA));
 
   private static final ActiveCase activeCase =
       ActiveCase.builder().caseReferenceNumber("testCaseReferenceNumber").build();
@@ -372,7 +387,7 @@ public class AssessmentControllerTest {
             get("/application/assessments")
                 .param("assessment", "billing")
                 .param("invoked-from", "CCMS_CB03")
-                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(USER_DETAILS, billUser)
                 .sessionAttr(CASE, ebsCase)
                 .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk())
@@ -432,7 +447,7 @@ public class AssessmentControllerTest {
             get("/application/assessments")
                 .param("assessment", "poa")
                 .param("invoked-from", "CCMS_POA01")
-                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(USER_DETAILS, poaUser)
                 .sessionAttr(CASE, ebsCase)
                 .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk())
@@ -475,6 +490,57 @@ public class AssessmentControllerTest {
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals(
         "User is not authorised to run the POA assessment for this case",
+        exception.getCause().getMessage());
+  }
+
+  @Test
+  public void assessmentGet_billing_rejectedWhenTheUserDoesNotHoldTheBillFunction() {
+    // The case supports billing, but this user does not hold it. The interview sits under
+    // /application, which carries no user-function rule, so without this check a user with only
+    // VC could start it.
+    final ApplicationDetail ebsCase =
+        buildApplicationDetail(1, true, new Date())
+            .caseReferenceNumber("CASE123")
+            .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_BILL));
+
+    final MockHttpServletRequestBuilder request =
+        get("/application/assessments")
+            .param("assessment", "billing")
+            .param("invoked-from", "CCMS_CB03")
+            .sessionAttr(USER_DETAILS, buildUserDetail().functions(List.of("VC")))
+            .sessionAttr(CASE, ebsCase)
+            .sessionAttr(ACTIVE_CASE, activeCase);
+
+    final Exception exception = assertThrows(Exception.class, () -> this.mockMvc.perform(request));
+
+    assertInstanceOf(CaabApplicationException.class, exception.getCause());
+    assertEquals(
+        "User does not hold the functions needed to run the BILLING assessment",
+        exception.getCause().getMessage());
+  }
+
+  @Test
+  public void assessmentGet_poa_rejectedWhenTheUserDoesNotHoldCaseBills() {
+    final ApplicationDetail ebsCase =
+        buildApplicationDetail(1, true, new Date())
+            .caseReferenceNumber("CASE123")
+            .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_POA));
+
+    final MockHttpServletRequestBuilder request =
+        get("/application/assessments")
+            .param("assessment", "poa")
+            .param("invoked-from", "CCMS_POA01")
+            .sessionAttr(
+                USER_DETAILS,
+                buildUserDetail().functions(List.of("VC", FunctionConstants.ADD_UPDATE_POA)))
+            .sessionAttr(CASE, ebsCase)
+            .sessionAttr(ACTIVE_CASE, activeCase);
+
+    final Exception exception = assertThrows(Exception.class, () -> this.mockMvc.perform(request));
+
+    assertInstanceOf(CaabApplicationException.class, exception.getCause());
+    assertEquals(
+        "User does not hold the functions needed to run the POA assessment",
         exception.getCause().getMessage());
   }
 
@@ -604,13 +670,20 @@ public class AssessmentControllerTest {
     assertEquals("Failed to retrieve assessment details", exception.getCause().getMessage());
   }
 
-  @Test
-  public void assessmentConfirmDisplaysCorrectView() throws Exception {
+  @ParameterizedTest
+  @CsvSource({
+    "application,/confirm",
+    "application,/confirm/caseSummary.do",
+    "amendments,/confirm",
+    "amendments,/confirm/caseSummary.do"
+  })
+  public void assessmentConfirmDisplaysCorrectView(String caseContext, String suffix)
+      throws Exception {
     final String token = "someToken";
     final ContextToken contextToken = new ContextToken();
     contextToken.setRulebaseId(1L);
-    contextToken.setProviderId("providerId");
-    contextToken.setCaseId("caseReferenceNumber");
+    contextToken.setProviderId(String.valueOf(userDetails.getProvider().getId()));
+    contextToken.setCaseId(activeCase.getCaseReferenceNumber());
 
     // Setup mock data for parent summary lookups
     final AssessmentSummaryEntityLookupValueDetail parentSummaryLookup =
@@ -662,7 +735,7 @@ public class AssessmentControllerTest {
         .thenReturn(new ArrayList<>());
 
     final MockHttpServletRequestBuilder request =
-        get("/application/assessments/confirm/caseSummary.do")
+        get("/" + caseContext + "/assessments" + suffix)
             .param("val", token)
             .sessionAttr(USER_DETAILS, userDetails)
             .sessionAttr(APPLICATION_ID, "applicationId")
@@ -674,6 +747,89 @@ public class AssessmentControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/assessments/assessment-confirm"))
         .andExpect(model().attributeExists("summary"));
+    verify(assessmentService)
+        .getAssessments(
+            anyList(),
+            eq(String.valueOf(userDetails.getProvider().getId())),
+            eq(activeCase.getCaseReferenceNumber()));
+  }
+
+  static Stream<Arguments> refusedConfirmations() {
+    return Stream.of(
+            "/application/assessments/confirm",
+            "/application/assessments/confirm/caseSummary.do",
+            "/amendments/assessments/confirm",
+            "/amendments/assessments/confirm/caseSummary.do")
+        .flatMap(
+            path ->
+                Stream.of(
+                        "provider",
+                        "case",
+                        "blankProvider",
+                        "blankCase",
+                        "missingUser",
+                        "missingActiveCase",
+                        "missingProvider",
+                        "missingProviderId",
+                        "blankActiveCase",
+                        "staleProviderCase",
+                        "nullToken",
+                        "nullRulebase",
+                        "invalidToken",
+                        "rulebase")
+                    .map(reason -> Arguments.of(path, reason)));
+  }
+
+  @ParameterizedTest
+  @MethodSource("refusedConfirmations")
+  void assessmentConfirmRejectsUnboundTokensBeforeAnyDataCalls(String path, String reason)
+      throws Exception {
+    ContextToken token = new ContextToken();
+    token.setProviderId(String.valueOf(userDetails.getProvider().getId()));
+    token.setCaseId(activeCase.getCaseReferenceNumber());
+    token.setRulebaseId(1L);
+    switch (reason) {
+      case "provider" -> token.setProviderId("another-provider");
+      case "case" -> token.setCaseId("another-case");
+      case "blankProvider" -> token.setProviderId("");
+      case "blankCase" -> token.setCaseId("");
+      case "rulebase" -> token.setRulebaseId(999L);
+      case "nullRulebase" -> token.setRulebaseId(null);
+      default -> {}
+    }
+    if ("invalidToken".equals(reason)) {
+      when(contextSecurityUtil.createContextToken(anyString()))
+          .thenThrow(new CaabApplicationException("Failed to process assessment token"));
+    } else {
+      when(contextSecurityUtil.createContextToken(anyString()))
+          .thenReturn("nullToken".equals(reason) ? null : token);
+    }
+    var request = get(path).param("val", "sensitive-token").header("Sec-Fetch-Mode", "cors");
+    if (!"missingUser".equals(reason)) {
+      UserDetail sessionUser =
+          switch (reason) {
+            case "missingProvider" -> new UserDetail();
+            case "missingProviderId" -> new UserDetail().provider(new BaseProvider());
+            default -> userDetails;
+          };
+      request.sessionAttr(USER_DETAILS, sessionUser);
+    }
+    if (!"missingActiveCase".equals(reason)) {
+      ActiveCase sessionCase =
+          switch (reason) {
+            case "blankActiveCase" -> ActiveCase.builder().caseReferenceNumber("").build();
+            case "staleProviderCase" ->
+                ActiveCase.builder()
+                    .caseReferenceNumber(activeCase.getCaseReferenceNumber())
+                    .providerId(456)
+                    .build();
+            default -> activeCase;
+          };
+      request.sessionAttr(ACTIVE_CASE, sessionCase);
+    }
+    mockMvc.perform(request).andExpect(status().isForbidden());
+    verifyNoInteractions(assessmentService, lookupService);
+    verify(securityEventLogger).authorizationDenied(any());
   }
 
   @Test
@@ -681,8 +837,8 @@ public class AssessmentControllerTest {
     final String token = "token";
     final ContextToken contextToken = new ContextToken();
     contextToken.setRulebaseId(1L);
-    contextToken.setProviderId("providerId");
-    contextToken.setCaseId("caseReferenceNumber");
+    contextToken.setProviderId(String.valueOf(userDetails.getProvider().getId()));
+    contextToken.setCaseId(activeCase.getCaseReferenceNumber());
 
     when(lookupService.getAssessmentSummaryAttributes("PARENT"))
         .thenReturn(Mono.just(new AssessmentSummaryEntityLookupDetail()));
@@ -722,8 +878,8 @@ public class AssessmentControllerTest {
     final String token = "someToken";
     final ContextToken contextToken = new ContextToken();
     contextToken.setRulebaseId(1L);
-    contextToken.setProviderId("providerId");
-    contextToken.setCaseId("caseReferenceNumber");
+    contextToken.setProviderId(String.valueOf(userDetails.getProvider().getId()));
+    contextToken.setCaseId(activeCase.getCaseReferenceNumber());
 
     // Setup mock data for parent summary lookups
     final AssessmentSummaryEntityLookupValueDetail parentSummaryLookup =
@@ -861,8 +1017,8 @@ public class AssessmentControllerTest {
     final String token = "someToken";
     final ContextToken contextToken = new ContextToken();
     contextToken.setRulebaseId(1L);
-    contextToken.setProviderId("providerId");
-    contextToken.setCaseId("caseReferenceNumber");
+    contextToken.setProviderId(String.valueOf(userDetails.getProvider().getId()));
+    contextToken.setCaseId(activeCase.getCaseReferenceNumber());
 
     // Setup mock data for parent summary lookups
     final AssessmentSummaryEntityLookupValueDetail parentSummaryLookup =

@@ -18,6 +18,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -45,6 +46,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -983,8 +986,21 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /notifications/{notification-id}/attachments/{attachment-id}/remove")
+  @DisplayName("POST: /notifications/{notification-id}/attachments/{attachment-id}/remove")
   class RemoveAttachmentTests {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"GET", "HEAD"})
+    void aReadRequestCannotDeleteAnAttachment(String method) throws Exception {
+      oldmockMvc
+          .perform(
+              org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request(
+                      org.springframework.http.HttpMethod.valueOf(method),
+                      "/notifications/234/attachments/567/remove")
+                  .sessionAttr("user", userDetails))
+          .andExpect(status().isMethodNotAllowed());
+      verifyNoInteractions(notificationService);
+    }
 
     @Test
     @DisplayName("Should redirect to provide documents or evidence page")
@@ -995,7 +1011,7 @@ class ActionsAndNotificationsControllerTest {
 
       assertThat(
               mockMvc.perform(
-                  get("/notifications/234/attachments/567/remove")
+                  post("/notifications/234/attachments/567/remove")
                       .sessionAttr("user", userDetails)
                       .flashAttrs(flashMap)))
           .hasStatus3xxRedirection()
@@ -1003,7 +1019,7 @@ class ActionsAndNotificationsControllerTest {
 
       verify(notificationService)
           .removeDraftNotificationAttachment(
-              "234", 567, userDetails.getLoginId(), userDetails.getUserId());
+              "234", 567, userDetails.getLoginId(), userDetails.getProvider().getId());
     }
   }
 
