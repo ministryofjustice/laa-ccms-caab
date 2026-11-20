@@ -19,11 +19,11 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUM
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_BASELINE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_CRITERIA;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
+import static uk.gov.laa.ccms.caab.mapper.NullableMapper.unwrap;
 import static uk.gov.laa.ccms.caab.util.DateUtils.convertToComponentDate;
 import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 import static uk.gov.laa.ccms.caab.util.view.ActionViewHelper.enhanceActionUrl;
@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -60,6 +61,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.PreCertificateAndLegalHelpCostsFormData;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
@@ -98,8 +100,10 @@ import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.service.OutcomeSubmissionService;
 import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.caab.util.PriorAuthorityUtils;
+import uk.gov.laa.ccms.caab.util.ProceedingOutcomeUtils;
 import uk.gov.laa.ccms.caab.util.view.ActionViewHelper;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -118,6 +122,7 @@ public class CaseController {
   private final ApplicationService applicationService;
   private final LookupService lookupService;
   private final CaseOutcomeService caseOutcomeService;
+  private final OutcomeSubmissionService submissionService;
   private final ProceedingOutcomeValidator proceedingOutcomeValidator;
   private final PreCertificateAndLegalHelpCostsValidator preCertificateAndLegalHelpCostsValidator;
   private final ProviderRequestDocumentUploadValidator providerRequestDocumentUploadValidator;
@@ -128,8 +133,6 @@ public class CaseController {
   private final MessageSource messageSource;
   private static final String SEARCH_URL = "SEARCH_URL";
   private static final String OUTCOMES_EVIDENCE_CODE = "OUTCOMES_EVIDENCE";
-  private static final String PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_SESSION_KEY_PREFIX =
-      PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA + ":";
 
   /**
    * Displays the case overview screen.
@@ -378,7 +381,7 @@ public class CaseController {
         final ProceedingOutcomeDetail outcome =
             localOutcome == null
                 ? proceeding.getOutcome()
-                : isClearedProceedingOutcomeMarker(localOutcome) ? null : localOutcome;
+                : ProceedingOutcomeUtils.isCleared(localOutcome) ? null : localOutcome;
         final ProceedingOutcomeDetail clearableOutcome = normaliseLegacyClearMarker(localOutcome);
         resolvedOutcomes.put(proceeding.getProceedingCaseId(), outcome);
         clearableOutcomes.put(proceeding.getProceedingCaseId(), clearableOutcome);
@@ -393,11 +396,20 @@ public class CaseController {
     model.addAttribute(
         "awardEditAllowed", hasOutcomeEditPermission(ebsCase) && localCaseOutcome.isPresent());
     model.addAttribute(
+        "outcomeSubmitAllowed",
+        hasOutcomeEditPermission(ebsCase)
+            && localCaseOutcome.isPresent()
+            && user.getFunctions() != null
+            && user.getFunctions()
+                .contains(uk.gov.laa.ccms.caab.config.UserRole.SUBMIT_CASE_OUTCOME.getCode()));
+    model.addAttribute(
         "outcomeDocumentActionAllowed", ActionViewHelper.isOutcomeDocumentActionAllowed(ebsCase));
     model.addAttribute("clearableOutcomes", clearableOutcomes);
     model.addAttribute(
+        "costsOutcomeAvailable", localCaseOutcome.isPresent() || ebsCase.getCaseOutcome() != null);
+    model.addAttribute(
         "preCertificateAndLegalHelpCostsSummary",
-        getPreCertificateAndLegalHelpCostsFormData(session, ebsCase.getCaseReferenceNumber()));
+        getPreCertificateAndLegalHelpCostsFormData(caseOutcome));
 
     model.addAttribute("awards", getAwards(caseOutcome));
 
@@ -411,6 +423,47 @@ public class CaseController {
             .orElse(Collections.emptyList());
     model.addAttribute("documents", documents);
     return "application/outcome-and-awards";
+  }
+
+  /** Checks the saved outcome before entering discharge or the summary destination. */
+  @PostMapping("/case/outcome-and-awards/submit")
+  public String submitOutcomeAndAwards(
+      @SessionAttribute(CASE) final ApplicationDetail currentCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final RedirectAttributes redirect,
+      final Locale locale) {
+    submissionService.requireSubmissionPermission(currentCase, user);
+    try {
+      final CaseOutcomeDetail draft = submissionService.prepareSubmission(currentCase, user);
+      final List<String> errors = new ArrayList<>();
+      submissionService
+          .awardErrors(draft)
+          .forEach(code -> errors.add(messageSource.getMessage(code, null, locale)));
+      final boolean dischargeAllowed = submissionService.canDischarge(currentCase, user, draft);
+      if (errors.isEmpty()
+          && !dischargeAllowed
+          && !submissionService.hasChanges(currentCase, draft)) {
+        errors.add(messageSource.getMessage("case.outcomeSubmission.noChanges", null, locale));
+      }
+      if (!errors.isEmpty()) {
+        redirect.addFlashAttribute("outcomeSubmissionErrors", errors);
+        return "redirect:/case/outcome-and-awards";
+      }
+      if (!dischargeAllowed) {
+        submissionService.clearDischarge(draft, user.getLoginId());
+        return "redirect:/case/outcome-and-awards/summary";
+      }
+      return "redirect:/case/outcome-and-awards/discharge";
+    } catch (CaabApiClientException | IllegalStateException ex) {
+      log.warn(
+          "Failed to prepare outcome submission for case {}",
+          currentCase.getCaseReferenceNumber(),
+          ex);
+      redirect.addFlashAttribute(
+          "outcomeSubmissionErrors",
+          List.of(messageSource.getMessage("case.outcomeSubmission.failed", null, locale)));
+      return "redirect:/case/outcome-and-awards";
+    }
   }
 
   /**
@@ -877,11 +930,14 @@ public class CaseController {
   public String preCertificateAndLegalHelpCosts(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      HttpSession session,
       Model model) {
     model.addAttribute(
         "preCertificateAndLegalHelpCosts",
-        getPreCertificateAndLegalHelpCostsFormData(session, ebsCase.getCaseReferenceNumber()));
+        getPreCertificateAndLegalHelpCostsFormData(
+            caseOutcomeService
+                .getCaseOutcome(
+                    ebsCase.getCaseReferenceNumber(), user.getProvider().getId().intValue())
+                .orElse(ebsCase.getCaseOutcome())));
     return "application/pre-certificate-and-legal-help-costs";
   }
 
@@ -898,52 +954,44 @@ public class CaseController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @ModelAttribute("preCertificateAndLegalHelpCosts")
           final PreCertificateAndLegalHelpCostsFormData preCertificateAndLegalHelpCosts,
-      final BindingResult bindingResult,
-      final Model model,
-      HttpSession session) {
+      final BindingResult bindingResult) {
     preCertificateAndLegalHelpCostsValidator.validate(
         preCertificateAndLegalHelpCosts, bindingResult);
     if (bindingResult.hasErrors()) {
       return "application/pre-certificate-and-legal-help-costs";
     }
 
-    session.setAttribute(
-        preCertificateAndLegalHelpCostsSessionKey(ebsCase.getCaseReferenceNumber()),
-        copyPreCertificateAndLegalHelpCostsFormData(preCertificateAndLegalHelpCosts));
+    try {
+      caseOutcomeService.updatePreCertificateAndLegalHelpCosts(
+          ebsCase.getCaseReferenceNumber(),
+          user.getProvider().getId().intValue(),
+          preCertificateAndLegalHelpCosts,
+          user.getLoginId());
+    } catch (CaabApiClientException | IllegalStateException ex) {
+      log.warn("Failed to save costs for case {}", ebsCase.getCaseReferenceNumber(), ex);
+      bindingResult.reject(
+          "preCertificateAndLegalHelpCosts.save.failed",
+          "We could not save the pre-certificate and legal help costs. Please try again.");
+      return "application/pre-certificate-and-legal-help-costs";
+    }
     return "redirect:/case/outcome-and-awards";
   }
 
   private PreCertificateAndLegalHelpCostsFormData getPreCertificateAndLegalHelpCostsFormData(
-      final HttpSession session, final String caseReferenceNumber) {
-    final PreCertificateAndLegalHelpCostsFormData formData =
-        (PreCertificateAndLegalHelpCostsFormData)
-            session.getAttribute(preCertificateAndLegalHelpCostsSessionKey(caseReferenceNumber));
-    return formData != null
-        ? copyPreCertificateAndLegalHelpCostsFormData(formData)
-        : new PreCertificateAndLegalHelpCostsFormData();
-  }
-
-  private String preCertificateAndLegalHelpCostsSessionKey(final String caseReferenceNumber) {
-    return PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_SESSION_KEY_PREFIX + caseReferenceNumber;
-  }
-
-  private PreCertificateAndLegalHelpCostsFormData copyPreCertificateAndLegalHelpCostsFormData(
-      final PreCertificateAndLegalHelpCostsFormData source) {
-    final PreCertificateAndLegalHelpCostsFormData copy =
-        new PreCertificateAndLegalHelpCostsFormData();
-    copy.setPreCertificateCosts(
-        StringUtils.hasText(source.getPreCertificateCosts())
-            ? source.getPreCertificateCosts().trim()
-            : null);
-    copy.setLegalHelpCosts(
-        StringUtils.hasText(source.getLegalHelpCosts()) ? source.getLegalHelpCosts().trim() : null);
-    copy.setOfficeCode(
-        StringUtils.hasText(source.getOfficeCode()) ? source.getOfficeCode().trim() : null);
-    copy.setUniqueFileNumber(
-        StringUtils.hasText(source.getUniqueFileNumber())
-            ? source.getUniqueFileNumber().trim()
-            : null);
-    return copy;
+      final CaseOutcomeDetail savedOutcome) {
+    final var saved = new PreCertificateAndLegalHelpCostsFormData();
+    saved.setPreCertificateCosts("0.00");
+    saved.setLegalHelpCosts("0.00");
+    if (savedOutcome != null) {
+      final BigDecimal preCertificateCosts = unwrap(savedOutcome.getPreCertificateCosts());
+      final BigDecimal legalCosts = unwrap(savedOutcome.getLegalCosts());
+      saved.setPreCertificateCosts(
+          preCertificateCosts == null ? "0.00" : preCertificateCosts.toPlainString());
+      saved.setLegalHelpCosts(legalCosts == null ? "0.00" : legalCosts.toPlainString());
+      saved.setOfficeCode(unwrap(savedOutcome.getOfficeCode()));
+      saved.setUniqueFileNumber(unwrap(savedOutcome.getUniqueFileNo()));
+    }
+    return saved;
   }
 
   private ProceedingDetail validateProceedingIndex(
@@ -962,7 +1010,7 @@ public class CaseController {
     if (localOutcome == null) {
       return proceeding.getOutcome();
     }
-    return isClearedProceedingOutcomeMarker(localOutcome) ? null : localOutcome;
+    return ProceedingOutcomeUtils.isCleared(localOutcome) ? null : localOutcome;
   }
 
   private ProceedingOutcomeDetail resolveLocalProceedingOutcomeForDisplay(
@@ -994,36 +1042,11 @@ public class CaseController {
       return null;
     }
 
-    if (isClearedProceedingOutcomeMarker(localOutcome)) {
+    if (ProceedingOutcomeUtils.isCleared(localOutcome)) {
       return null;
     }
 
     return localOutcome;
-  }
-
-  private boolean isClearedProceedingOutcomeMarker(final ProceedingOutcomeDetail localOutcome) {
-    return localOutcome != null
-        && localOutcome.getProceedingCaseId() != null
-        && localOutcome.getDateOfFinalWork() == null
-        && !hasStringDisplayValue(localOutcome.getStageEnd())
-        && !StringUtils.hasText(localOutcome.getResolutionMethod())
-        && !hasStringDisplayValue(localOutcome.getResult())
-        && !StringUtils.hasText(localOutcome.getResultInfo())
-        && !StringUtils.hasText(localOutcome.getAlternativeResolution())
-        && !StringUtils.hasText(localOutcome.getAdrInfo())
-        && !hasSelectedCourt(localOutcome.getCourtCode(), localOutcome.getCourtName())
-        && !StringUtils.hasText(localOutcome.getOutcomeCourtCaseNo())
-        && !StringUtils.hasText(localOutcome.getWiderBenefits());
-  }
-
-  private boolean hasSelectedCourt(final String courtCode, final String courtName) {
-    return StringUtils.hasText(ProceedingOutcomeFormData.normaliseCourtValue(courtCode))
-        || StringUtils.hasText(ProceedingOutcomeFormData.normaliseCourtValue(courtName));
-  }
-
-  private boolean hasStringDisplayValue(final uk.gov.laa.ccms.caab.model.StringDisplayValue value) {
-    return value != null
-        && (StringUtils.hasText(value.getId()) || StringUtils.hasText(value.getDisplayValue()));
   }
 
   private ProceedingOutcomeDetail buildProceedingOutcome(

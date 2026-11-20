@@ -3,9 +3,11 @@ package uk.gov.laa.ccms.caab.mapper;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -22,8 +24,39 @@ import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentOtherDetailsFormData;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 
-class NullableBooleanMapperTest {
+class NullableMapperTest {
   private final OpponentMapper mapper = Mappers.getMapper(OpponentMapper.class);
+
+  @ParameterizedTest
+  @MethodSource("nullableValues")
+  void unwrapsNullableValuesForMappersAndOtherCallers(JsonNullable<?> value, Object expected) {
+    assertThat(NullableMapper.unwrap(value)).isEqualTo(expected);
+  }
+
+  private static Stream<Arguments> nullableValues() {
+    return Stream.of(
+        Arguments.of(null, null),
+        Arguments.of(JsonNullable.undefined(), null),
+        Arguments.of(JsonNullable.of(null), null),
+        Arguments.of(JsonNullable.of(false), false),
+        Arguments.of(JsonNullable.of(true), true),
+        Arguments.of(JsonNullable.of(""), ""),
+        Arguments.of(JsonNullable.of("reference"), "reference"),
+        Arguments.of(JsonNullable.of(BigDecimal.ZERO), BigDecimal.ZERO),
+        Arguments.of(JsonNullable.of(new BigDecimal("12.50")), new BigDecimal("12.50")));
+  }
+
+  @ParameterizedTest
+  @MethodSource("values")
+  void wrapsValuesIncludingNullAsExplicitlyPresent(Object value) {
+    final var wrapped = NullableMapper.wrap(value);
+    assertThat(wrapped.isPresent()).isTrue();
+    assertThat(wrapped.get()).isEqualTo(value);
+  }
+
+  private static Stream<Object> values() {
+    return Stream.of(null, false, true, "", "reference", BigDecimal.ZERO, new BigDecimal("12.50"));
+  }
 
   @ParameterizedTest
   @NullSource

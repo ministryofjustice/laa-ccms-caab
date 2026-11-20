@@ -14,6 +14,15 @@
   <div id="main-content">
     <h1 class="govuk-heading-l" th:text="#{case.outcomeAndAwards.title}"></h1>
     <p class="govuk-body-l" th:text="#{case.outcomeAndAwards.intro}"></p>
+    <div class="govuk-error-summary" data-module="govuk-error-summary"
+         th:if="${outcomeSubmissionErrors != null}" role="alert">
+      <h2 class="govuk-error-summary__title" th:text="#{case.outcomeSubmission.errorTitle}"></h2>
+      <div class="govuk-error-summary__body">
+        <ul class="govuk-list govuk-error-summary__list">
+          <li th:each="error : ${outcomeSubmissionErrors}" th:text="${error}"></li>
+        </ul>
+      </div>
+    </div>
 
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
@@ -142,7 +151,7 @@
           </tr>
           </thead>
           <tbody class="govuk-table__body">
-          <tr class="govuk-table__row">
+          <tr class="govuk-table__row" th:if="${costsOutcomeAvailable == true}">
             <td class="govuk-table__cell" id="preCertificateAndLegalHelpCostsType">
               <a class="govuk-link govuk-link--no-visited-state"
                  th:href="@{/case/outcome-and-awards/preCertificateAndLegalHelpCosts}"
@@ -185,9 +194,13 @@
       </div>
     </div>
 
-    <div class="govuk-button-group govuk-!-margin-top-6">
-      <a class="govuk-button" href="#" th:text="#{site.submit}"></a>
-    </div>
+    <form th:if="${outcomeSubmitAllowed == true}"
+          th:action="@{/case/outcome-and-awards/submit}" method="post">
+      <div class="govuk-button-group govuk-!-margin-top-6">
+        <button class="govuk-button" type="submit" id="submitOutcome"
+                th:text="#{site.submit}"></button>
+      </div>
+    </form>
   </div>
 </div>
 </body>

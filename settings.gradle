@@ -11,4 +11,10 @@ pluginManagement {
     }
 }
 
+includeBuild("../laa-ccms-caab-api") {
+    dependencySubstitution {
+        substitute module("uk.gov.laa.ccms.caab:caab-api") using project(":caab-api")
+    }
+}
+
 rootProject.name = 'laa-ccms-caab'
