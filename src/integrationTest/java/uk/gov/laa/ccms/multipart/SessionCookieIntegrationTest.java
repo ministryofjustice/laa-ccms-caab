@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.security.saml2.autoconfigure.Saml2RelyingPartyAutoConfiguration;
+import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -36,7 +36,7 @@ class SessionCookieIntegrationTest {
   void secureHttpOnlyCookieAndForwardedHttps() throws Exception {
     var plain = request(port, contextPath, false);
     String cookie = plain.headers().firstValue("set-cookie").orElseThrow();
-    assertThat(cookie).contains("Secure", "HttpOnly").doesNotContain("SameSite");
+    assertThat(cookie).contains("Secure", "HttpOnly", "SameSite=Lax");
     assertThat(plain.headers().firstValue("strict-transport-security")).isEmpty();
     var forwarded = request(port, contextPath, true);
     assertThat(forwarded.headers().firstValue("strict-transport-security")).isPresent();
@@ -54,7 +54,7 @@ class SessionCookieIntegrationTest {
   }
 
   @SpringBootConfiguration
-  @EnableAutoConfiguration(exclude = Saml2RelyingPartyAutoConfiguration.class)
+  @EnableAutoConfiguration(exclude = OAuth2ClientAutoConfiguration.class)
   @Import(SessionEndpoint.class)
   static class App {
     @Bean
@@ -92,6 +92,8 @@ class LocalSessionCookieIntegrationTest {
             .headers()
             .firstValue("set-cookie")
             .orElseThrow();
-    assertThat(cookie).contains("CAAB_JSESSIONID", "HttpOnly").doesNotContain("Secure", "SameSite");
+    assertThat(cookie)
+        .contains("CAAB_JSESSIONID", "HttpOnly", "SameSite=Lax")
+        .doesNotContain("Secure");
   }
 }
