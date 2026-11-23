@@ -168,7 +168,8 @@ class AssessmentMapperTest {
   }
 
   @Test
-  void toAssessmentEntityTypeList_buildsLinkedCaseEntityAndRelationship() {
+  @DisplayName("The merits prepop sends LINKED_CASES and its link empty, even with linked cases")
+  void toAssessmentEntityTypeList_meritsAssessment_sendsNoLinkedCaseInstances() {
     final LinkedCaseDetail linkedCase = new LinkedCaseDetail();
     linkedCase.setLscCaseReference("LINK-1");
     context.getApplication().setLinkedCases(List.of(linkedCase));
@@ -176,19 +177,13 @@ class AssessmentMapperTest {
     final List<AssessmentEntityTypeDetail> result =
         assessmentMapper.toAssessmentEntityTypeList(context);
 
-    // the LINKED_CASES entity type carries an instance per linked case, keyed by its case reference
     final AssessmentEntityTypeDetail linkedCaseType =
         result.stream()
             .filter(entityType -> "LINKED_CASES".equals(entityType.getName()))
             .findFirst()
             .orElseThrow();
-    assertEquals(1, linkedCaseType.getEntities().size());
-    final AssessmentEntityDetail linkedCaseEntity = linkedCaseType.getEntities().get(0);
-    assertEquals("LINK-1", linkedCaseEntity.getName());
-    assertContainsAttribute(
-        linkedCaseEntity.getAttributes(), AssessmentAttribute.LINKED_CASE_ID, "LINK-1");
+    assertTrue(linkedCaseType.getEntities().isEmpty());
 
-    // the global entity declares the linkedcases containment relationship to it
     final AssessmentEntityDetail globalEntity =
         result.stream()
             .filter(entityType -> "global".equals(entityType.getName()))
@@ -201,34 +196,7 @@ class AssessmentMapperTest {
             .filter(relationship -> "linkedcases".equals(relationship.getName()))
             .findFirst()
             .orElseThrow();
-    assertEquals(1, linkedCaseRelationship.getRelationshipTargets().size());
-    assertEquals(
-        "LINK-1", linkedCaseRelationship.getRelationshipTargets().get(0).getTargetEntityId());
-  }
-
-  @Test
-  void linkedCaseWithoutLscRef_usesNumericIdForLinkedCaseIdValue() {
-    // LINKED_CASE_ID is numeric in the rulebase, so with no LSC reference its value falls back to
-    // the bare numeric id, not the "LC_<id>" instance identifier.
-    final LinkedCaseDetail linkedCase = new LinkedCaseDetail();
-    linkedCase.setId(42);
-    context.getApplication().setLinkedCases(List.of(linkedCase));
-
-    final List<AssessmentEntityTypeDetail> result =
-        assessmentMapper.toAssessmentEntityTypeList(context);
-
-    final AssessmentEntityDetail linkedCaseEntity =
-        result.stream()
-            .filter(entityType -> "LINKED_CASES".equals(entityType.getName()))
-            .findFirst()
-            .orElseThrow()
-            .getEntities()
-            .get(0);
-    // Entity instance name keeps the "LC_<id>" identifier.
-    assertEquals("LC_42", linkedCaseEntity.getName());
-    // But the numeric LINKED_CASE_ID attribute value is the bare id, not "LC_42".
-    assertContainsAttribute(
-        linkedCaseEntity.getAttributes(), AssessmentAttribute.LINKED_CASE_ID, "42");
+    assertTrue(linkedCaseRelationship.getRelationshipTargets().isEmpty());
   }
 
   @Test

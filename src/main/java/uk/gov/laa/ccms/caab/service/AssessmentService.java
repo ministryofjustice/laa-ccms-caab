@@ -1012,6 +1012,24 @@ public class AssessmentService {
   }
 
   /**
+   * Removes every linked-case instance from a merits session, leaving the empty LINKED_CASES entity
+   * and its global link in place. CAAB cannot seed LINKED_CASE_OWNER, and an instance without it
+   * leaves ASSESS_COMPLETE unresolved, so - as in old PUI - no linked cases are sent. This also
+   * clears instances from prepops persisted before the mapper stopped emitting them.
+   *
+   * @param assessment the merits assessment to clean
+   */
+  void removeLinkedCaseInstances(final AssessmentDetail assessment) {
+    final List<String> linkedCaseNames =
+        getAssessmentEntitiesForEntityType(assessment, LINKED_CASE).stream()
+            .map(AssessmentEntityDetail::getName)
+            .toList();
+
+    deleteEntityAndRelationship(
+        assessment, LINKED_CASE, AssessmentRelationship.LINKED_CASE, linkedCaseNames);
+  }
+
+  /**
    * Deletes redundant opponents from the assessment that are not present in the application.
    *
    * @param assessment the assessment details
@@ -1505,6 +1523,11 @@ public class AssessmentService {
 
     mergeCopiedAssessmentData(prepopAssessment, copiedAnswers);
     mergeCopiedAssessmentData(assessment, copiedAnswers);
+
+    if (AssessmentRulebase.MERITS == assessmentRulebase) {
+      removeLinkedCaseInstances(prepopAssessment);
+      removeLinkedCaseInstances(assessment);
+    }
 
     // An amend-case assessment must not reuse the answers the rulebase marks "Do Not Reuse"
     // (merits)

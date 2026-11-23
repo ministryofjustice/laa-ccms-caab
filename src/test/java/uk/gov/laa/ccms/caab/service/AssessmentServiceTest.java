@@ -24,6 +24,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBST
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROGRESS_STATUS_TYPES;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.GLOBAL;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.LINKED_CASE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.OPPONENT;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS;
@@ -1304,6 +1305,43 @@ public class AssessmentServiceTest {
     assertEquals(1, proceedingEntities.size());
     assertEquals("P_123", proceedingEntities.getFirst().getName());
     assertEquals(0, opponentEntities.size());
+  }
+
+  @Test
+  @DisplayName("removeLinkedCaseInstances empties LINKED_CASES and the global linkedcases link")
+  void removeLinkedCaseInstancesEmptiesEntityAndLink() {
+    final AssessmentEntityDetail globalEntity =
+        new AssessmentEntityDetail()
+            .name("300001749512")
+            .relations(
+                new ArrayList<>(
+                    List.of(
+                        new AssessmentRelationshipDetail()
+                            .name("linkedcases")
+                            .relationshipTargets(
+                                new ArrayList<>(
+                                    List.of(
+                                        new AssessmentRelationshipTargetDetail()
+                                            .targetEntityId("300001741940")))))));
+    final AssessmentDetail assessment =
+        new AssessmentDetail()
+            .caseReferenceNumber("300001749512")
+            .entityTypes(
+                new ArrayList<>(
+                    List.of(
+                        new AssessmentEntityTypeDetail()
+                            .name("global")
+                            .entities(new ArrayList<>(List.of(globalEntity))),
+                        new AssessmentEntityTypeDetail()
+                            .name("LINKED_CASES")
+                            .entities(
+                                new ArrayList<>(
+                                    List.of(new AssessmentEntityDetail().name("300001741940")))))));
+
+    assessmentService.removeLinkedCaseInstances(assessment);
+
+    assertTrue(getAssessmentEntitiesForEntityType(assessment, LINKED_CASE).isEmpty());
+    assertTrue(globalEntity.getRelations().getFirst().getRelationshipTargets().isEmpty());
   }
 
   @Test

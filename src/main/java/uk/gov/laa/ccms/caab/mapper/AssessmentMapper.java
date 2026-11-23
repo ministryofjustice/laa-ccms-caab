@@ -23,7 +23,6 @@ import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.LAR_
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.LEAD_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.LEAD_PROCEEDING_CHANGED;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.LEVEL_OF_SERVICE;
-import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.LINKED_CASE_ID;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.MARITIAL_STATUS;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.MATTER_TYPE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.NEW_APPL_OR_AMENDMENT;
@@ -83,7 +82,6 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
@@ -246,28 +244,18 @@ public interface AssessmentMapper {
       final List<AssessmentRelationshipDetail> globalRelationships =
           new ArrayList<>(List.of(opponentRelationship, proceedingRelationship));
 
-      // Declared even when empty so merits knows InstanceCount(the linked cases) = 0. Withheld from
-      // means, which old PUI never sends: its unseeded LINKED_CASE_OWNER blocks CLIENT_PROV_LA.
-      // Withheld from the billing rulebases too - they declare no LINKED_CASES entity, and a link
-      // whose target table is absent fails the seed with OPA-DATA-108. This guard must stay in step
-      // with the entity list in toAssessmentEntityTypeList: a link without its table, or a table
-      // without its link, both break the load.
+      // Merits only, and always empty. The empty link gives the rulebase InstanceCount(the linked
+      // cases) = 0. Linked-case instances are never sent, matching old PUI: CAAB has no
+      // LINKED_CASE_OWNER to seed them with, and an unseeded owner leaves the goal (ASSESS_COMPLETE
+      // / CLIENT_PROV_LA) unresolved. The billing rulebases declare no LINKED_CASES entity, and a
+      // link whose target table is absent fails the seed with OPA-DATA-108. This guard must stay in
+      // step with the entity list in toAssessmentEntityTypeList: a link without its table, or a
+      // table without its link, both break the load.
       if (isMeritsAssessment(context)) {
-        final List<LinkedCaseDetail> linkedCases =
-            getAssessmentLinkedCases(context.getApplication());
-
-        final List<AssessmentRelationshipTargetDetail> linkedCaseRelationshipTargets =
-            linkedCases.stream()
-                .map(
-                    linkedCase ->
-                        new AssessmentRelationshipTargetDetail()
-                            .targetEntityId(getLinkedCaseOpaInstanceMappingId(linkedCase)))
-                .collect(Collectors.toList());
-
         globalRelationships.add(
             new AssessmentRelationshipDetail()
                 .name(LINKED_CASE.getType().toLowerCase().replace("_", ""))
-                .relationshipTargets(linkedCaseRelationshipTargets)
+                .relationshipTargets(new ArrayList<>())
                 .prepopulated(true));
       }
 
@@ -1091,9 +1079,9 @@ public interface AssessmentMapper {
   }
 
   /**
-   * Builds the LINKED_CASES entity type for the merits prepop. The entity (and its global
-   * containment relationship) is always emitted - even with no linked cases - so the rulebase can
-   * resolve {@code InstanceCount(the linked cases)} for the case-routing legally-linked rules.
+   * Builds the empty LINKED_CASES entity type for the merits prepop, the table its global link
+   * points at. It carries no instances: see the linkedcases relationship in
+   * toAssessmentEntityTypeDetailGlobal.
    *
    * @param context the assessment mapping context
    * @return the assessment entity type detail for linked cases
@@ -1111,62 +1099,6 @@ public interface AssessmentMapper {
       return existingEntityType;
     }
 
-    final List<AssessmentEntityDetail> linkedCaseEntities =
-        getAssessmentLinkedCases(context.getApplication()).stream()
-            .map(
-                linkedCase ->
-                    new AssessmentEntityDetail()
-                        .name(getLinkedCaseOpaInstanceMappingId(linkedCase))
-                        .prepopulated(true)
-                        .attributes(
-                            List.of(
-                                new AssessmentAttributeDetail()
-                                    .name(LINKED_CASE_ID.name())
-                                    .value(getLinkedCaseIdValue(linkedCase))
-                                    .type(LINKED_CASE_ID.getType()))))
-            .collect(Collectors.toList());
-
-    return new AssessmentEntityTypeDetail()
-        .name(LINKED_CASE.getType())
-        .entities(linkedCaseEntities);
-  }
-
-  /**
-   * Returns the application's linked cases, never null.
-   *
-   * @param application the application
-   * @return the linked cases (empty when none)
-   */
-  default List<LinkedCaseDetail> getAssessmentLinkedCases(final ApplicationDetail application) {
-    if (application == null || application.getLinkedCases() == null) {
-      return List.of();
-    }
-    return application.getLinkedCases();
-  }
-
-  /**
-   * Builds the OPA instance id for a linked case (its LSC case reference, falling back to its id).
-   *
-   * @param linkedCase the linked case
-   * @return the OPA instance id
-   */
-  default String getLinkedCaseOpaInstanceMappingId(final LinkedCaseDetail linkedCase) {
-    return linkedCase.getLscCaseReference() != null
-        ? linkedCase.getLscCaseReference()
-        : "LC_" + linkedCase.getId();
-  }
-
-  /**
-   * Returns the numeric LINKED_CASE_ID attribute value. The rulebase declares LINKED_CASE_ID as a
-   * number, so this must stay numeric - the LSC case reference, falling back to the numeric linked
-   * case id (unlike the OPA instance id, which may be the non-numeric "LC_&lt;id&gt;").
-   *
-   * @param linkedCase the linked case
-   * @return the numeric LINKED_CASE_ID value
-   */
-  default String getLinkedCaseIdValue(final LinkedCaseDetail linkedCase) {
-    return linkedCase.getLscCaseReference() != null
-        ? linkedCase.getLscCaseReference()
-        : String.valueOf(linkedCase.getId());
+    return new AssessmentEntityTypeDetail().name(LINKED_CASE.getType()).entities(new ArrayList<>());
   }
 }
