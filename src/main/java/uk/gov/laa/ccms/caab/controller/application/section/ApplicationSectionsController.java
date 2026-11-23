@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpSession;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -24,9 +25,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationSectionValidator;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
+import uk.gov.laa.ccms.caab.security.HeldFunctions;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.util.ApplicationEditorState;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -63,6 +66,11 @@ public class ApplicationSectionsController {
         Optional.ofNullable(applicationService.getApplication(applicationId).block())
             .orElseThrow(
                 () -> new CaabApplicationException("Failed to retrieve application detail"));
+
+    if (Boolean.TRUE.equals(application.getAmendment())
+        && !HeldFunctions.holdsAll(UserRole.VIEW_CASE_DETAILS)) {
+      throw new AccessDeniedException("An amendment's sections need VC");
+    }
 
     final ApplicationSectionDisplay sections =
         Optional.ofNullable(applicationService.getApplicationSections(application, user))

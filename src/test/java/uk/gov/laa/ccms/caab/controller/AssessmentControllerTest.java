@@ -14,6 +14,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -32,6 +33,7 @@ import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildAssessmentDeta
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
+import jakarta.servlet.ServletException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -39,6 +41,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -50,6 +53,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.format.support.FormattingConversionService;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -772,6 +776,70 @@ public class AssessmentControllerTest {
     final ArgumentCaptor<AssessmentDetail> captor = ArgumentCaptor.forClass(AssessmentDetail.class);
     verify(assessmentService).getAssessmentSummaryToDisplay(captor.capture(), any(), any());
     assertThat(captor.getValue().getId()).isEqualTo(2L);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "3, , VC CB",
+    "4, , VC CB " + FunctionConstants.ADD_UPDATE_BILL,
+    "1, CCMS_MNA05, YCA",
+    "2, , YCA"
+  })
+  @DisplayName("The answers page rechecks the functions the interview needed")
+  void assessmentConfirmRechecksFunctions(
+      final long rulebaseId, final String invokedFrom, final String functions) {
+    final ContextToken contextToken = new ContextToken();
+    contextToken.setRulebaseId(rulebaseId);
+    contextToken.setInvokedForm(invokedFrom);
+    contextToken.setCaseId("testCaseReferenceNumber");
+    when(contextSecurityUtil.createContextToken(anyString())).thenReturn(contextToken);
+
+    final Exception exception =
+        assertThrows(
+            ServletException.class,
+            () ->
+                mockMvc.perform(
+                    get("/application/assessments/confirm")
+                        .param("val", "token")
+                        .sessionAttr(
+                            USER_DETAILS,
+                            buildUserDetail().functions(List.of(functions.split(" "))))
+                        .sessionAttr(ACTIVE_CASE, activeCase)));
+
+    assertInstanceOf(AccessDeniedException.class, exception.getCause());
+    verifyNoInteractions(assessmentService);
+  }
+
+  @Test
+  @DisplayName("The open draft's answers page needs no VC")
+  void assessmentConfirmAllowsOpenDraftWithoutViewCase() throws Exception {
+    final ContextToken contextToken = new ContextToken();
+    contextToken.setRulebaseId(1L);
+    contextToken.setProviderId("providerId");
+    contextToken.setCaseId("draftReference");
+    when(contextSecurityUtil.createContextToken(anyString())).thenReturn(contextToken);
+    when(lookupService.getAssessmentSummaryAttributes(anyString()))
+        .thenReturn(Mono.just(new AssessmentSummaryEntityLookupDetail()));
+    when(assessmentService.getAssessments(anyList(), anyString(), anyString()))
+        .thenReturn(
+            Mono.just(
+                new AssessmentDetails()
+                    .addContentItem(buildAssessmentDetail(Date.from(Instant.now())))));
+    when(assessmentService.getAssessmentSummaryToDisplay(any(), any(), any()))
+        .thenReturn(new ArrayList<>());
+
+    this.mockMvc
+        .perform(
+            get("/application/assessments/confirm")
+                .param("val", "token")
+                .sessionAttr(USER_DETAILS, buildUserDetail().functions(List.of("YCA")))
+                .sessionAttr(
+                    ACTIVE_CASE,
+                    ActiveCase.builder()
+                        .caseReferenceNumber("draftReference")
+                        .draftApplication(true)
+                        .build()))
+        .andExpect(status().isOk());
   }
 
   @Test

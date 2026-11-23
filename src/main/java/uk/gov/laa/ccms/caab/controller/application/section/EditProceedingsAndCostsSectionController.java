@@ -1177,7 +1177,8 @@ public class EditProceedingsAndCostsSectionController {
       @Validated @ModelAttribute("priorAuthorityDetails")
           final PriorAuthorityDetailsFormData priorAuthorityDetails,
       final BindingResult bindingResult,
-      final Model model) {
+      final Model model,
+      final HttpSession session) {
 
     proceedingAndCostsMapper.toPriorAuthorityDetailsFormData(
         priorAuthorityDetails, priorAuthorityFlow);
@@ -1204,6 +1205,7 @@ public class EditProceedingsAndCostsSectionController {
     if (ACTION_ADD.equals(priorAuthorityAction)) {
       applicationService.addPriorAuthority(applicationId, priorAuthority, user);
     } else {
+      requirePriorAuthorityOfOpenApplication(priorAuthority.getId(), session);
       applicationService.updatePriorAuthority(priorAuthority, user);
     }
 
@@ -1389,23 +1391,26 @@ public class EditProceedingsAndCostsSectionController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final HttpSession session) {
 
-    // Checked against the application now open, not a list kept from whichever was open before.
-    final ApplicationDetail application = openApplication(session);
-    final boolean belongs =
-        Optional.ofNullable(application.getPriorAuthorities())
-            .orElse(Collections.emptyList())
-            .stream()
-            .anyMatch(pa -> pa.getId().equals(priorAuthorityId));
-
-    if (!belongs) {
-      throw new AccessDeniedException(
-          "Prior authority %d is not part of the open application".formatted(priorAuthorityId));
-    }
+    requirePriorAuthorityOfOpenApplication(priorAuthorityId, session);
 
     applicationService.deletePriorAuthority(priorAuthorityId, user);
 
     return "redirect:/%s/proceedings-and-costs#prior-authority"
         .formatted(caseContext.getPathValue());
+  }
+
+  /** Checked against the application now open, not state kept from whichever was open before. */
+  private void requirePriorAuthorityOfOpenApplication(
+      final Integer priorAuthorityId, final HttpSession session) {
+    final boolean belongs =
+        Optional.ofNullable(openApplication(session).getPriorAuthorities())
+            .orElse(Collections.emptyList())
+            .stream()
+            .anyMatch(pa -> pa.getId().equals(priorAuthorityId));
+    if (!belongs) {
+      throw new AccessDeniedException(
+          "Prior authority %s is not part of the open application".formatted(priorAuthorityId));
+    }
   }
 
   private ApplicationDetail openApplication(final HttpSession session) {

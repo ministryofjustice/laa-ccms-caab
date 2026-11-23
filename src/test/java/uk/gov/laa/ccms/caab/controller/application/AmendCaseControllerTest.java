@@ -131,13 +131,15 @@ class AmendCaseControllerTest {
           .thenReturn(Mono.just(Collections.emptyList()));
       when(evidenceMapper.toEvidenceRequiredList(any(), any())).thenReturn(Collections.emptyList());
 
+      // Left by a draft opened before returning to the amendment.
+      final ActiveCase retained =
+          ActiveCase.builder().caseReferenceNumber("123").draftApplication(true).build();
       assertThat(
               mockMvc.perform(
                   get("/amendments/summary")
                       .sessionAttr(APPLICATION_SUMMARY, tdsApplication)
                       .sessionAttr(CASE, activeCase)
-                      .sessionAttr(
-                          ACTIVE_CASE, ActiveCase.builder().caseReferenceNumber("123").build())
+                      .sessionAttr(ACTIVE_CASE, retained)
                       .sessionAttr(USER_DETAILS, userDetail)))
           .hasStatusOk()
           .hasViewName("application/amendment-summary")
@@ -153,6 +155,9 @@ class AmendCaseControllerTest {
                           .getAvailableFunctions()
                           .contains(FunctionConstants.MEANS_ASSESSMENT_LEGAL_AMENDMENT)),
               eq(userDetail));
+
+      assertThat(retained.isAmendment()).isTrue();
+      assertThat(retained.isDraftApplication()).isFalse();
 
       // The required evidence list is loaded so the upload screen can be reached directly
       // from the amend case summary.

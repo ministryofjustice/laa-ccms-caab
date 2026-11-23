@@ -2,9 +2,12 @@ package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -20,7 +23,9 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SECTIO
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SECTIONS_DATA;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 
+import jakarta.servlet.ServletException;
 import java.util.Date;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +36,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -38,6 +46,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationSectionValidator;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
@@ -61,6 +70,36 @@ class ApplicationSectionsControllerTest {
   @BeforeEach
   public void setup() {
     mockMvc = standaloneSetup(applicationSectionsController).build();
+    SecurityContextHolder.getContext()
+        .setAuthentication(
+            new TestingAuthenticationToken("user", null, UserRole.VIEW_CASE_DETAILS.getCode()));
+  }
+
+  @AfterEach
+  void clearAuthentication() {
+    SecurityContextHolder.clearContext();
+  }
+
+  @Test
+  @DisplayName("An amendment's sections are refused without VC, a draft's are not")
+  void amendmentSectionsNeedViewCase() throws Exception {
+    SecurityContextHolder.getContext()
+        .setAuthentication(new TestingAuthenticationToken("user", null, "YCA"));
+    final ApplicationDetail amendment = buildApplicationDetail(1, true, new Date());
+    amendment.setAmendment(true);
+    when(applicationService.getApplication("1")).thenReturn(Mono.just(amendment));
+
+    final Exception exception =
+        assertThrows(
+            ServletException.class,
+            () ->
+                mockMvc.perform(
+                    get("/application/sections")
+                        .sessionAttr("applicationId", "1")
+                        .sessionAttr("user", new UserDetail())));
+
+    assertInstanceOf(AccessDeniedException.class, exception.getCause());
+    verify(applicationService, never()).getApplicationSections(any(), any());
   }
 
   @Test

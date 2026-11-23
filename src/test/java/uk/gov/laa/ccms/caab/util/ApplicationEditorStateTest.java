@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PRIOR_AUTHORITIES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRIOR_AUTHORITY_FLOW_FORM_DATA;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ class ApplicationEditorStateTest {
     session.setAttribute(ACTIVE_CASE, ActiveCase.builder().applicationId(applicationId).build());
     session.setAttribute(APPLICATION_PRIOR_AUTHORITIES, List.of());
     session.setAttribute(CURRENT_PROCEEDING, new ProceedingDetail());
+    session.setAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, new Object());
     return session;
   }
 
@@ -29,6 +31,7 @@ class ApplicationEditorStateTest {
     ApplicationEditorState.clearWhenApplicationChanges(session, 2);
 
     assertNull(session.getAttribute(APPLICATION_PRIOR_AUTHORITIES));
+    assertNull(session.getAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA));
     assertNull(session.getAttribute(CURRENT_PROCEEDING));
   }
 

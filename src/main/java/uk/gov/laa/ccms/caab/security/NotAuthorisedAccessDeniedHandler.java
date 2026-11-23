@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
-import java.util.function.Predicate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -59,18 +58,15 @@ public class NotAuthorisedAccessDeniedHandler implements AccessDeniedHandler {
     }
 
     HttpSession session = request.getSession();
-    // A refused page load must not return to itself. A refused form post may return to the page
-    // it was posted from, which was shown by a page load and so can be loaded again.
-    boolean refusedPageLoad =
-        "GET".equals(request.getMethod()) || "HEAD".equals(request.getMethod());
-    Predicate<String> notRefusedPage =
-        page ->
-            !refusedPageLoad || !RefusedActionSession.pathOf(page).equals(request.getRequestURI());
+    // A refused page load leaves the history, so no two refused pages can return to each other. A
+    // refused form post may return to the page it was posted from, which was shown by a page load.
+    if ("GET".equals(request.getMethod()) || "HEAD".equals(request.getMethod())) {
+      RefusedActionSession.forgetRenderedPage(session, request.getRequestURI());
+    }
     String target =
         refererOnThisSite(request)
             .flatMap(referer -> RefusedActionSession.findRenderedPage(session, referer))
-            .filter(notRefusedPage)
-            .or(() -> RefusedActionSession.lastRenderedPage(session).filter(notRefusedPage))
+            .or(() -> RefusedActionSession.lastRenderedPage(session))
             .filter(page -> RefusedActionSession.isLocalPage(page, request.getContextPath()))
             .orElse(request.getContextPath() + HOME_PATH);
 

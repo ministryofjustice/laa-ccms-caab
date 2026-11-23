@@ -2200,6 +2200,46 @@ class EditProceedingsAndCostsSectionControllerTest {
   @DisplayName("POST: /{caseContext}/prior-authorities/{action}/details")
   class PostPriorAuthoritiesDetails {
 
+    private void stubPriorAuthorityOfApplication(final String applicationId) {
+      final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
+      priorAuthority.setId(5);
+      when(proceedingAndCostsMapper.toPriorAuthority(any(), any())).thenReturn(priorAuthority);
+      when(applicationService.getApplication(applicationId))
+          .thenReturn(Mono.just(new ApplicationDetail().priorAuthorities(List.of(priorAuthority))));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    @DisplayName("Refuses editing a prior authority that is not part of the open application")
+    void refusesEditingPriorAuthorityFromAnotherApplication(final String caseContext) {
+      final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
+      typeDetails.setPriorAuthorityType("1");
+      final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData("edit");
+      priorAuthorityFlow.setPriorAuthorityTypeFormData(typeDetails);
+      // The flow still holds an amendment's prior authority after a draft was opened.
+      final PriorAuthorityDetail amendmentPriorAuthority = new PriorAuthorityDetail();
+      amendmentPriorAuthority.setId(5);
+      when(proceedingAndCostsMapper.toPriorAuthority(any(), any()))
+          .thenReturn(amendmentPriorAuthority);
+      when(applicationService.getApplication("draft"))
+          .thenReturn(Mono.just(new ApplicationDetail().priorAuthorities(List.of())));
+
+      final Exception exception =
+          assertThrows(
+              ServletException.class,
+              () ->
+                  mockMvc.perform(
+                      post("/{caseContext}/prior-authorities/edit/details", caseContext)
+                          .sessionAttr(APPLICATION_ID, "draft")
+                          .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
+                          .sessionAttr(USER_DETAILS, new UserDetail())
+                          .flashAttr(
+                              "priorAuthorityDetails", new PriorAuthorityDetailsFormData())));
+
+      assertInstanceOf(AccessDeniedException.class, exception.getCause());
+      verify(applicationService, never()).updatePriorAuthority(any(), any());
+    }
+
     @ParameterizedTest(name = "{0} case with action type {1}")
     @CsvSource({"application, add", "application, edit", "amendments, add", "amendments, edit"})
     @DisplayName("Should return expected result")
@@ -2215,6 +2255,10 @@ class EditProceedingsAndCostsSectionControllerTest {
       final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(action);
       priorAuthorityFlow.setPriorAuthorityTypeFormData(typeDetails);
       priorAuthorityFlow.setPriorAuthorityDetailsFormData(priorAuthorityDetails);
+
+      if ("edit".equals(action)) {
+        stubPriorAuthorityOfApplication(applicationId);
+      }
 
       mockMvc
           .perform(
@@ -2308,6 +2352,10 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       priorAuthorityDetails.setJustification(RandomStringUtils.insecure().nextAlphabetic(200));
       priorAuthorityDetails.setSummary(RandomStringUtils.insecure().nextAlphabetic(35));
+
+      if ("edit".equals(action)) {
+        stubPriorAuthorityOfApplication(applicationId);
+      }
 
       mockMvc
           .perform(

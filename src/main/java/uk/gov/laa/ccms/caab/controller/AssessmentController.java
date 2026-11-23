@@ -448,10 +448,7 @@ public class AssessmentController {
     // The interview URL is reachable directly, so the case must be re-checked for the billing
     // function here and not only on the screen that links to it (old PUI gates the equivalent
     // StartOpaAssessment step with TestUserAuthorizedFunction).
-    final String requiredFunction =
-        assessmentRulebase == AssessmentRulebase.POA
-            ? FunctionConstants.ADD_UPDATE_POA
-            : FunctionConstants.ADD_UPDATE_BILL;
+    final String requiredFunction = billingFunction(assessmentRulebase);
 
     if (ebsCase.getAvailableFunctions() == null
         || !ebsCase.getAvailableFunctions().contains(requiredFunction)) {
@@ -464,18 +461,56 @@ public class AssessmentController {
     // functions are a property of the case, as BillingController reads them to decide whether
     // billing is offered at all. This interview sits under /application, which carries no
     // user-function rule, so the functions /case/billing/** requires are checked here too.
+    requireBillingFunctions(assessmentRulebase, user);
+
+    return ebsCase;
+  }
+
+  private static String billingFunction(final AssessmentRulebase assessmentRulebase) {
+    return assessmentRulebase == AssessmentRulebase.POA
+        ? FunctionConstants.ADD_UPDATE_POA
+        : FunctionConstants.ADD_UPDATE_BILL;
+  }
+
+  private static void requireBillingFunctions(
+      final AssessmentRulebase assessmentRulebase, final UserDetail user) {
     final List<String> userFunctions = Optional.ofNullable(user.getFunctions()).orElseGet(List::of);
     if (!userFunctions.containsAll(
         List.of(
             UserRole.VIEW_CASE_DETAILS.getCode(),
             UserRole.VIEW_CASE_BILL.getCode(),
-            requiredFunction))) {
+            billingFunction(assessmentRulebase)))) {
       throw new AccessDeniedException(
           "User does not hold the functions needed to run the %s assessment"
               .formatted(assessmentRulebase.getType()));
     }
+  }
 
-    return ebsCase;
+  /**
+   * The answers page is reached from a link OPA hands back, so the functions the interview needed
+   * are checked again: billing's for a bill or POA, and VC for anything but the open draft.
+   */
+  private static void requireConfirmFunctions(
+      final AssessmentRulebase assessmentRulebase,
+      final ContextToken contextToken,
+      final UserDetail user,
+      final HttpSession session) {
+    if (assessmentRulebase.isFinancialAssessment()) {
+      requireBillingFunctions(assessmentRulebase, user);
+      return;
+    }
+    final boolean openDraft =
+        !MEANS_REASSESSMENT_INVOKED_FROM.equals(contextToken.getInvokedForm())
+            && session.getAttribute(ACTIVE_CASE) instanceof ActiveCase activeCase
+            && activeCase.isDraftApplication()
+            && Objects.equals(activeCase.getCaseReferenceNumber(), contextToken.getCaseId());
+    if (!openDraft
+        && !Optional.ofNullable(user.getFunctions())
+            .orElseGet(List::of)
+            .contains(UserRole.VIEW_CASE_DETAILS.getCode())) {
+      throw new AccessDeniedException(
+          "User does not hold the functions needed to view this assessment");
+    }
   }
 
   private String getCancelLinkUrl(final CaseContext caseContext, final String invokedFrom) {
@@ -542,6 +577,8 @@ public class AssessmentController {
   public String assessmentConfirm(
       @PathVariable("caseContext") final CaseContext caseContext,
       @RequestParam(value = "val") final String token,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final HttpSession session,
       final Model model) {
     final ContextToken contextToken = contextSecurityUtil.createContextToken(token);
     final Long rulebaseId = contextToken.getRulebaseId();
@@ -550,6 +587,7 @@ public class AssessmentController {
 
     // get the rulebase from the token
     final AssessmentRulebase assessmentRulebase = AssessmentRulebase.findById(rulebaseId);
+    requireConfirmFunctions(assessmentRulebase, contextToken, user, session);
 
     // get the assessment details mono
     final Mono<AssessmentDetails> assessmentDetailsMono =

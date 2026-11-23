@@ -157,6 +157,7 @@ public class AmendCaseController {
     ApplicationEditorState.clearWhenApplicationChanges(httpSession, amendment.getId());
     activeCase.setApplicationId(amendment.getId());
     activeCase.setAmendment(true);
+    activeCase.setDraftApplication(false);
 
     httpSession.setAttribute(AMEND_CLIENT_ORIGIN, AmendClientOrigin.AMEND_CASE);
     httpSession.setAttribute(APPLICATION, amendment);

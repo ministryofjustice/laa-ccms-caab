@@ -58,6 +58,14 @@ public final class RefusedActionSession {
   }
 
   /** The page most recently shown by a plain page load. */
+  /** Drops a page from the return history, so the user is never sent back to it. */
+  static void forgetRenderedPage(HttpSession session, String path) {
+    List<String> pages = new ArrayList<>(renderedPages(session));
+    if (pages.removeIf(page -> pathOf(page).equals(path))) {
+      session.setAttribute(RENDERED_PAGES, pages);
+    }
+  }
+
   static Optional<String> lastRenderedPage(HttpSession session) {
     List<String> pages = renderedPages(session);
     return pages.isEmpty() ? Optional.empty() : Optional.of(pages.getLast());

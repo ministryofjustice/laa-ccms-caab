@@ -162,6 +162,19 @@ class DraftApplicationOnlyInterceptorTest {
   }
 
   @Test
+  @DisplayName("A percent-encoded client segment still needs CD")
+  void encodedClientDetailsNeedClientDetailsFunction() {
+    session.setAttribute(ACTIVE_CASE, amendment());
+    loggedInWith(UserRole.VIEW_CASE_DETAILS.getCode());
+    MockHttpServletRequest encoded =
+        new MockHttpServletRequest("GET", "/application/sections/cl%69ent/details/summary");
+    encoded.setSession(session);
+
+    assertThatThrownBy(() -> interceptor.preHandle(encoded, response, new Object()))
+        .isInstanceOf(AccessDeniedException.class);
+  }
+
+  @Test
   @DisplayName("An amendment's other corrections need only VC")
   void amendmentProviderDetailsNeedOnlyViewCaseDetails() throws Exception {
     session.setAttribute(ACTIVE_CASE, amendment());

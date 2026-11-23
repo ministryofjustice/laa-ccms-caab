@@ -5,6 +5,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PRIOR_
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PROCEEDINGS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_SCOPE_LIMITATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRIOR_AUTHORITY_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA_OLD;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_SCOPE_LIMITATIONS;
@@ -21,6 +22,7 @@ public final class ApplicationEditorState {
   private static final List<String> EDITOR_ATTRIBUTES =
       List.of(
           APPLICATION_PRIOR_AUTHORITIES,
+          PRIOR_AUTHORITY_FLOW_FORM_DATA,
           APPLICATION_PROCEEDINGS,
           CURRENT_PROCEEDING,
           PROCEEDING_FLOW_FORM_DATA,

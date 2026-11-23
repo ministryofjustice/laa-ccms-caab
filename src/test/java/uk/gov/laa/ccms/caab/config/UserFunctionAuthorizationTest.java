@@ -507,6 +507,26 @@ class UserFunctionAuthorizationTest {
                 .session(sessionWithRenderedPages("/last-page", "/case/overview"))
                 .header(HttpHeaders.REFERER, "http://localhost/case/overview")
                 .with(user("user").authorities(() -> "OTHER")))
+        .andExpect(redirectedUrl("/last-page"));
+  }
+
+  @Test
+  @DisplayName("Two refused pages never send the user back and forth between them")
+  void refusedPagesDoNotLoop() throws Exception {
+    MockHttpSession session = sessionWithRenderedPages("/case/overview", "/notifications/search");
+    mockMvc
+        .perform(
+            request(HttpMethod.GET, "/notifications/search")
+                .session(session)
+                .header(HttpHeaders.REFERER, "http://localhost/case/overview")
+                .with(user("user").authorities(() -> "OTHER")))
+        .andExpect(redirectedUrl("/case/overview"));
+    mockMvc
+        .perform(
+            request(HttpMethod.GET, "/case/overview")
+                .session(session)
+                .header(HttpHeaders.REFERER, "http://localhost/notifications/search")
+                .with(user("user").authorities(() -> "OTHER")))
         .andExpect(redirectedUrl("/home"));
   }
 
