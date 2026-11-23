@@ -154,9 +154,12 @@
           <tr class="govuk-table__row" th:if="${costsOutcomeAvailable == true}">
             <td class="govuk-table__cell" id="preCertificateAndLegalHelpCostsType">
               <a class="govuk-link govuk-link--no-visited-state"
+                 th:if="${awardEditAllowed == true}"
                  th:href="@{/case/outcome-and-awards/preCertificateAndLegalHelpCosts}"
                  th:id="preCertificateAndLegalHelpCostsLink"
                  th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.link}"></a>
+              <span th:unless="${awardEditAllowed == true}"
+                    th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.link}"></span>
             </td>
             <td class="govuk-table__cell"
                 id="preCertificateAndLegalHelpCostsPreCertificateAmount"

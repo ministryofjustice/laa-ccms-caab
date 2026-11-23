@@ -1592,13 +1592,14 @@ class CaseControllerTest {
           .updatePreCertificateAndLegalHelpCosts(any(), any(), any(), any());
     }
 
-    @Test
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"PO", "POD"})
     @DisplayName("Pre-certificate and legal help costs post saves to backend and redirects")
-    public void preCertificateAndLegalHelpCostsPostSavesAndRedirects() {
+    public void preCertificateAndLegalHelpCostsPostSavesAndRedirects(String function) {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
           getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null)
-              .availableFunctions(List.of("PO"));
+              .availableFunctions(List.of(function));
       doNothing().when(preCertificateAndLegalHelpCostsValidator).validate(any(), any());
 
       assertThat(
@@ -1769,10 +1770,45 @@ class CaseControllerTest {
           .containsEntry("costsOutcomeAvailable", true);
     }
 
-    @Test
-    void costsCanBeLoadedAndSavedWithoutCaseOutcomeEditPermission() {
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"VO", "none", "missing", "ebs-only"})
+    void readOnlyCostsCannotBeEditedOrSaved(String source) {
       final var ebsCase =
-          new ApplicationDetail().caseReferenceNumber("8").availableFunctions(List.of("VO"));
+          new ApplicationDetail()
+              .caseReferenceNumber("8")
+              .availableFunctions(
+                  "missing".equals(source)
+                      ? null
+                      : "none".equals(source) ? List.of() : List.of("VO"))
+              .caseOutcome(savedCostsOutcome());
+      lenient()
+          .when(caseOutcomeService.getCaseOutcome("8", user.getProvider().getId().intValue()))
+          .thenReturn(
+              "ebs-only".equals(source) ? Optional.empty() : Optional.of(savedCostsOutcome()));
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .param("preCertificateCosts", "999")))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+      verify(caseOutcomeService, never())
+          .updatePreCertificateAndLegalHelpCosts(any(), any(), any(), any());
+      verify(preCertificateAndLegalHelpCostsValidator, never()).validate(any(), any());
+    }
+
+    @Test
+    void costsCannotBeSavedWhenCaseBecomesReadOnlyAfterFormLoad() {
+      final var ebsCase =
+          new ApplicationDetail().caseReferenceNumber("8").availableFunctions(List.of("PO"));
       when(caseOutcomeService.getCaseOutcome("8", user.getProvider().getId().intValue()))
           .thenReturn(Optional.of(savedCostsOutcome()));
       assertThat(
@@ -1782,6 +1818,8 @@ class CaseControllerTest {
                       .sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/pre-certificate-and-legal-help-costs");
+
+      ebsCase.setAvailableFunctions(List.of("VO"));
       assertThat(
               mockMvc.perform(
                   post("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
@@ -1790,8 +1828,9 @@ class CaseControllerTest {
                       .param("preCertificateCosts", "999")))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/case/outcome-and-awards");
-      verify(caseOutcomeService).updatePreCertificateAndLegalHelpCosts(any(), any(), any(), any());
-      verify(preCertificateAndLegalHelpCostsValidator).validate(any(), any());
+      verify(caseOutcomeService, never())
+          .updatePreCertificateAndLegalHelpCosts(any(), any(), any(), any());
+      verify(preCertificateAndLegalHelpCostsValidator, never()).validate(any(), any());
     }
 
     private CaseOutcomeDetail savedCostsOutcome() {

@@ -72,6 +72,7 @@ import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidat
 import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestDocumentUploadValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
@@ -400,8 +401,7 @@ public class CaseController {
         hasOutcomeEditPermission(ebsCase)
             && localCaseOutcome.isPresent()
             && user.getFunctions() != null
-            && user.getFunctions()
-                .contains(uk.gov.laa.ccms.caab.config.UserRole.SUBMIT_CASE_OUTCOME.getCode()));
+            && user.getFunctions().contains(UserRole.SUBMIT_CASE_OUTCOME.getCode()));
     model.addAttribute(
         "outcomeDocumentActionAllowed", ActionViewHelper.isOutcomeDocumentActionAllowed(ebsCase));
     model.addAttribute("clearableOutcomes", clearableOutcomes);
@@ -931,6 +931,13 @@ public class CaseController {
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       Model model) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn(
+          "Rejecting pre-certificate and legal help costs form load for read-only case {}",
+          ebsCase.getCaseReferenceNumber());
+      return "redirect:/case/outcome-and-awards";
+    }
+
     model.addAttribute(
         "preCertificateAndLegalHelpCosts",
         getPreCertificateAndLegalHelpCostsFormData(
@@ -955,6 +962,13 @@ public class CaseController {
       @ModelAttribute("preCertificateAndLegalHelpCosts")
           final PreCertificateAndLegalHelpCostsFormData preCertificateAndLegalHelpCosts,
       final BindingResult bindingResult) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn(
+          "Rejecting pre-certificate and legal help costs save for read-only case {}",
+          ebsCase.getCaseReferenceNumber());
+      return "redirect:/case/outcome-and-awards";
+    }
+
     preCertificateAndLegalHelpCostsValidator.validate(
         preCertificateAndLegalHelpCosts, bindingResult);
     if (bindingResult.hasErrors()) {

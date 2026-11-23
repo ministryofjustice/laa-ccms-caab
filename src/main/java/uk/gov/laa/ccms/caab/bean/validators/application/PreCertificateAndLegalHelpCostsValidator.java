@@ -73,9 +73,7 @@ public class PreCertificateAndLegalHelpCostsValidator extends AbstractValidator 
   private void validateCostAmount(final String field, final String value, final Errors errors) {
     if (!errors.hasFieldErrors(field)) {
       final BigDecimal amount = new BigDecimal(value.trim());
-      if (amount.signum() < 0
-          || amount.compareTo(new BigDecimal("99999999.99")) > 0
-          || amount.stripTrailingZeros().scale() > 2) {
+      if (amount.compareTo(new BigDecimal("99999999.99")) > 0) {
         errors.rejectValue(
             field,
             "case.outcomeSubmission.cost.invalid",

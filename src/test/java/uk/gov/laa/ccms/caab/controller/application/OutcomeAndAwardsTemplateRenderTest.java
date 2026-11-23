@@ -208,7 +208,8 @@ class OutcomeAndAwardsTemplateRenderTest {
 
     assertThat(html)
         .contains("Proceeding 1")
-        .contains("preCertificateAndLegalHelpCostsLink")
+        .contains("id=\"preCertificateAndLegalHelpCostsType\"")
+        .doesNotContain("preCertificateAndLegalHelpCostsLink")
         .doesNotContain("proceedingOutcomeSummaryLink-0")
         .doesNotContain("clearProceedingOutcomeLink-0");
   }
