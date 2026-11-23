@@ -169,6 +169,76 @@ public class ProviderControllerTest {
   }
 
   @Test
+  public void switchingProviderClearsStaleProviderSessionStateWhileKeepingSessionInfrastructure()
+      throws Exception {
+    String loginId = "testLoginId";
+    BaseProvider providerFirm1 = new BaseProvider().id(12345).name("providerFirm1");
+    BaseProvider providerFirm2 = new BaseProvider().id(67890).name("providerFirm2");
+    UserDetail userDetails =
+        new UserDetail()
+            .userId(1)
+            .userType("testUserType")
+            .loginId(loginId)
+            .firms(List.of(providerFirm1, providerFirm2))
+            .provider(providerFirm1);
+    ProviderFirmFormData providerFirmFormData = new ProviderFirmFormData();
+    providerFirmFormData.setProviderFirmId(67890);
+
+    when(userService.updateUserOptions(67890, loginId, "testUserType"))
+        .thenReturn(Mono.just(new ClientTransactionResponse()));
+    when(userService.getUserByLoginId(loginId))
+        .thenReturn(
+            Mono.just(
+                new UserDetail()
+                    .loginId(loginId)
+                    .provider(providerFirm2)
+                    .functions(List.of("VC"))));
+
+    MockHttpSession session = new MockHttpSession();
+    session.setAttribute("user", userDetails);
+    session.setAttribute("SPRING_SECURITY_CONTEXT", "security-context");
+    session.setAttribute("org.springframework.security.web.csrf.CSRF_TOKEN", "csrf-token");
+    session.setAttribute(
+        uk.gov.laa.ccms.caab.security.AbsoluteSessionTimeoutFilter.AUTHENTICATED_AT,
+        java.time.Instant.EPOCH);
+    session.setAttribute(
+        uk.gov.laa.ccms.caab.logging.SessionCorrelationFilter.class.getName() + ".sessionID",
+        "corr-id");
+    session.setAttribute("activeCase", "stale-active-case");
+    session.setAttribute("case", "stale-case");
+    session.setAttribute("applicationId", 999);
+    session.setAttribute("notification", "stale-notification");
+    session.setAttribute("notificationSearchCriteria", "stale-criteria");
+
+    this.mockMvc
+        .perform(
+            post("/provider-switch")
+                .session(session)
+                .flashAttr("providerFirmFormData", providerFirmFormData))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/home"));
+
+    assertThat(session.getAttribute("activeCase")).isNull();
+    assertThat(session.getAttribute("case")).isNull();
+    assertThat(session.getAttribute("applicationId")).isNull();
+    assertThat(session.getAttribute("notification")).isNull();
+    assertThat(session.getAttribute("notificationSearchCriteria")).isNull();
+    assertThat(((UserDetail) session.getAttribute("user")).getProvider()).isEqualTo(providerFirm2);
+    assertThat(session.getAttribute("SPRING_SECURITY_CONTEXT")).isEqualTo("security-context");
+    assertThat(session.getAttribute("org.springframework.security.web.csrf.CSRF_TOKEN"))
+        .isEqualTo("csrf-token");
+    assertThat(
+            session.getAttribute(
+                uk.gov.laa.ccms.caab.security.AbsoluteSessionTimeoutFilter.AUTHENTICATED_AT))
+        .isEqualTo(java.time.Instant.EPOCH);
+    assertThat(
+            session.getAttribute(
+                uk.gov.laa.ccms.caab.logging.SessionCorrelationFilter.class.getName()
+                    + ".sessionID"))
+        .isEqualTo("corr-id");
+  }
+
+  @Test
   public void switchingProviderReloadsFunctionsInTheLoggedInAuthentication() throws Exception {
     String loginId = "testLoginId";
     BaseProvider providerFirm1 = new BaseProvider().id(12345).name("providerFirm1");

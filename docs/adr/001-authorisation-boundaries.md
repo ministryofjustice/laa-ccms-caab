@@ -1,6 +1,6 @@
 # Authorisation boundaries and default-deny
 
-Status: Proposed; requires agreement from Paul K and the API/platform owners.
+Status: Proposed — requires agreement from Paul K and the API/platform owners.
 
 Related: [CCMS-1460](https://dsdmoj.atlassian.net/browse/CCMS-1460),
 [CCMS-1461](https://dsdmoj.atlassian.net/browse/CCMS-1461),
@@ -10,97 +10,152 @@ Related: [CCMS-1460](https://dsdmoj.atlassian.net/browse/CCMS-1460),
 
 EntraID OIDC establishes the user's CCMS identity. Application function codes
 authorise actions; authentication alone does not establish provider or case access.
-The inherited work from [#882](https://github.com/ministryofjustice/laa-ccms-caab/pull/882)
-extends those function rules and presentation controls. Privilege refresh must
-update both the authentication and OIDC principal, preserve non-function
-authorities and revoke old functions. A provider switch that cannot reload the
-selected provider ends the session rather than reusing the previous provider's
-privileges.
+The inherited work from [#882](https://github.com/ministryofjustice/laa-ccms-caab/pull/882),
+reconciled with current `main` (including outcome submission and discharge routes
+from [#960](https://github.com/ministryofjustice/laa-ccms-caab/pull/960)), extends
+those URL function rules and template controls:
 
-The production filter chain is tested against an independent inventory of every
-production MVC mapping, method, significant path-variable value and mapping
-condition. Every function and composite prerequisite is exercised. A new mapping
-under an existing protected wildcard must still receive an explicit expectation.
-SecurityConfiguration is included in coverage again. This is a build-time
-guardrail, not runtime default-deny or proof of controller-level data access.
+- **OIDC privilege refresh & session isolation:** Privilege reloads update both
+  the Spring Security authentication and the OIDC principal, preserve non-function
+  authorities and remove revoked functions. On provider switch, stale
+  provider-scoped session state (active case, case, application, notification and
+  search attributes) is cleared while preserving session infrastructure; if the
+  user cannot be reloaded for the newly selected provider, the session is
+  invalidated rather than reusing the previous provider's privileges.
+- **Exhaustive route matrix & coverage:** The production `SecurityFilterChain` is
+  tested against an independent manifest of every production MVC mapping, HTTP
+  method, significant path-variable value (including `caseContext`,
+  `billingContext`, `action`, `submissionContext` and `submissionType`) and
+  mapping condition. Every `UserRole` function and composite/alternative
+  prerequisite is exercised, and any newly added mapping — even beneath an
+  existing protected wildcard — fails the build until explicitly classified.
+  `SecurityConfiguration` is included in JaCoCo coverage verification again.
+  `SubmittedCaseClientInterceptor` logs `AUTHORIZATION_DENIED` before redirecting
+  refused submitted-case client edits.
+- **Identity-bound assessment confirmation:** Both confirmation callback aliases
+  bind the decoded provider and case identifiers to the current session user and
+  active case before making any assessment or lookup calls, and query using the
+  validated session identifiers. Missing state, malformed tokens, mismatches and
+  invalid rulebases are denied and audit-logged.
+- **Provider-scoped attachment handling:** Notification attachment removal is a
+  function-authorised, CSRF-protected POST (`GET`/`HEAD` return 405), and all
+  draft notification attachment operations (create, list, validate, download,
+  submit and remove) consistently pass `user.getProvider().getId()` rather than
+  `user.getUserId()`.
 
-Assessment confirmation binds decoded provider and case identifiers to the
-current session before assessment or lookup calls. Missing state, malformed
-tokens, mismatches and invalid rulebases are denied. Backend queries use the
-validated session identifiers. Attachment removal is a provider-scoped,
-function-authorised POST with CSRF protection; GET/HEAD cannot delete.
+## Decision 1: runtime default-deny and authenticated-only routes (U1)
 
-## Pending decision: runtime default-deny
+**Current state:** `SecurityConfiguration` retains `anyRequest().authenticated()`.
+In legacy PUI (`laa-ccms-provider-ui`, `CheckActionAllowed.java`), function checks
+were applied only to explicit action transitions, leaving session-bound section
+editing authenticated-only. The independent route manifest currently classifies
+all discovered routes into explicit function rules, 2 `PUBLIC` routes and the
+remaining `AUTHENTICATED` routes.
 
-Current behaviour retains `anyRequest().authenticated()`. Authenticated-only
-journeys are explicitly identified in the independent test inventory without
-inventing business function requirements.
+**Recommendation for Paul K:** Adopt runtime `anyRequest().denyAll()` backed by
+an explicit allowlist of genuinely `PUBLIC` routes, agreed `AUTHENTICATED` routes
+and required framework paths (`/error`, `/login/**`, `/oauth2/**`, `/logout`).
+Because the manifest already enumerates every non-function route, the allowlist is
+concrete and low-risk, and fails closed even if a route is introduced outside the
+test inventory. Until Paul K approves this change, `anyRequest().authenticated()`
+is retained with the exhaustive inventory as a mandatory build check.
 
-Preferred option for discussion: enumerate genuinely public and authenticated-only
-flows, retain the agreed function rules, then use `anyRequest().denyAll()`. This
-fails closed for routes introduced outside the test inventory, but requires
-business agreement on each currently authenticated-only flow and verification of
-framework/error/operational routes.
+**Open question:** Confirm whether `/application/sections/**` and
+`/application/abandon` should remain `AUTHENTICATED` (relying on session-bound
+draft application state, matching legacy PUI) or require explicit entry functions
+such as `CA` / `YCA`.
 
-Alternative: retain the authenticated fallback with the exhaustive inventory as
-a mandatory build check. This has lower migration risk but cannot protect an
-untested deployment or a route missed by discovery.
+## Decision 2: URL rules vs method/service-layer authorisation (U2)
 
-Paul K must agree the option and the intended authenticated-only flows. Neither
-option has been approved by this ADR.
+**Current state:** Coarse function checks live in `SecurityConfiguration`, while
+[#960](https://github.com/ministryofjustice/laa-ccms-caab/pull/960) introduced
+targeted service-layer guards (`OutcomeSubmissionService.requireSubmissionPermission`,
+`canDischarge`) for state-dependent rules that URL matchers cannot express.
 
-## Pending decision: method and service boundaries
+**Recommendation for Paul K:** Keep URL rules + the exhaustive manifest as the
+primary mechanism for coarse function checks in this single-entry MVC BFF, paired
+with explicit domain/service guards where authorisation depends on case state or
+provider ownership. Avoid duplicating URL function checks with global
+`@PreAuthorize` annotations: duplicate rules drift easily, and `AccessDeniedException`
+thrown from MVC controllers must be coordinated with `GlobalExceptionHandler` so
+it is routed through `NotAuthorisedAccessDeniedHandler` and `SecurityEventLogger`
+rather than rendered as a generic error page.
 
-URL rules protect browser requests, not calls made through another entry point.
-Sensitive writes and provider-scoped reads may also need method/service guards.
-Options are agreed `@PreAuthorize` guards with method security enabled, or
-explicit service-boundary checks that have access to authoritative provider/case
-state. Choose the ownership boundary and denial behaviour before enabling a
-global annotation policy. Duplicate, independently maintained role rules can
-diverge; tests must cover direct invocation and alternate entry points if guards
-are introduced.
+**Open question:** Agree this layered boundary and standardise how service-layer
+authorisation denials map to refusal navigation and `AUTHORIZATION_DENIED` audit
+events.
 
-Client-credentials support is separate from deployment readiness and end-user
-authorisation. API/platform owners must confirm role grants, distinct caller
-identities, credential storage/rotation and token audiences. APIs must still
-validate provider/resource scope rather than trust an arbitrary provider ID
-because an authenticated service supplied it. The UI cannot substitute for these
-downstream checks. No API role activation or credential rotation is performed here.
+## Decision 3: service-to-service identity and downstream API authorisation (U3)
 
-## Pending decision: OPA confirmation lifecycle
+**Verified live state (as of Nov 2026):**
+- EntraID OAuth2 client-credentials bearer authentication has now merged across
+  the UI and all four backend APIs
+  ([laa-ccms-caab-api#207](https://github.com/ministryofjustice/laa-ccms-caab-api/pull/207),
+  [laa-ccms-data-api#307](https://github.com/ministryofjustice/laa-ccms-data-api/pull/307),
+  [laa-ccms-caab-assessment-api#142](https://github.com/ministryofjustice/laa-ccms-caab-assessment-api/pull/142),
+  [laa-ccms-soa-gateway-api#321](https://github.com/ministryofjustice/laa-ccms-soa-gateway-api/pull/321))
+  and chart configuration
+  ([laa-ccms-caab-helm-charts#303](https://github.com/ministryofjustice/laa-ccms-caab-helm-charts/pull/303),
+  enabling `SPRING_PROFILES_ACTIVE=api-oauth2` on the UI and removing static
+  `authorized-clients`).
+- **Remaining gaps:**
+  1. The UI authenticates to all four API scopes with a single shared
+     `AZURE_CLIENT_ID` / `AZURE_CLIENT_SECRET` holding a broad `ALL` role; no
+     per-operation or per-API least-privilege app roles or workload identity
+     federation are in place yet.
+  2. `USER_DETAILS_API_ACCESS_TOKEN` (`X-Authorization`) and SOA→WebLogic/EBS
+     service credentials remain static secrets.
+  3. None of the four backend APIs inspect end-user JWT claims or enforce
+     end-user provider/resource ownership — they verify only the service bearer
+     token and trust caller-supplied `providerId`, `userId`, `Caab-User-Login-Id`
+     and `soaGatewayUserRole` parameters.
 
-`SecurityUtils.createHubContext` stamps `ttl` at launch and includes `ezgovId`.
-`ContextToken` comments distinguish connector-load timing from a possible
-save/return token; `isTtlExpired` has no production caller. These do not establish
-a confirmation lifetime or atomic single-use contract. CCMS-1462 does not supply
-the missing policy.
+**Open question for Paul K & API/platform owners:** Agree whether the backend
+APIs remain a trusted-BFF boundary (hardened via internal-only network policy,
+least-privilege per-caller app roles, and secret rotation/workload identity) or
+whether user/provider context must be propagated and enforced independently at
+the API layer. Service authentication does not substitute for end-user provider
+authorisation.
 
-The OPA owner must establish whether save refreshes the timestamp, the meaning
-and uniqueness of the journey identifier, lifetime and clock skew, refresh,
-retry and multiple-tab behaviour, and when consumption becomes irreversible.
-Consumption before a recoverable backend failure could prevent a legitimate retry.
-A replay store must work atomically across replicas and restarts; neither an
-in-memory set nor ingress stickiness establishes that guarantee.
+## Decision 4: OPA confirmation token lifecycle (U4 / CCMS-1462)
 
-Provider/case binding is enforced now. Expiry and single-use remain unimplemented;
-neither the 60-minute idle session timeout nor the absolute session timeout is
-an agreed OPA token lifetime. Raw session IDs are not used as replay keys.
+**Verified contract in `laa-ccms-connector` and `laa-ccms-provider-ui`:**
+- `SecurityUtils.createHubContext` stamps `ttl` once at OPA launch alongside
+  `ezgovId`.
+- `laa-ccms-connector` (`HubTdsWebService.java`, `application.yml`) enforces
+  `ccms.pui.connector.ttl.millis = 20000` (20 s) strictly on **Load** and never
+  refreshes `ttl` on **Save**; the `valret` parameter in `ContextToken` is
+  unused.
+- On completion, OPA redirects the browser to `GET assessments/confirm?val=<original launch token>`,
+  which is a read-only confirmation/summary page.
+- Imposing a short confirmation TTL would break legitimate 15–60 minute OPA
+  interviews without connector changes. Enforcing single-use consumption would
+  break browser refresh/back navigation and require shared cross-replica storage
+  respecting read-only-root containers for negligible security gain on a
+  read-only GET. (Separately, CCMS-1462 tracks replacing legacy `Encryptor.java`
+  weak `PBEWithMD5AndDES` encryption.)
+
+**Recommendation for Paul K / OPA owner:** Confirm that session provider/case
+binding (implemented here) — optionally paired with a coarse future-timestamp
+or session-lifetime sanity check — is sufficient for the read-only confirmation
+callback without changing the OPA connector protocol or adding a distributed
+replay store.
 
 ## Deployment compatibility
 
-[#947](https://github.com/ministryofjustice/laa-ccms-caab/pull/947) and
+[#947](https://github.com/ministryofjustice/laa-ccms-caab/pull/947) (updated at
+`584aa6f3` with EntraID/OIDC and agreed **`SameSite=Lax`**, `Secure`, `HttpOnly`
+cookies) and
 [ministryofjustice/laa-ccms-caab-helm-charts#373](https://github.com/ministryofjustice/laa-ccms-caab-helm-charts/pull/373)
-provide separate cookie, browser-header, transport, container and exposure controls.
-They do not replace function or provider authorisation.
+(updated at `7de96a72`) provide separate cookie, browser-header, transport,
+container and ingress-exposure controls. They complement, rather than replace,
+function and provider authorisation.
 
-API calls continue to use internal services, not the backend ingresses disabled
-by the chart change. This implementation adds no writable storage or privileged
-container requirements. Future replay storage must respect non-root,
-read-only-root deployment constraints.
-
-Refusal navigation uses safely recorded local pages, with a context-path home
-fallback, and does not require a full Referer. Missing/invalid CSRF tokens and
-background refusals remain logged 403 responses. Real EntraID callback and OPA
-round-trip evidence under Strict cookies, plus regression HTTPS DNS/TLS/allowlist
-reachability, remain the existing CCMS-1459 deployment gates. Unit/render tests
-cannot establish those browser or environment properties.
+API calls use internal Kubernetes services rather than the backend ingresses
+disabled by the chart change, and this PR adds no writable filesystem paths or
+elevated container privileges. Refusal navigation uses safely recorded local
+pages with a context-path `/home` fallback and does not depend on browser
+`Referer`; missing/invalid CSRF tokens and background refusals remain logged
+403 responses. Browser/environment rollout checks for `#947` + `#373` remain
+tracked under CCMS-1459 (with rate-limiting in CCMS-1465 and CSP ingress 403 in
+CCMS-1660).

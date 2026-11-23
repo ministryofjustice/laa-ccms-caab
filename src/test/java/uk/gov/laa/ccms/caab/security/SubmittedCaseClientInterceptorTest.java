@@ -1,6 +1,9 @@
 package uk.gov.laa.ccms.caab.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 
@@ -16,7 +19,8 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 @DisplayName("Submitted case client interceptor")
 class SubmittedCaseClientInterceptorTest {
 
-  private final SubmittedCaseClientInterceptor interceptor = new SubmittedCaseClientInterceptor();
+  private SecurityEventLogger securityEventLogger;
+  private SubmittedCaseClientInterceptor interceptor;
 
   private MockHttpSession session;
   private MockHttpServletRequest request;
@@ -24,6 +28,8 @@ class SubmittedCaseClientInterceptorTest {
 
   @BeforeEach
   void setUp() {
+    securityEventLogger = mock(SecurityEventLogger.class);
+    interceptor = new SubmittedCaseClientInterceptor(securityEventLogger);
     session = new MockHttpSession();
     request = new MockHttpServletRequest("GET", "/application/sections/client/details/summary");
     request.setSession(session);
@@ -44,6 +50,7 @@ class SubmittedCaseClientInterceptorTest {
     session.setAttribute(ACTIVE_CASE, draft());
 
     assertThat(interceptor.preHandle(request, response, new Object())).isTrue();
+    verify(securityEventLogger, never()).authorizationDenied(request);
   }
 
   @Test
@@ -53,10 +60,11 @@ class SubmittedCaseClientInterceptorTest {
     session.setAttribute(ACTIVE_CASE, draft());
 
     assertThat(interceptor.preHandle(request, response, new Object())).isTrue();
+    verify(securityEventLogger, never()).authorizationDenied(request);
   }
 
   @Test
-  @DisplayName("The open submitted case's client is refused")
+  @DisplayName("The open submitted case's client is refused and logged")
   void refusesSubmittedCase() throws Exception {
     session.setAttribute(CASE, new ApplicationDetail().caseReferenceNumber("SUBMITTED"));
     session.setAttribute(ACTIVE_CASE, submitted());
@@ -64,6 +72,7 @@ class SubmittedCaseClientInterceptorTest {
     assertThat(interceptor.preHandle(request, response, new Object())).isFalse();
     assertThat(response.getRedirectedUrl()).isEqualTo("/home");
     assertThat(RefusedActionSession.consumeNotAuthorised(session)).isTrue();
+    verify(securityEventLogger).authorizationDenied(request);
   }
 
   @Test
@@ -72,6 +81,7 @@ class SubmittedCaseClientInterceptorTest {
     session.setAttribute(ACTIVE_CASE, submitted());
 
     assertThat(interceptor.preHandle(request, response, new Object())).isFalse();
+    verify(securityEventLogger).authorizationDenied(request);
   }
 
   @Test
@@ -80,5 +90,6 @@ class SubmittedCaseClientInterceptorTest {
     session.setAttribute(CASE, new ApplicationDetail().caseReferenceNumber("SUBMITTED"));
 
     assertThat(interceptor.preHandle(request, response, new Object())).isFalse();
+    verify(securityEventLogger).authorizationDenied(request);
   }
 }

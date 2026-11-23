@@ -83,7 +83,7 @@ public class NotificationAttachmentDownloadController {
       @PathVariable("attachment_id") Integer attachmentId) {
     boolean belongsToNotification =
         notificationService
-            .getDraftNotificationAttachments(notificationId, user.getUserId())
+            .getDraftNotificationAttachments(notificationId, user.getProvider().getId())
             .blockOptional()
             .map(NotificationAttachmentDetails::getContent)
             .stream()

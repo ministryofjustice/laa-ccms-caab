@@ -19,6 +19,11 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 public class SubmittedCaseClientInterceptor implements HandlerInterceptor {
 
   private final AccessDeniedHandler refusal = new NotAuthorisedAccessDeniedHandler();
+  private final SecurityEventLogger securityEventLogger;
+
+  public SubmittedCaseClientInterceptor(SecurityEventLogger securityEventLogger) {
+    this.securityEventLogger = securityEventLogger;
+  }
 
   @Override
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
@@ -33,6 +38,9 @@ public class SubmittedCaseClientInterceptor implements HandlerInterceptor {
       }
     } else if (!submittedCaseInSession(session)) {
       return true;
+    }
+    if (securityEventLogger != null) {
+      securityEventLogger.authorizationDenied(request);
     }
     refusal.handle(
         request,

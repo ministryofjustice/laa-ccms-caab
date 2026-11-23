@@ -130,7 +130,7 @@ class NotificationAttachmentDownloadControllerTest {
 
   @Test
   void aDraftAttachmentOfTheNotificationRedirectsToItsSignedUrl() throws Exception {
-    when(notificationService.getDraftNotificationAttachments("234", 1))
+    when(notificationService.getDraftNotificationAttachments("234", 10))
         .thenReturn(Mono.just(draftAttachments(31)));
     when(notificationService.getDraftDocumentLink("31")).thenReturn(Optional.of(SIGNED_URL));
 
@@ -151,7 +151,7 @@ class NotificationAttachmentDownloadControllerTest {
 
   @Test
   void aDraftThatIsNotOnTheNotificationIsNotFoundAndNoLinkIsSigned() throws Exception {
-    when(notificationService.getDraftNotificationAttachments("234", 1))
+    when(notificationService.getDraftNotificationAttachments("234", 10))
         .thenReturn(Mono.just(draftAttachments(31)));
 
     mockMvc

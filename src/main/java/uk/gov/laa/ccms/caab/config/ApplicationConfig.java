@@ -25,6 +25,7 @@ import org.springframework.web.servlet.i18n.FixedLocaleResolver;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import uk.gov.laa.ccms.caab.security.RefusedActionPageInterceptor;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.security.SubmittedCaseClientInterceptor;
 import uk.gov.laa.ccms.caab.util.UserRoleUtil;
 
@@ -75,13 +76,15 @@ public class ApplicationConfig implements WebMvcConfigurer {
 
   private final UploadSizeErrorInterceptor uploadSizeErrorInterceptor;
 
+  private final SecurityEventLogger securityEventLogger;
+
   @Override
   public void addInterceptors(InterceptorRegistry registry) {
     registry.addInterceptor(loggingInterceptor);
     registry.addInterceptor(uploadSizeErrorInterceptor);
     registry.addInterceptor(new RefusedActionPageInterceptor());
     registry
-        .addInterceptor(new SubmittedCaseClientInterceptor())
+        .addInterceptor(new SubmittedCaseClientInterceptor(securityEventLogger))
         .addPathPatterns("/application/sections/client/details/**");
   }
 
@@ -117,7 +120,8 @@ public class ApplicationConfig implements WebMvcConfigurer {
       @Value("${av.api.timeout}") final Integer avApiTimeout,
       final LoggingInterceptor loggingInterceptor,
       final UploadSizeErrorInterceptor uploadSizeErrorInterceptor,
-      final ObjectProvider<ClientRegistrationRepository> clientRegistrationRepository) {
+      final ObjectProvider<ClientRegistrationRepository> clientRegistrationRepository,
+      final ObjectProvider<SecurityEventLogger> securityEventLogger) {
     this.ebsApiProperties = ebsApiProperties;
     this.soaApiProperties = soaApiProperties;
     this.caabApiProperties = caabApiProperties;
@@ -132,6 +136,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
     this.uploadSizeErrorInterceptor = uploadSizeErrorInterceptor;
     this.clientRegistrationRepository = clientRegistrationRepository.getIfAvailable();
     this.authorizedClientManager = authorizedClientManager(this.clientRegistrationRepository);
+    this.securityEventLogger = securityEventLogger.getIfAvailable();
   }
 
   private static OAuth2AuthorizedClientManager authorizedClientManager(

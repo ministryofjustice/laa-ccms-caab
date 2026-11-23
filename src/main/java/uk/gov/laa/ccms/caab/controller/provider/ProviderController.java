@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.provider;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,8 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.provider.ProviderFirmFormData;
 import uk.gov.laa.ccms.caab.bean.validators.provider.ProviderFirmValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.logging.SessionCorrelationFilter;
+import uk.gov.laa.ccms.caab.security.AbsoluteSessionTimeoutFilter;
 import uk.gov.laa.ccms.caab.security.UserFunctionAuthorities;
 import uk.gov.laa.ccms.caab.service.NotificationSearchOptionsCache;
 import uk.gov.laa.ccms.caab.service.UserService;
@@ -110,11 +113,26 @@ public class ProviderController {
     user.setProvider(newProvider);
     UserFunctionAuthorities.replace(authentication, user, reloadedUser, session);
     user.setFunctions(reloadedUser.getFunctions());
+    clearProviderSessionState(session);
     notificationSearchOptionsCache.clear();
 
-    session.setAttribute("user", user);
+    session.setAttribute(USER_DETAILS, user);
 
     return "redirect:/home";
+  }
+
+  private static void clearProviderSessionState(HttpSession session) {
+    Collections.list(session.getAttributeNames()).stream()
+        .filter(name -> !isSessionInfrastructureAttribute(name))
+        .forEach(session::removeAttribute);
+  }
+
+  private static boolean isSessionInfrastructureAttribute(String name) {
+    return USER_DETAILS.equals(name)
+        || AbsoluteSessionTimeoutFilter.AUTHENTICATED_AT.equals(name)
+        || name.startsWith(SessionCorrelationFilter.class.getName() + ".")
+        || name.startsWith("SPRING_SECURITY_")
+        || name.startsWith("org.springframework.");
   }
 
   private UserDetail reloadUser(String loginId) {
