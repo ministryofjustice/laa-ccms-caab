@@ -9,6 +9,7 @@ import org.springframework.lang.Nullable;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -73,6 +74,32 @@ public final class ApplicationUtil {
   public static boolean getLarScopeFlagAssessmentInput(final ApplicationDetail application) {
     return application.getLarScopeFlag() != null
         && Boolean.TRUE.equals(application.getLarScopeFlag());
+  }
+
+  /**
+   * Works out the cost limit changed flag for assessment input, matching old PUI's ProcessCosts. On
+   * an application it is true when the requested cost limitation exceeds the default; on an
+   * amendment it is the flag recorded on the amendment's cost limit.
+   *
+   * @param application the application details
+   * @return true if the cost limit has been raised, otherwise false
+   */
+  public static boolean getCostLimitChangedAssessmentInput(final ApplicationDetail application) {
+    if (Boolean.TRUE.equals(application.getAmendment())) {
+      return Optional.ofNullable(application.getCostLimit())
+          .map(CostLimitDetail::getChanged)
+          .orElse(false);
+    }
+
+    return Optional.ofNullable(application.getCosts())
+        .filter(
+            costs ->
+                costs.getDefaultCostLimitation() != null
+                    && costs.getRequestedCostLimitation() != null)
+        .map(
+            costs ->
+                costs.getRequestedCostLimitation().compareTo(costs.getDefaultCostLimitation()) > 0)
+        .orElse(false);
   }
 
   /**

@@ -11,6 +11,7 @@ import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildProceeding;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildClientDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -31,6 +32,8 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CostLimitDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -293,6 +296,67 @@ class AssessmentMapperTest {
             AssessmentAttribute.RNON_MAND_EVIDENCE_AMD_CORR.name(),
             AssessmentAttribute.PDECLARATION_WILL_BE_SIGNED_EM.name(),
             AssessmentAttribute.HRA_ISSUES_SIGNIFICANT.name());
+  }
+
+  @Test
+  @DisplayName("COST_LIMIT_CHANGED_FLAG is true on an application requesting above the default")
+  void costLimitChangedFlag_application_requestedAboveDefault_isTrue() {
+    final ApplicationDetail application = context.getApplication();
+    application.setAmendment(false);
+    application.setCostLimit(null);
+    application.setCosts(
+        new CostStructureDetail()
+            .defaultCostLimitation(new BigDecimal("1350.00"))
+            .requestedCostLimitation(new BigDecimal("5000.00")));
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.COST_LIMIT_CHANGED_FLAG, "true");
+  }
+
+  @Test
+  @DisplayName("COST_LIMIT_CHANGED_FLAG is false on an application requesting the default limit")
+  void costLimitChangedFlag_application_requestedEqualsDefault_isFalse() {
+    final ApplicationDetail application = context.getApplication();
+    application.setAmendment(false);
+    application.setCostLimit(null);
+    application.setCosts(
+        new CostStructureDetail()
+            .defaultCostLimitation(new BigDecimal("1350.00"))
+            .requestedCostLimitation(new BigDecimal("1350")));
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.COST_LIMIT_CHANGED_FLAG, "false");
+  }
+
+  @Test
+  @DisplayName("COST_LIMIT_CHANGED_FLAG is false on an application with no costs")
+  void costLimitChangedFlag_application_noCosts_isFalse() {
+    final ApplicationDetail application = context.getApplication();
+    application.setAmendment(false);
+    application.setCostLimit(null);
+    application.setCosts(null);
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.COST_LIMIT_CHANGED_FLAG, "false");
+  }
+
+  @Test
+  @DisplayName("COST_LIMIT_CHANGED_FLAG is false on an amendment with no recorded change")
+  void costLimitChangedFlag_amendment_noRecordedChange_isFalse() {
+    final ApplicationDetail application = context.getApplication();
+    application.setAmendment(true);
+    application.setCostLimit(new CostLimitDetail());
+    application.setCosts(
+        new CostStructureDetail()
+            .defaultCostLimitation(new BigDecimal("1350.00"))
+            .requestedCostLimitation(new BigDecimal("5000.00")));
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.COST_LIMIT_CHANGED_FLAG, "false");
   }
 
   @Test

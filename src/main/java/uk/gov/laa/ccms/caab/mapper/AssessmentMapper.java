@@ -55,6 +55,7 @@ import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.LIN
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.OPPONENT;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.PROCEEDING;
 import static uk.gov.laa.ccms.caab.util.ApplicationUtil.getAppAmendTypeAssessmentInput;
+import static uk.gov.laa.ccms.caab.util.ApplicationUtil.getCostLimitChangedAssessmentInput;
 import static uk.gov.laa.ccms.caab.util.ApplicationUtil.getEcfFlagAssessmentInput;
 import static uk.gov.laa.ccms.caab.util.ApplicationUtil.getLarScopeFlagAssessmentInput;
 import static uk.gov.laa.ccms.caab.util.ApplicationUtil.getNewApplicationOrAmendment;
@@ -837,12 +838,17 @@ public interface AssessmentMapper {
       ClientDetail client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "value", source = "application.costLimit.changed")
+  @Mapping(target = "value", source = "application", qualifiedByName = "mapCostLimitChanged")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toCostLimitChangedFlagAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
+
+  @Named("mapCostLimitChanged")
+  default boolean mapCostLimitChanged(final ApplicationDetail application) {
+    return getCostLimitChangedAssessmentInput(application);
+  }
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "client.address.country")
