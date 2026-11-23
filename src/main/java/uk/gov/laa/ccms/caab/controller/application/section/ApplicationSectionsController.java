@@ -28,6 +28,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.util.ApplicationEditorState;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /** Controller for the application sections. */
@@ -86,6 +87,7 @@ public class ApplicationSectionsController {
             .build();
 
     model.addAttribute(ACTIVE_CASE, activeCase);
+    ApplicationEditorState.clearWhenApplicationChanges(session, application.getId());
     session.setAttribute(ACTIVE_CASE, activeCase);
     session.removeAttribute(CLIENT_FLOW_FORM_DATA);
     session.removeAttribute(CLIENT_FLOW_CONTEXT);

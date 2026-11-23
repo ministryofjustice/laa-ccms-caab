@@ -40,6 +40,7 @@ import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
+import uk.gov.laa.ccms.caab.util.ApplicationEditorState;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -153,6 +154,7 @@ public class AmendCaseController {
     final List<EvidenceRequired> evidenceRequired =
         evidenceMapper.toEvidenceRequiredList(evidenceRequiredLookups, uploadedDocuments);
 
+    ApplicationEditorState.clearWhenApplicationChanges(httpSession, amendment.getId());
     activeCase.setApplicationId(amendment.getId());
     activeCase.setAmendment(true);
 

@@ -31,6 +31,7 @@ import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.Nullable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -1385,21 +1386,33 @@ public class EditProceedingsAndCostsSectionController {
   public String priorAuthorityRemovePost(
       @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("prior-authority-id") final int priorAuthorityId,
-      @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES)
-          final List<PriorAuthorityDetail> priorAuthorities,
-      @SessionAttribute(USER_DETAILS) final UserDetail user) {
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final HttpSession session) {
 
-    // existence check
-    final boolean exists =
-        priorAuthorities.stream().anyMatch(pa -> pa.getId().equals(priorAuthorityId));
+    // Checked against the application now open, not a list kept from whichever was open before.
+    final ApplicationDetail application = openApplication(session);
+    final boolean belongs =
+        Optional.ofNullable(application.getPriorAuthorities())
+            .orElse(Collections.emptyList())
+            .stream()
+            .anyMatch(pa -> pa.getId().equals(priorAuthorityId));
 
-    if (!exists) {
-      throw new CaabApplicationException("No prior authority found with id: " + priorAuthorityId);
+    if (!belongs) {
+      throw new AccessDeniedException(
+          "Prior authority %d is not part of the open application".formatted(priorAuthorityId));
     }
 
     applicationService.deletePriorAuthority(priorAuthorityId, user);
 
     return "redirect:/%s/proceedings-and-costs#prior-authority"
         .formatted(caseContext.getPathValue());
+  }
+
+  private ApplicationDetail openApplication(final HttpSession session) {
+    return Optional.ofNullable(
+            applicationService
+                .getApplication(String.valueOf(session.getAttribute(APPLICATION_ID)))
+                .block())
+        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve application"));
   }
 }

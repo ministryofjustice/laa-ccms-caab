@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -68,6 +69,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -1786,11 +1788,16 @@ class EditProceedingsAndCostsSectionControllerTest {
       final String action = "edit";
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
       final UserDetail user = new UserDetail();
-      final ProceedingDetail proceeding = new ProceedingDetail();
+      final ProceedingDetail proceeding = new ProceedingDetail().id(7);
       proceeding.setScopeLimitations(
           new ArrayList<>(List.of(new ScopeLimitationDetail().id(scopeLimitationId))));
+      when(applicationService.getApplication("123"))
+          .thenReturn(
+              Mono.just(
+                  new ApplicationDetail().proceedings(List.of(new ProceedingDetail().id(7)))));
 
       final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(APPLICATION_ID, "123");
       session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
       session.setAttribute(USER_DETAILS, user);
       session.setAttribute(CURRENT_PROCEEDING, proceeding);
@@ -1808,6 +1815,40 @@ class EditProceedingsAndCostsSectionControllerTest {
       assertTrue(
           proceeding.getScopeLimitations().isEmpty(),
           "ProceedingDetail's scope limitations should be empty after removal");
+    }
+
+    @ParameterizedTest
+    @DisplayName("Refuses a proceeding left in the session by another application")
+    @ValueSource(strings = {"application", "amendments"})
+    void refusesProceedingFromAnotherApplication(String caseContext) {
+      final ProceedingDetail amendmentProceeding = new ProceedingDetail().id(7);
+      amendmentProceeding.setScopeLimitations(
+          new ArrayList<>(List.of(new ScopeLimitationDetail().id(1))));
+      when(applicationService.getApplication("123"))
+          .thenReturn(
+              Mono.just(
+                  new ApplicationDetail().proceedings(List.of(new ProceedingDetail().id(8)))));
+
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(APPLICATION_ID, "123");
+      session.setAttribute(PROCEEDING_FLOW_FORM_DATA, new ProceedingFlowFormData("edit"));
+      session.setAttribute(USER_DETAILS, new UserDetail());
+      session.setAttribute(CURRENT_PROCEEDING, amendmentProceeding);
+
+      final Exception exception =
+          assertThrows(
+              ServletException.class,
+              () ->
+                  mockMvc.perform(
+                      post(
+                              "/{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/remove",
+                              caseContext,
+                              1)
+                          .session(session)));
+
+      assertInstanceOf(AccessDeniedException.class, exception.getCause());
+      assertFalse(amendmentProceeding.getScopeLimitations().isEmpty());
+      verify(applicationService, never()).updateProceeding(any(), any());
     }
   }
 
@@ -2487,8 +2528,8 @@ class EditProceedingsAndCostsSectionControllerTest {
       final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
       priorAuthority.setId(priorAuthorityId);
 
-      final List<PriorAuthorityDetail> priorAuthorities = new ArrayList<>();
-      priorAuthorities.add(priorAuthority);
+      when(applicationService.getApplication("123"))
+          .thenReturn(Mono.just(new ApplicationDetail().priorAuthorities(List.of(priorAuthority))));
 
       mockMvc
           .perform(
@@ -2496,7 +2537,7 @@ class EditProceedingsAndCostsSectionControllerTest {
                       "/{caseContext}/prior-authorities/{prior-authority-id}/remove",
                       caseContext,
                       priorAuthorityId)
-                  .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)
+                  .sessionAttr(APPLICATION_ID, "123")
                   .sessionAttr(USER_DETAILS, user))
           .andExpect(status().is3xxRedirection())
           .andExpect(
@@ -2507,11 +2548,15 @@ class EditProceedingsAndCostsSectionControllerTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"application", "amendments"})
-    @DisplayName("Should throw exception when prior authority not found")
-    void shouldThrowExceptionWhenPriorAuthorityNotFound(String caseContext) {
+    @DisplayName("Refuses a prior authority that is not part of the open application")
+    void refusesPriorAuthorityFromAnotherApplication(String caseContext) {
       final int priorAuthorityId = 1;
       final UserDetail user = new UserDetail();
-      final List<PriorAuthorityDetail> priorAuthorities = new ArrayList<>();
+      // The amendment's prior authority, still in the session after switching to a draft.
+      final PriorAuthorityDetail amendmentPriorAuthority = new PriorAuthorityDetail();
+      amendmentPriorAuthority.setId(priorAuthorityId);
+      when(applicationService.getApplication("123"))
+          .thenReturn(Mono.just(new ApplicationDetail().priorAuthorities(List.of())));
 
       final Exception exception =
           assertThrows(
@@ -2522,13 +2567,13 @@ class EditProceedingsAndCostsSectionControllerTest {
                               "/{caseContext}/prior-authorities/{prior-authority-id}/remove",
                               caseContext,
                               priorAuthorityId)
-                          .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)
+                          .sessionAttr(APPLICATION_ID, "123")
+                          .sessionAttr(
+                              APPLICATION_PRIOR_AUTHORITIES, List.of(amendmentPriorAuthority))
                           .sessionAttr(USER_DETAILS, user)));
 
-      assertInstanceOf(CaabApplicationException.class, exception.getCause());
-      assertEquals(
-          "No prior authority found with id: " + priorAuthorityId,
-          exception.getCause().getMessage());
+      assertInstanceOf(AccessDeniedException.class, exception.getCause());
+      verify(applicationService, never()).deletePriorAuthority(anyInt(), any());
     }
   }
 

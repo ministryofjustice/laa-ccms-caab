@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EMERGENCY_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_SCOPE_LIMITATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA;
@@ -13,9 +14,11 @@ import jakarta.servlet.http.HttpSession;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -380,6 +383,7 @@ public class ScopeLimitationController {
     } else {
       final ProceedingDetail proceeding =
           (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
+      requirePartOfOpenApplication(proceeding, session);
       final List<ScopeLimitationDetail> scopeLimitations = proceeding.getScopeLimitations();
 
       scopeLimitations.removeIf(
@@ -510,5 +514,22 @@ public class ScopeLimitationController {
     }
 
     return criteria;
+  }
+
+  /** Refuses a proceeding kept in the session that belongs to another application. */
+  private void requirePartOfOpenApplication(
+      final ProceedingDetail proceeding, final HttpSession session) {
+    final ApplicationDetail application =
+        Optional.ofNullable(
+                applicationService
+                    .getApplication(String.valueOf(session.getAttribute(APPLICATION_ID)))
+                    .block())
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve application"));
+    final boolean belongs =
+        Optional.ofNullable(application.getProceedings()).orElse(List.of()).stream()
+            .anyMatch(candidate -> Objects.equals(candidate.getId(), proceeding.getId()));
+    if (!belongs) {
+      throw new AccessDeniedException("The proceeding is not part of the open application");
+    }
   }
 }
