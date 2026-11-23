@@ -53,7 +53,16 @@ class UnrestrictedRoutesTest {
           "caseContext", List.of("application", "amendments"),
           "billingContext", List.of("bill", "poa"),
           "action", List.of("add", "edit"),
-          "submissionContext", List.of("undertaking"));
+          "submissionContext", List.of("undertaking"),
+          "submissionType",
+              List.of(
+                  "client",
+                  "client-create",
+                  "client-update",
+                  "notification-attachments",
+                  "submit-case",
+                  "submit-case-provider-request",
+                  "submit-general-provider-request"));
 
   @Autowired private WebApplicationContext context;
 

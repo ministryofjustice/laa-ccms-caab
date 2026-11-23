@@ -282,6 +282,30 @@ class UserFunctionAuthorizationTest {
         route("GET", "/case/billing", UserRole.VIEW_CASE_BILL, UserRole.VIEW_CASE_DETAILS),
         route(
             "POST",
+            "/case/outcome-and-awards/submit",
+            UserRole.SUBMIT_CASE_OUTCOME,
+            UserRole.VIEW_CASE_DETAILS,
+            UserRole.RECORD_OUTCOME),
+        route(
+            "POST",
+            "/case/outcome-and-awards/submit",
+            UserRole.SUBMIT_CASE_OUTCOME,
+            UserRole.VIEW_CASE_DETAILS,
+            UserRole.REQUEST_CASE_DISCHARGE),
+        route(
+            "GET",
+            "/case/outcome-and-awards/discharge",
+            UserRole.SUBMIT_CASE_OUTCOME,
+            UserRole.VIEW_CASE_DETAILS,
+            UserRole.REQUEST_CASE_DISCHARGE),
+        route(
+            "POST",
+            "/case/outcome-and-awards/discharge",
+            UserRole.SUBMIT_CASE_OUTCOME,
+            UserRole.VIEW_CASE_DETAILS,
+            UserRole.REQUEST_CASE_DISCHARGE),
+        route(
+            "POST",
             "/case/outcome-and-awards/proceeding/0/outcome/clear",
             UserRole.CLEAR_OUTCOME,
             UserRole.VIEW_CASE_DETAILS,

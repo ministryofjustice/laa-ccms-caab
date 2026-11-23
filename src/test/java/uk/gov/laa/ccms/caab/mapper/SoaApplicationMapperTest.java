@@ -53,6 +53,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.data.domain.PageImpl;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
@@ -812,17 +815,38 @@ class SoaApplicationMapperTest {
     CaseOutcomeDetail result = applicationMapper.toCaseOutcome(caseOutcomeMappingContext);
 
     assertNotNull(result);
-    assertEquals(soaCaseDetail.getLegalHelpCosts(), result.getLegalCosts());
+    assertEquals(soaCaseDetail.getPreCertificateCosts(), result.getPreCertificateCosts().get());
+    assertEquals(soaCaseDetail.getLegalHelpCosts(), result.getLegalCosts().get());
     assertEquals(
         soaCaseDetail.getApplicationDetails().getLarDetails().getLegalHelpOfficeCode(),
-        result.getOfficeCode());
+        result.getOfficeCode().get());
     assertEquals(
         soaCaseDetail.getApplicationDetails().getLarDetails().getLegalHelpUfn(),
-        result.getUniqueFileNo());
+        result.getUniqueFileNo().get());
     assertEquals(soaCaseDetail.getDischargeStatus().getOtherDetails(), result.getOtherDetails());
     assertEquals(soaCaseDetail.getDischargeStatus().getReason(), result.getDischargeReason());
     assertEquals(
         soaCaseDetail.getDischargeStatus().isClientContinuePvtInd(), result.getClientContinueInd());
+  }
+
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(strings = {"0.00", "12.50"})
+  void caseOutcomePreservesNullableCostsAndReferences(String amount) {
+    final var source = buildCaseDetail(APP_TYPE_EMERGENCY);
+    final var cost = amount == null ? null : new BigDecimal(amount);
+    source.setPreCertificateCosts(cost);
+    source.setLegalHelpCosts(cost);
+    source.setApplicationDetails(null);
+
+    final var result =
+        applicationMapper.toCaseOutcome(
+            SoaCaseOutcomeMappingContext.builder().soaCase(source).build());
+
+    assertEquals(JsonNullable.of(cost), result.getPreCertificateCosts());
+    assertEquals(JsonNullable.of(cost), result.getLegalCosts());
+    assertEquals(JsonNullable.of(null), result.getOfficeCode());
+    assertEquals(JsonNullable.of(null), result.getUniqueFileNo());
   }
 
   @Test

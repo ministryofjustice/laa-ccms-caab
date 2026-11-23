@@ -84,6 +84,79 @@ class SecurityEventsEndToEndTest {
   }
 
   @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings = {"submit", "discharge"})
+  void outcomeSubmissionRoutesRequireSubmitOutcomeAndCsrf(String destination) throws Exception {
+    final String path = "/case/outcome-and-awards/" + destination;
+    final var csrf =
+        org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+            .csrf();
+    final var submitter =
+        user("jane")
+            .authorities(
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("VC"),
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("SUBOUT"),
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("POD"));
+    mockMvc
+        .perform(post(path).with(user("jane").authorities()).with(csrf))
+        .andExpect(
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isFound());
+    mockMvc
+        .perform(
+            post(path)
+                .with(submitter)
+                .with(
+                    org.springframework.security.test.web.servlet.request
+                        .SecurityMockMvcRequestPostProcessors.csrf()
+                        .useInvalidToken()))
+        .andExpect(
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.status()
+                .isForbidden());
+    // This harness has no controller: reaching 404 proves the security chain allowed the request.
+    mockMvc
+        .perform(post(path).with(submitter).with(csrf))
+        .andExpect(
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.status()
+                .isNotFound());
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "submit, VC PO SUBOUT, 404",
+    "submit, VC POD SUBOUT, 404",
+    "submit, SUBOUT, 302",
+    "submit, VC SUBOUT, 302",
+    "submit, PO SUBOUT, 302",
+    "submit, VC POD, 302",
+    "submit, VC VO, 302",
+    "discharge, VC POD SUBOUT, 404",
+    "discharge, VC PO SUBOUT, 302",
+    "discharge, POD SUBOUT, 302",
+    "discharge, VC SUBOUT, 302",
+    "discharge, VC POD, 302",
+    "discharge, VC VO, 302"
+  })
+  void outcomeJourneyEnforcesLegacyPermissionsForGetAndPost(
+      String destination, String functions, int expectedStatus) throws Exception {
+    final var authorities =
+        java.util.Arrays.stream(functions.split(" "))
+            .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
+            .toList();
+    final String path = "/case/outcome-and-awards/" + destination;
+    for (final var request : List.of(get(path), post(path))) {
+      mockMvc
+          .perform(
+              request
+                  .with(user("jane").authorities(authorities))
+                  .with(
+                      org.springframework.security.test.web.servlet.request
+                          .SecurityMockMvcRequestPostProcessors.csrf()))
+          .andExpect(
+              org.springframework.test.web.servlet.result.MockMvcResultMatchers.status()
+                  .is(expectedStatus));
+    }
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
   @org.junit.jupiter.params.provider.CsvSource({
     "/notifications/234/attachments/567/download,ATT,false",
     "/notifications/234/attachments/567/download,UPLOAD_EVIDENCE,true",

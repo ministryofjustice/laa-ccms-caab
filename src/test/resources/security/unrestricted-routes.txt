@@ -33,9 +33,12 @@ GET /application/submit-case/undertaking/confirmed
 POST /application/submit-case/undertaking/confirmed
 GET /application/submit-case/undertaking/failed
 POST /application/submit-case/undertaking/failed
-GET /application/{submissionType}/confirmed
-GET /application/{submissionType}/failed
-POST /application/{submissionType}/failed
+GET /application/client-update/confirmed
+GET /application/client-update/failed
+POST /application/client-update/failed
+GET /application/submit-case/confirmed
+GET /application/submit-case/failed
+POST /application/submit-case/failed
 
 # Sections of an application, which the legacy PUI does not check against user functions
 GET /application/abandon

@@ -164,11 +164,14 @@ public class SecurityConfiguration {
     authorize
         .requestMatchers(
             "/general-provider-requests/**",
-            "/application/submit-general-provider-request/confirmed")
+            "/application/submit-general-provider-request/confirmed",
+            "/application/submit-general-provider-request/failed")
         .hasAuthority(UserRole.CREATE_GENERAL_REQUEST.getCode())
         // A case query is raised from an open case.
         .requestMatchers(
-            "/case-provider-requests/**", "/application/submit-case-provider-request/confirmed")
+            "/case-provider-requests/**",
+            "/application/submit-case-provider-request/confirmed",
+            "/application/submit-case-provider-request/failed")
         .access(caseAction(UserRole.SUBMIT_CASE_QUERY))
         // Registering a client is a step in creating an application.
         .requestMatchers(HttpMethod.POST, "/application/client/details/summary")
@@ -253,7 +256,8 @@ public class SecurityConfiguration {
         .requestMatchers(
             "/notifications/*/provide-documents-or-evidence",
             "/notifications/*/attachments/**",
-            "/application/notification-attachments/confirmed")
+            "/application/notification-attachments/confirmed",
+            "/application/notification-attachments/failed")
         .access(notificationAction(UserRole.UPLOAD_EVIDENCE))
         // Searching a case's notifications is an action on the open case.
         .requestMatchers("/notifications/case-search")
@@ -308,6 +312,12 @@ public class SecurityConfiguration {
         .access(caseAction(UserRole.VIEW_CASE_BILL, UserRole.ENTER_UNDERTAKING))
         .requestMatchers("/case/billing")
         .access(caseAction(UserRole.VIEW_CASE_BILL))
+        .requestMatchers("/case/outcome-and-awards/submit")
+        .access(outcomeAction(UserRole.SUBMIT_CASE_OUTCOME))
+        // This discharge page is part of the submission journey; legacy additionally
+        // requires POD, case eligibility and completed proceeding outcomes.
+        .requestMatchers("/case/outcome-and-awards/discharge")
+        .access(caseAction(UserRole.SUBMIT_CASE_OUTCOME, UserRole.REQUEST_CASE_DISCHARGE))
         .requestMatchers("/case/outcome-and-awards/proceeding/*/outcome/clear")
         .access(outcomeAction(UserRole.CLEAR_OUTCOME))
         .requestMatchers("/case/outcome-and-awards/proceeding/*/outcome/**")
