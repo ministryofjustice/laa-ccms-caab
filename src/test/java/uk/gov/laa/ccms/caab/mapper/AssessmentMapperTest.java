@@ -360,6 +360,28 @@ class AssessmentMapperTest {
   }
 
   @Test
+  @DisplayName("POST_CODE is 'No Fixed Abode' for a client with no fixed abode")
+  void postCode_noFixedAbode_isNoFixedAbodeText() {
+    context.getClient().setNoFixedAbode(true);
+    context.getClient().getAddress().setPostalCode(null);
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.POST_CODE, "No Fixed Abode");
+  }
+
+  @Test
+  @DisplayName("POST_CODE is empty for a client with neither an address nor no fixed abode")
+  void postCode_noAddress_isNull() {
+    context.getClient().setNoFixedAbode(null);
+    context.getClient().setAddress(null);
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.POST_CODE, null);
+  }
+
+  @Test
   public void shouldReturnCorrectOpponentOpaInstanceMappingId() {
     final OpponentDetail opponent = new OpponentDetail().id(123);
     final String expectedOpaInstanceMappingId = "OPPONENT_123";

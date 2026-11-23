@@ -1005,11 +1005,21 @@ public interface AssessmentMapper {
   AssessmentAttributeDetail toNiNoAttribute(ClientDetail client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "value", source = "client.address.postalCode")
+  @Mapping(target = "value", source = "client", qualifiedByName = "mapPostCode")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toPostCodeAttribute(ClientDetail client, AssessmentAttribute attribute);
+
+  // Matches old PUI's Address.getPostCodeOpaInput: a client with no fixed abode has no postcode,
+  // so the rulebase is given this text instead.
+  @Named("mapPostCode")
+  default String mapPostCode(final ClientDetail client) {
+    if (Boolean.TRUE.equals(client.getNoFixedAbode())) {
+      return "No Fixed Abode";
+    }
+    return client.getAddress() == null ? null : client.getAddress().getPostalCode();
+  }
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application.providerDetails.providerCaseReference")
