@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.client;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -8,6 +9,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,16 +20,21 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.mock.http.client.reactive.MockClientHttpRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -41,8 +49,10 @@ import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.caab.model.BillCreate;
 import uk.gov.laa.ccms.caab.model.Bills;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeCostsRequest;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeDischargeRequest;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
@@ -69,6 +79,243 @@ import uk.gov.laa.ccms.caab.util.DateUtils;
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
 class CaabApiClientTest {
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(strings = {"0.00", "12.50"})
+  void costsRequestSerializesOnlyScopedCostFieldsUsingActualCodecs(String amount) throws Exception {
+    final var output =
+        new MockClientHttpRequest(
+            HttpMethod.PUT, URI.create("http://localhost/case-outcomes/42/costs"));
+    final var actualClient =
+        recordingClient(output, ClientResponse.create(HttpStatus.NO_CONTENT).build());
+    final var value = amount == null ? null : new BigDecimal(amount);
+
+    actualClient
+        .updateCaseOutcomeCosts(
+            42,
+            "user",
+            new CaseOutcomeCostsRequest("case", "123")
+                .preCertificateCosts(value)
+                .legalCosts(value)
+                .officeCode(null)
+                .uniqueFileNo(null))
+        .block();
+
+    final var json = new ObjectMapper().readTree(output.getBodyAsString().block());
+    assertThat(json.properties())
+        .extracting(java.util.Map.Entry::getKey)
+        .containsExactlyInAnyOrder(
+            "case_reference_number",
+            "provider_id",
+            "pre_certificate_costs",
+            "legal_costs",
+            "office_code",
+            "unique_file_no");
+    assertThat(json.get("case_reference_number").asText()).isEqualTo("case");
+    assertThat(json.get("provider_id").asText()).isEqualTo("123");
+    for (String field : List.of("pre_certificate_costs", "legal_costs")) {
+      if (value == null) {
+        assertThat(json.get(field).isNull()).isTrue();
+      } else {
+        assertThat(json.get(field).isNumber()).isTrue();
+        assertThat(json.get(field).decimalValue()).isEqualByComparingTo(value);
+      }
+    }
+    assertThat(json.get("office_code").isNull()).isTrue();
+    assertThat(json.get("unique_file_no").isNull()).isTrue();
+  }
+
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(booleans = {true, false})
+  void dischargeRequestSerializesAnswersAndExplicitClearingUsingActualCodecs(Boolean answer)
+      throws Exception {
+    final var output =
+        new MockClientHttpRequest(
+            HttpMethod.PUT, URI.create("http://localhost/case-outcomes/42/discharge"));
+    final var actualClient =
+        recordingClient(output, ClientResponse.create(HttpStatus.NO_CONTENT).build());
+
+    actualClient
+        .updateCaseOutcomeDischarge(
+            42,
+            "user",
+            new CaseOutcomeDischargeRequest("case", "123")
+                .dischargeCaseInd(answer)
+                .clientContinueInd(answer)
+                .dischargeReason(null)
+                .otherDetails(null))
+        .block();
+
+    final var json = new ObjectMapper().readTree(output.getBodyAsString().block());
+    assertThat(json.properties())
+        .extracting(java.util.Map.Entry::getKey)
+        .containsExactlyInAnyOrder(
+            "case_reference_number",
+            "provider_id",
+            "discharge_case_ind",
+            "client_continue_ind",
+            "discharge_reason",
+            "other_details");
+    assertThat(json.get("case_reference_number").asText()).isEqualTo("case");
+    assertThat(json.get("provider_id").asText()).isEqualTo("123");
+    for (String field : List.of("discharge_case_ind", "client_continue_ind")) {
+      if (answer == null) {
+        assertThat(json.get(field).isNull()).isTrue();
+      } else {
+        assertThat(json.get(field).isBoolean()).isTrue();
+        assertThat(json.get(field).booleanValue()).isEqualTo(answer);
+      }
+    }
+    assertThat(json.get("discharge_reason").isNull()).isTrue();
+    assertThat(json.get("other_details").isNull()).isTrue();
+  }
+
+  @Test
+  void preparationDeserializesCleanedDraftAndNullableCostsUsingActualCodecs() throws Exception {
+    final var output =
+        new MockClientHttpRequest(
+            HttpMethod.POST, URI.create("http://localhost/case-outcomes/42/prepare-submission"));
+    final var actualClient =
+        recordingClient(
+            output,
+            ClientResponse.create(HttpStatus.OK)
+                .header("Content-Type", "application/json")
+                .body(
+                    """
+                    {"id":42,"case_reference_number":"case","provider_id":"123",
+                     "pre_certificate_costs":null,"legal_costs":12.50,
+                     "office_code":null,"unique_file_no":"010124/001",
+                     "discharge_case_ind":false,"client_continue_ind":null,
+                     "financial_awards":[{"id":7,"award_type":"DAMAGE","liable_parties":[]}]}
+                    """)
+                .build());
+
+    final var result =
+        actualClient
+            .prepareCaseOutcomeSubmission(
+                42, "user", new CaseOutcomeDetail().caseReferenceNumber("case").providerId("123"))
+            .block();
+
+    final var json = new ObjectMapper().readTree(output.getBodyAsString().block());
+    assertThat(json.get("case_reference_number").asText()).isEqualTo("case");
+    assertThat(json.get("provider_id").asText()).isEqualTo("123");
+    assertThat(result.getPreCertificateCosts()).isEqualTo(JsonNullable.of(null));
+    assertThat(result.getLegalCosts().get()).isEqualByComparingTo("12.50");
+    assertThat(result.getOfficeCode()).isEqualTo(JsonNullable.of(null));
+    assertThat(result.getUniqueFileNo().get()).isEqualTo("010124/001");
+    assertThat(result.getDischargeCaseInd()).isFalse();
+    assertThat(result.getClientContinueInd()).isNull();
+    assertThat(result.getFinancialAwards())
+        .singleElement()
+        .satisfies(
+            award -> {
+              assertThat(award.getId()).isEqualTo(7);
+              assertThat(award.getLiableParties()).isEmpty();
+            });
+  }
+
+  private CaabApiClient recordingClient(MockClientHttpRequest output, ClientResponse response) {
+    return new CaabApiClient(
+        WebClient.builder()
+            .baseUrl("http://localhost")
+            .exchangeFunction(
+                request -> {
+                  assertThat(request.method()).isEqualTo(output.getMethod());
+                  assertThat(request.url()).isEqualTo(output.getURI());
+                  assertThat(request.headers().getFirst("Caab-User-Login-Id")).isEqualTo("user");
+                  return request
+                      .writeTo(output, ExchangeStrategies.withDefaults())
+                      .thenReturn(response);
+                })
+            .build(),
+        new CaabApiClientErrorHandler());
+  }
+
+  @Test
+  void preparationSendsCaseProviderScopeAndReturnsCleanedDraft() {
+    final var scope = new CaseOutcomeDetail().caseReferenceNumber("case").providerId("123");
+    final var cleaned = new CaseOutcomeDetail().id(42);
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri("/case-outcomes/{id}/prepare-submission", 42))
+        .thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", "user")).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(scope)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CaseOutcomeDetail.class)).thenReturn(Mono.just(cleaned));
+    StepVerifier.create(caabApiClient.prepareCaseOutcomeSubmission(42, "user", scope))
+        .expectNext(cleaned)
+        .verifyComplete();
+  }
+
+  @Test
+  void preparationPropagatesCleanupFailure() {
+    final var scope = new CaseOutcomeDetail().caseReferenceNumber("case").providerId("123");
+    final var failure = new CaabApiClientException("Cleanup failed");
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri("/case-outcomes/{id}/prepare-submission", 42))
+        .thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", "user")).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(scope)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CaseOutcomeDetail.class)).thenReturn(Mono.error(failure));
+    when(apiClientErrorHandler.handleApiUpdateError(
+            failure, CaabApiClient.RESOURCE_TYPE_CASE_OUTCOME, "id", "42"))
+        .thenReturn(Mono.error(failure));
+    StepVerifier.create(caabApiClient.prepareCaseOutcomeSubmission(42, "user", scope))
+        .expectErrorMatches(error -> error == failure)
+        .verify();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"costs", "discharge"})
+  void scalarOutcomeUpdatesUseTargetedPutAndLoginHeader(String section) {
+    final var costs = new CaseOutcomeCostsRequest("case", "123");
+    final var discharge = new CaseOutcomeDischargeRequest("case", "123").dischargeCaseInd(false);
+    final Object details = "costs".equals(section) ? costs : discharge;
+    when(caabApiWebClient.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri("/case-outcomes/{id}/{section}", 42, section))
+        .thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", "user")).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(details)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+    StepVerifier.create(
+            "costs".equals(section)
+                ? caabApiClient.updateCaseOutcomeCosts(42, "user", costs)
+                : caabApiClient.updateCaseOutcomeDischarge(42, "user", discharge))
+        .verifyComplete();
+    verify(requestBodyMock).bodyValue(details);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"costs", "discharge"})
+  void scalarOutcomeUpdatesPropagateFailures(String section) {
+    final var costs = new CaseOutcomeCostsRequest("case", "123");
+    final var discharge = new CaseOutcomeDischargeRequest("case", "123");
+    final Object details = "costs".equals(section) ? costs : discharge;
+    final var failure = new CaabApiClientException("Save failed");
+    when(caabApiWebClient.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri("/case-outcomes/{id}/{section}", 42, section))
+        .thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", "user")).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(details)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.error(failure));
+    when(apiClientErrorHandler.handleApiUpdateError(
+            failure, CaabApiClient.RESOURCE_TYPE_CASE_OUTCOME, "id", "42"))
+        .thenReturn(Mono.error(failure));
+    StepVerifier.create(
+            "costs".equals(section)
+                ? caabApiClient.updateCaseOutcomeCosts(42, "user", costs)
+                : caabApiClient.updateCaseOutcomeDischarge(42, "user", discharge))
+        .expectErrorMatches(error -> error == failure)
+        .verify();
+  }
 
   @Mock private WebClient caabApiWebClient;
 

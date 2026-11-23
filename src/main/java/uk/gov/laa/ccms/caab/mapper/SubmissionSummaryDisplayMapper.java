@@ -27,8 +27,8 @@ import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.DeclarationLookupValueDetail;
 
 /** Mapper interface for converting submission summary details to display values. */
-@Mapper(componentModel = "spring")
-public interface SubmissionSummaryDisplayMapper extends NullableBooleanMapper {
+@Mapper(componentModel = "spring", uses = NullableMapper.class)
+public interface SubmissionSummaryDisplayMapper {
   CommonMapper COMMON_MAPPER = Mappers.getMapper(CommonMapper.class);
 
   @Mapping(target = "office", source = "application.providerDetails.office.displayValue")
