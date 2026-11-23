@@ -126,6 +126,15 @@ public class AssessmentService {
   private static final DateTimeFormatter ASSESSMENT_DATE_FORMATTER =
       DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
+  // Prepopulated global inputs that were previously sent empty or with a different value from old
+  // PUI, so prepops persisted before that was corrected must be refreshed when reused.
+  private static final Set<String> REFRESHED_GLOBAL_INPUTS =
+      Set.of(
+          AssessmentAttribute.COST_LIMIT_CHANGED_FLAG.name(),
+          AssessmentAttribute.LEAD_PROCEEDING_CHANGED.name(),
+          AssessmentAttribute.NEW_APPL_OR_AMENDMENT.name(),
+          AssessmentAttribute.POST_CODE.name());
+
   private final AssessmentApiClient assessmentApiClient;
   private final CaabApiClient caabApiClient;
   private final EbsApiClient ebsApiClient;
@@ -1018,8 +1027,9 @@ public class AssessmentService {
    * clears instances from prepops persisted before the mapper stopped emitting them.
    *
    * @param assessment the merits assessment to clean
+   * @return true if any linked-case instance was removed
    */
-  void removeLinkedCaseInstances(final AssessmentDetail assessment) {
+  boolean removeLinkedCaseInstances(final AssessmentDetail assessment) {
     final List<String> linkedCaseNames =
         getAssessmentEntitiesForEntityType(assessment, LINKED_CASE).stream()
             .map(AssessmentEntityDetail::getName)
@@ -1027,6 +1037,70 @@ public class AssessmentService {
 
     deleteEntityAndRelationship(
         assessment, LINKED_CASE, AssessmentRelationship.LINKED_CASE, linkedCaseNames);
+    return !linkedCaseNames.isEmpty();
+  }
+
+  /**
+   * Brings a persisted (reused) means or merits prepop up to date with the inputs CAAB used to map
+   * differently from old PUI, without rebuilding it - the prepop also holds the provider's answers.
+   * The values are refreshed in place, keeping attribute ids, and for merits any linked-case
+   * instance is removed. When anything changed the checkpoint is dropped, since resuming from it
+   * would restore the old values into the interview.
+   *
+   * @param prepopAssessment the persisted prepop assessment, updated in place
+   * @param assessmentRulebase the rulebase being started
+   * @param context the mapping context the fresh values are mapped from
+   */
+  void refreshPersistedPrepop(
+      final AssessmentDetail prepopAssessment,
+      final AssessmentRulebase assessmentRulebase,
+      final AssessmentMappingContext context) {
+    boolean changed = refreshGlobalInputs(prepopAssessment, context);
+    if (AssessmentRulebase.MERITS == assessmentRulebase) {
+      changed |= removeLinkedCaseInstances(prepopAssessment);
+    }
+
+    if (changed && prepopAssessment.getCheckpoint() != null) {
+      log.info(
+          "Dropping checkpoint for {} [{}]: its prepopulated inputs were refreshed",
+          prepopAssessment.getName(),
+          prepopAssessment.getCaseReferenceNumber());
+      prepopAssessment.setCheckpoint(null);
+    }
+  }
+
+  private boolean refreshGlobalInputs(
+      final AssessmentDetail prepopAssessment, final AssessmentMappingContext context) {
+    final AssessmentEntityTypeDetail globalEntityType =
+        getAssessmentEntityType(prepopAssessment, GLOBAL);
+    final AssessmentEntityDetail globalEntity =
+        globalEntityType == null
+            ? null
+            : getAssessmentEntity(globalEntityType, prepopAssessment.getCaseReferenceNumber());
+    if (globalEntity == null) {
+      return false;
+    }
+
+    boolean changed = false;
+    for (final AssessmentAttributeDetail fresh : assessmentMapper.globalToAttributeList(context)) {
+      if (!REFRESHED_GLOBAL_INPUTS.contains(fresh.getName())) {
+        continue;
+      }
+
+      final Optional<AssessmentAttributeDetail> existing =
+          globalEntity.getAttributes().stream()
+              .filter(attribute -> fresh.getName().equals(attribute.getName()))
+              .findFirst();
+
+      if (existing.isEmpty()) {
+        globalEntity.getAttributes().add(fresh);
+        changed = true;
+      } else if (!Objects.equals(existing.get().getValue(), fresh.getValue())) {
+        existing.get().setValue(fresh.getValue());
+        changed = true;
+      }
+    }
+    return changed;
   }
 
   /**
@@ -1524,6 +1598,9 @@ public class AssessmentService {
     mergeCopiedAssessmentData(prepopAssessment, copiedAnswers);
     mergeCopiedAssessmentData(assessment, copiedAnswers);
 
+    if (!createdNewPrepopAssessment && !assessmentRulebase.isFinancialAssessment()) {
+      refreshPersistedPrepop(prepopAssessment, assessmentRulebase, assessmentContext);
+    }
     if (AssessmentRulebase.MERITS == assessmentRulebase) {
       removeLinkedCaseInstances(prepopAssessment);
       removeLinkedCaseInstances(assessment);

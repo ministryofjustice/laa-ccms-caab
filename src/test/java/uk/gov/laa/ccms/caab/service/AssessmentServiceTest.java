@@ -1345,6 +1345,91 @@ public class AssessmentServiceTest {
   }
 
   @Test
+  @DisplayName(
+      "refreshPersistedPrepop refreshes stale inputs in place and drops the merits checkpoint")
+  void refreshPersistedPrepopRefreshesStaleInputsAndDropsCheckpoint() {
+    final AssessmentAttributeDetail staleCostLimitChanged =
+        new AssessmentAttributeDetail().id(11L).name("COST_LIMIT_CHANGED_FLAG").value(null);
+    final AssessmentAttributeDetail providerAnswer =
+        new AssessmentAttributeDetail().id(12L).name("FIRST_NAME").value("answered");
+    final AssessmentEntityDetail globalEntity =
+        new AssessmentEntityDetail()
+            .name("300001749512")
+            .attributes(new ArrayList<>(List.of(staleCostLimitChanged, providerAnswer)))
+            .relations(new ArrayList<>());
+    final AssessmentDetail prepop =
+        new AssessmentDetail()
+            .name("meritsAssessment_PREPOP")
+            .caseReferenceNumber("300001749512")
+            .checkpoint(new uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail())
+            .entityTypes(
+                new ArrayList<>(
+                    List.of(
+                        new AssessmentEntityTypeDetail()
+                            .name("global")
+                            .entities(new ArrayList<>(List.of(globalEntity))),
+                        new AssessmentEntityTypeDetail()
+                            .name("LINKED_CASES")
+                            .entities(
+                                new ArrayList<>(
+                                    List.of(new AssessmentEntityDetail().name("300001741940")))))));
+
+    when(assessmentMapper.globalToAttributeList(any()))
+        .thenReturn(
+            List.of(
+                new AssessmentAttributeDetail().name("COST_LIMIT_CHANGED_FLAG").value("false"),
+                new AssessmentAttributeDetail().name("POST_CODE").value("No Fixed Abode"),
+                new AssessmentAttributeDetail().name("FIRST_NAME").value("mapped")));
+
+    assessmentService.refreshPersistedPrepop(prepop, AssessmentRulebase.MERITS, null);
+
+    assertEquals(11L, staleCostLimitChanged.getId());
+    assertEquals("false", staleCostLimitChanged.getValue());
+    assertTrue(
+        globalEntity.getAttributes().stream()
+            .anyMatch(
+                attribute ->
+                    "POST_CODE".equals(attribute.getName())
+                        && "No Fixed Abode".equals(attribute.getValue())));
+    assertEquals("answered", providerAnswer.getValue());
+    assertTrue(getAssessmentEntitiesForEntityType(prepop, LINKED_CASE).isEmpty());
+    assertNull(prepop.getCheckpoint());
+  }
+
+  @Test
+  @DisplayName("refreshPersistedPrepop keeps the checkpoint when nothing changed")
+  void refreshPersistedPrepopKeepsCheckpointWhenUpToDate() {
+    final AssessmentDetail prepop =
+        new AssessmentDetail()
+            .name("meansAssessment_PREPOP")
+            .caseReferenceNumber("300001749512")
+            .checkpoint(new uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail())
+            .entityTypes(
+                new ArrayList<>(
+                    List.of(
+                        new AssessmentEntityTypeDetail()
+                            .name("global")
+                            .entities(
+                                new ArrayList<>(
+                                    List.of(
+                                        new AssessmentEntityDetail()
+                                            .name("300001749512")
+                                            .attributes(
+                                                new ArrayList<>(
+                                                    List.of(
+                                                        new AssessmentAttributeDetail()
+                                                            .name("POST_CODE")
+                                                            .value("SW1A 1AA"))))))))));
+
+    when(assessmentMapper.globalToAttributeList(any()))
+        .thenReturn(List.of(new AssessmentAttributeDetail().name("POST_CODE").value("SW1A 1AA")));
+
+    assessmentService.refreshPersistedPrepop(prepop, AssessmentRulebase.MEANS, null);
+
+    assertNotNull(prepop.getCheckpoint());
+  }
+
+  @Test
   void testGetAssessmentOpponentMappingContexts() {
     final ApplicationDetail application = new ApplicationDetail();
     final OpponentDetail opponent1 = new OpponentDetail().title("MR");
