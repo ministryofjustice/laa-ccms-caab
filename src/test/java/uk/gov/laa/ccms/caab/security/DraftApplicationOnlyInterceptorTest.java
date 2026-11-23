@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,8 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -37,6 +40,7 @@ import org.springframework.web.util.pattern.PathPattern;
 import org.springframework.web.util.pattern.PathPatternParser;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 
 @DisplayName("Draft application only interceptor")
@@ -105,6 +109,49 @@ class DraftApplicationOnlyInterceptorTest {
   void refusesSubmittedCaseWithoutActiveCase() throws Exception {
     session.setAttribute(CASE, new ApplicationDetail().caseReferenceNumber("SUBMITTED"));
 
+    assertThatThrownBy(() -> interceptor.preHandle(request, response, new Object()))
+        .isInstanceOf(AccessDeniedException.class);
+  }
+
+  private static ActiveCase amendment() {
+    return ActiveCase.builder().caseReferenceNumber("AMENDED").amendment(true).build();
+  }
+
+  private static void loggedInWith(String... functions) {
+    SecurityContextHolder.getContext()
+        .setAuthentication(new TestingAuthenticationToken("user", null, functions));
+  }
+
+  @AfterEach
+  void clearLogin() {
+    SecurityContextHolder.clearContext();
+  }
+
+  @Test
+  @DisplayName(
+      "An amendment is let through for a user who holds VC, as its validation corrections"
+          + " use these pages")
+  void allowsAmendmentWithViewCaseDetails() throws Exception {
+    session.setAttribute(ACTIVE_CASE, amendment());
+    loggedInWith(UserRole.VIEW_CASE_DETAILS.getCode());
+
+    assertThat(interceptor.preHandle(request, response, new Object())).isTrue();
+  }
+
+  @Test
+  @DisplayName("An amendment is refused for a user without VC")
+  void refusesAmendmentWithoutViewCaseDetails() throws Exception {
+    session.setAttribute(ACTIVE_CASE, amendment());
+    loggedInWith(UserRole.AMEND_CASE.getCode());
+
+    assertThatThrownBy(() -> interceptor.preHandle(request, response, new Object()))
+        .isInstanceOf(AccessDeniedException.class);
+  }
+
+  @Test
+  @DisplayName(
+      "With no active case at all, nothing shows a draft is being edited, so it is refused")
+  void refusesWithoutActiveCase() {
     assertThatThrownBy(() -> interceptor.preHandle(request, response, new Object()))
         .isInstanceOf(AccessDeniedException.class);
   }

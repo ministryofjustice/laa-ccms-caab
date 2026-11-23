@@ -62,6 +62,7 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
@@ -121,7 +122,9 @@ public class AssessmentControllerTest {
         standaloneSetup(assessmentController).setConversionService(conversionService).build();
   }
 
-  private static final UserDetail userDetails = buildUserDetail();
+  /** Holds VC, which a means or merits assessment of an amendment or reassessment needs. */
+  private static final UserDetail userDetails =
+      buildUserDetail().functions(List.of(UserRole.VIEW_CASE_DETAILS.getCode()));
 
   /** Holds what /case/billing/bill requires, so the bill interview is reachable. */
   private static final UserDetail billUser =
@@ -975,6 +978,32 @@ public class AssessmentControllerTest {
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals("Failed to retrieve assessment details", exception.getCause().getMessage());
+  }
+
+  @Test
+  public void assessmentGet_amendmentMeans_refusedWithoutViewCaseDetails() throws Exception {
+    when(applicationService.getApplication(anyString()))
+        .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date()).amendment(true)));
+
+    assertRefusedLikeTheRouteRules(
+        get("/application/assessments")
+            .param("assessment", "means")
+            .param("invoked-from", "summary")
+            .sessionAttr(USER_DETAILS, buildUserDetail().functions(List.of()))
+            .sessionAttr(APPLICATION_ID, "applicationId"));
+  }
+
+  @Test
+  public void assessmentGet_meansReassessment_refusedWithoutViewCaseDetails() throws Exception {
+    when(applicationService.getApplication(anyString()))
+        .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
+
+    assertRefusedLikeTheRouteRules(
+        get("/application/assessments")
+            .param("assessment", "means")
+            .param("invoked-from", "CCMS_MNA05")
+            .sessionAttr(USER_DETAILS, buildUserDetail().functions(List.of()))
+            .sessionAttr(APPLICATION_ID, "applicationId"));
   }
 
   /** The refusal is handled as the route rules handle one: back to a page, with the message. */

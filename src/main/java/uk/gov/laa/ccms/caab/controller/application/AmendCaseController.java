@@ -154,6 +154,7 @@ public class AmendCaseController {
         evidenceMapper.toEvidenceRequiredList(evidenceRequiredLookups, uploadedDocuments);
 
     activeCase.setApplicationId(amendment.getId());
+    activeCase.setAmendment(true);
 
     httpSession.setAttribute(AMEND_CLIENT_ORIGIN, AmendClientOrigin.AMEND_CASE);
     httpSession.setAttribute(APPLICATION, amendment);

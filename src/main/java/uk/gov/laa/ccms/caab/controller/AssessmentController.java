@@ -200,6 +200,18 @@ public class AssessmentController {
             ? resolveBillingCase(session, assessmentRulebase, user)
             : resolveAssessmentApplication(session);
 
+    // A means or merits assessment of an amendment or a means reassessment works on an open case,
+    // which needs VC. The /application form of this URL carries no rule for it.
+    if (!assessmentRulebase.isFinancialAssessment()
+        && (Boolean.TRUE.equals(application.getAmendment())
+            || MEANS_REASSESSMENT_INVOKED_FROM.equals(invokedFrom))
+        && !Optional.ofNullable(user.getFunctions())
+            .orElseGet(List::of)
+            .contains(UserRole.VIEW_CASE_DETAILS.getCode())) {
+      throw new AccessDeniedException(
+          "User does not hold the functions needed to assess an open case");
+    }
+
     // The TDS draft application does not carry a computed default cost limitation, which the OPA
     // prepop maps into DEFAULT_COST_LIMITATION and the merits rulebase needs to resolve its
     // completion goal (ASSESS_COMPLETE). Compute it here before building the prepop.
