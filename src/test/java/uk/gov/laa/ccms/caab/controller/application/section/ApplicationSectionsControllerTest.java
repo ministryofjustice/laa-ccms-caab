@@ -187,6 +187,8 @@ class ApplicationSectionsControllerTest {
                 .sessionAttr("user", new UserDetail()))
         .andExpect(status().isOk())
         .andExpect(
-            model().attribute("activeCase", hasProperty("draftApplication", is(draftApplication))));
+            model().attribute("activeCase", hasProperty("draftApplication", is(draftApplication))))
+        .andExpect(
+            model().attribute("activeCase", hasProperty("amendment", is(!draftApplication))));
   }
 }

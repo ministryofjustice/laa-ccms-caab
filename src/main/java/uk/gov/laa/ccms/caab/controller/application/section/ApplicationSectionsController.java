@@ -76,6 +76,7 @@ public class ApplicationSectionsController {
     final ActiveCase activeCase =
         ActiveCase.builder()
             .draftApplication(!Boolean.TRUE.equals(application.getAmendment()))
+            .amendment(Boolean.TRUE.equals(application.getAmendment()))
             .applicationId(application.getId())
             .caseReferenceNumber(sections.getCaseReferenceNumber())
             .providerId(application.getProviderDetails().getProvider().getId())

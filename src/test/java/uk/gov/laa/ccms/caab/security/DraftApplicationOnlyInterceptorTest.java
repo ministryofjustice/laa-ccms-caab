@@ -133,7 +133,7 @@ class DraftApplicationOnlyInterceptorTest {
           + " use these pages")
   void allowsAmendmentWithViewCaseDetails() throws Exception {
     session.setAttribute(ACTIVE_CASE, amendment());
-    loggedInWith(UserRole.VIEW_CASE_DETAILS.getCode());
+    loggedInWith(UserRole.VIEW_CASE_DETAILS.getCode(), UserRole.VIEW_CLIENT_DETAILS.getCode());
 
     assertThat(interceptor.preHandle(request, response, new Object())).isTrue();
   }
@@ -146,6 +146,31 @@ class DraftApplicationOnlyInterceptorTest {
 
     assertThatThrownBy(() -> interceptor.preHandle(request, response, new Object()))
         .isInstanceOf(AccessDeniedException.class);
+  }
+
+  @Test
+  @DisplayName("An amendment's client details also need CD, as on the amendment pages")
+  void amendmentClientDetailsNeedClientDetailsFunction() throws Exception {
+    session.setAttribute(ACTIVE_CASE, amendment());
+    loggedInWith(UserRole.VIEW_CASE_DETAILS.getCode(), UserRole.AMEND_CASE.getCode());
+
+    assertThatThrownBy(() -> interceptor.preHandle(request, response, new Object()))
+        .isInstanceOf(AccessDeniedException.class);
+
+    loggedInWith(UserRole.VIEW_CASE_DETAILS.getCode(), UserRole.VIEW_CLIENT_DETAILS.getCode());
+    assertThat(interceptor.preHandle(request, response, new Object())).isTrue();
+  }
+
+  @Test
+  @DisplayName("An amendment's other corrections need only VC")
+  void amendmentProviderDetailsNeedOnlyViewCaseDetails() throws Exception {
+    session.setAttribute(ACTIVE_CASE, amendment());
+    loggedInWith(UserRole.VIEW_CASE_DETAILS.getCode());
+    MockHttpServletRequest providerDetails =
+        new MockHttpServletRequest("POST", "/application/sections/provider-details");
+    providerDetails.setSession(session);
+
+    assertThat(interceptor.preHandle(providerDetails, response, new Object())).isTrue();
   }
 
   @Test
