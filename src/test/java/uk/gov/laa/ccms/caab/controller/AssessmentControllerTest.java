@@ -294,6 +294,60 @@ public class AssessmentControllerTest {
     verify(applicationService, never()).getApplication(anyString());
   }
 
+  @ParameterizedTest(name = "draft submitted={0}, session case={1} -> {2}")
+  @CsvSource({
+    // caab-api does not persist submitted, so a matching session case supplies it
+    ",1,true",
+    // a value the draft already carries is kept
+    "false,1,false",
+    // a session case for another case reference must not supply it
+    ",2,"
+  })
+  void assessmentGet_amendment_takesSubmittedFlagFromMatchingSessionCase(
+      final Boolean draftSubmitted, final String sessionCaseReference, final Boolean expected)
+      throws Exception {
+    final ApplicationDetail draft = buildApplicationDetail(1, true, new Date());
+    draft.setSubmitted(draftSubmitted);
+    when(applicationService.getApplication(anyString())).thenReturn(Mono.just(draft));
+
+    final ApplicationDetail sessionCase =
+        new ApplicationDetail().caseReferenceNumber(sessionCaseReference).submitted(true);
+
+    when(contextSecurityUtil.createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()))
+        .thenReturn("contextToken");
+    when(clientService.getClient(anyString())).thenReturn(Mono.just(new ClientDetail()));
+
+    final AssessmentDetail assessmentDetail = buildAssessmentDetail(new Date());
+    assessmentDetail.setId(1L);
+    when(assessmentService.getAssessments(any(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessmentDetail)));
+
+    mockMvc
+        .perform(
+            get("/amendments/assessments")
+                .param("assessment", "merits")
+                .param("invoked-from", "summary")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(APPLICATION_ID, "applicationId")
+                .sessionAttr(CASE, sessionCase)
+                .sessionAttr(ACTIVE_CASE, activeCase))
+        .andExpect(status().isOk());
+
+    final ArgumentCaptor<ApplicationDetail> captor =
+        ArgumentCaptor.forClass(ApplicationDetail.class);
+    verify(assessmentService)
+        .startAssessment(captor.capture(), any(), any(), any(), eq(false), isNull());
+    assertEquals(expected, captor.getValue().getSubmitted());
+  }
+
   @Test
   public void assessmentGet_meansReassessment_rejectsStaleSessionApplication() {
     // A session application left over from a different case must not be used.
