@@ -84,6 +84,82 @@ class SecurityEventsEndToEndTest {
   }
 
   @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings = {"submit", "discharge"})
+  void outcomeSubmissionRoutesRequireSubmitOutcomeAndCsrf(String destination) throws Exception {
+    final String path = "/case/outcome-and-awards/" + destination;
+    final var csrf =
+        org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+            .csrf();
+    // An outcome is submitted from an open case, so VC is held alongside SUBOUT and POD.
+    final var submitter =
+        user("jane")
+            .authorities(
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("VC"),
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("SUBOUT"),
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("POD"));
+    // A refused page load is returned to a page the user may see, so it redirects.
+    mockMvc
+        .perform(post(path).with(user("jane").authorities()).with(csrf))
+        .andExpect(
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl(
+                "/home"));
+    mockMvc
+        .perform(
+            post(path)
+                .with(submitter)
+                .with(
+                    org.springframework.security.test.web.servlet.request
+                        .SecurityMockMvcRequestPostProcessors.csrf()
+                        .useInvalidToken()))
+        .andExpect(
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.status()
+                .isForbidden());
+    // This harness has no controller: reaching 404 proves the security chain allowed the request.
+    mockMvc
+        .perform(post(path).with(submitter).with(csrf))
+        .andExpect(
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.status()
+                .isNotFound());
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "submit, SUBOUT, 302",
+    "submit, SUBOUT PO, 404",
+    "submit, POD, 302",
+    "submit, VO, 302",
+    "submit, SUBOUT POD, 404",
+    "discharge, SUBOUT, 302",
+    "discharge, SUBOUT PO, 302",
+    "discharge, POD, 302",
+    "discharge, VO, 302",
+    "discharge, SUBOUT POD, 404"
+  })
+  void outcomeJourneyEnforcesLegacyPermissionsForGetAndPost(
+      String destination, String functions, int expectedStatus) throws Exception {
+    // Outcome pages are reached from an open case, so every user here holds VC; the outcome flow
+    // also needs PO or POD. A refused page load redirects (302) rather than returning a 403.
+    final var authorities =
+        java.util.stream.Stream.concat(
+                java.util.stream.Stream.of("VC"), java.util.Arrays.stream(functions.split(" ")))
+            .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
+            .toList();
+    final String path = "/case/outcome-and-awards/" + destination;
+    for (final var request : List.of(get(path), post(path))) {
+      mockMvc
+          .perform(
+              request
+                  .with(user("jane").authorities(authorities))
+                  .with(
+                      org.springframework.security.test.web.servlet.request
+                          .SecurityMockMvcRequestPostProcessors.csrf()))
+          .andExpect(
+              org.springframework.test.web.servlet.result.MockMvcResultMatchers.status()
+                  .is(expectedStatus));
+    }
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
   @org.junit.jupiter.params.provider.CsvSource({
     "/notifications/234/attachments/567/download,ATT,false",
     "/notifications/234/attachments/567/download,UPLOAD_EVIDENCE,true",

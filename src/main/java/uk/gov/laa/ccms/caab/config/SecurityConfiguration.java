@@ -291,6 +291,12 @@ public class SecurityConfiguration {
         .access(caseAction(UserRole.VIEW_CASE_BILL, UserRole.ENTER_UNDERTAKING))
         .requestMatchers("/case/billing")
         .access(caseAction(UserRole.VIEW_CASE_BILL))
+        // Submitting an outcome needs SUBOUT; its discharge page also needs POD, as in the legacy
+        // PUI.
+        .requestMatchers("/case/outcome-and-awards/discharge")
+        .access(outcomeAction(UserRole.SUBMIT_CASE_OUTCOME, UserRole.REQUEST_CASE_DISCHARGE))
+        .requestMatchers("/case/outcome-and-awards/submit")
+        .access(outcomeAction(UserRole.SUBMIT_CASE_OUTCOME))
         .requestMatchers("/case/outcome-and-awards/proceeding/*/outcome/clear")
         .access(outcomeAction(UserRole.CLEAR_OUTCOME))
         .requestMatchers("/case/outcome-and-awards/proceeding/*/outcome/**")

@@ -333,6 +333,18 @@ class UserFunctionAuthorizationTest {
             UserRole.CLEAR_OUTCOME,
             UserRole.VIEW_CASE_DETAILS,
             UserRole.REQUEST_CASE_DISCHARGE),
+        route(
+            "POST",
+            "/case/outcome-and-awards/submit",
+            UserRole.SUBMIT_CASE_OUTCOME,
+            UserRole.VIEW_CASE_DETAILS,
+            UserRole.RECORD_OUTCOME),
+        route(
+            "GET",
+            "/case/outcome-and-awards/discharge",
+            UserRole.SUBMIT_CASE_OUTCOME,
+            UserRole.VIEW_CASE_DETAILS,
+            UserRole.REQUEST_CASE_DISCHARGE),
         route("GET", "/case/overview", UserRole.VIEW_CASE_DETAILS),
         route("GET", "/application/proceedings/scope-limitations/confirm", UserRole.ADD_PROCEEDING),
         route(
