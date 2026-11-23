@@ -77,8 +77,9 @@ public class PartyListService {
    * @param providerId the provider owning the case
    * @param awardPath the award type's URL path segment
    * @param awardId the award parties are being added to
-   * @param createdEbsIds EBS ids of opponents already created and linked to this award; needed
-   *     because the CAAB API replaces a created opponent's EBS id with a synthetic one
+   * @param createdEbsIds EBS ids of opponents created and linked to this award earlier in the same
+   *     session, closing the small window before the CAAB API's own record of the link (keyed on
+   *     the opponent's real EBS id) is visible to a subsequent request, e.g. a rapid double-submit
    * @return the candidates, in case opponent order, without duplicates
    * @throws CaabApplicationException if a persisted draft cannot be reloaded
    */
