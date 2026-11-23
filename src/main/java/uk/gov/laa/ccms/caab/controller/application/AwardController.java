@@ -751,18 +751,17 @@ public class AwardController {
             user.getProvider().getId().intValue(),
             awardPath,
             awardId);
+    final var party = award.parties().stream().filter(p -> partyId.equals(p.id())).findFirst();
+    if (party.isEmpty()) {
+      log.info("Party {} is not linked to {} award {}", partyId, awardPath, awardId);
+      return "redirect:/case/outcome-and-awards/" + awardPath + "/" + awardId + "/liable-parties";
+    }
 
     model.addAttribute("award", award);
     model.addAttribute("awardPath", awardPath);
     model.addAttribute("awardId", awardId);
     model.addAttribute("partyId", partyId);
-    model.addAttribute(
-        "partyName",
-        award.parties().stream()
-            .filter(p -> p.id().equals(partyId))
-            .findFirst()
-            .map(LiablePartyDisplay::name)
-            .orElse("Unknown Party"));
+    model.addAttribute("partyName", party.map(LiablePartyDisplay::name).orElse(null));
 
     return "application/remove-party-confirmation-screen";
   }

@@ -167,6 +167,19 @@ class LiablePartiesTemplateRenderTest {
   }
 
   @Test
+  void partyRemovalFallsBackToUnavailableMessageWhenNameIsMissing() throws Exception {
+    final String html =
+        mockMvc
+            .perform(get("/test/remove-party").param("named", "false"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    assertThat(html).contains("Party details unavailable").doesNotContain("null");
+  }
+
+  @Test
   void errorSummaryLinkTargetsTheFirstSelectableCheckbox() throws Exception {
     assertThat(
             renderPartyList(
@@ -264,11 +277,12 @@ class LiablePartiesTemplateRenderTest {
   @Controller
   static class HarnessController {
     @GetMapping("/test/remove-party")
-    String displayRemoveParty(final Model model) {
+    String displayRemoveParty(
+        @RequestParam(defaultValue = "true") boolean named, final Model model) {
       model.addAttribute("awardPath", "land");
       model.addAttribute("awardId", 7);
       model.addAttribute("partyId", 101);
-      model.addAttribute("partyName", "Jane Smith");
+      model.addAttribute("partyName", named ? "Jane Smith" : null);
       model.addAttribute("user", Map.of("functions", List.of()));
       return "application/remove-party-confirmation-screen";
     }

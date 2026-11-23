@@ -212,6 +212,21 @@ class AwardControllerTest {
     }
 
     @Test
+    void removePartyConfirmationRedirectsWhenPartyIsNotOnAward() {
+      final var award =
+          new LiablePartiesDisplay("LAND", "Property", BigDecimal.TEN, false, false, List.of());
+      when(caseOutcomeService.getLiablePartiesDisplay("300000001", 123, "land", 7))
+          .thenReturn(award);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/999/remove")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasRedirectedUrl("/case/outcome-and-awards/land/7/liable-parties");
+    }
+
+    @Test
     void confirmRemovePartyUsesAwardContextAndRedirectsToLiableParties() {
       assertThat(
               mockMvc.perform(

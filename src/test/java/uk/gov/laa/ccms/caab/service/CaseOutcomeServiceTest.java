@@ -139,7 +139,7 @@ class CaseOutcomeServiceTest {
   }
 
   @Test
-  void removePartyDoesNotDeleteWhenLinkIsNotOnSelectedAward() {
+  void removePartyTreatsAlreadyRemovedLinkAsSuccess() {
     final var award =
         new CostAwardDetail()
             .id(7)
@@ -149,10 +149,26 @@ class CaseOutcomeServiceTest {
         .when(caseOutcomeService)
         .getCaseOutcome("caseRef", 123);
 
+    caseOutcomeService.removePartyFromAward("caseRef", 123, "cost-award", 7, 999, "user1");
+
+    verifyNoMoreInteractions(caabApiClient);
+  }
+
+  @Test
+  void removePartyFailsWhenLinkHasNoOpponentId() {
+    final var award =
+        new CostAwardDetail()
+            .id(7)
+            .awardType("COST")
+            .liableParties(List.of(new LiablePartyDetail().id(101)));
+    doReturn(Optional.of(new CaseOutcomeDetail().id(42).costAwards(List.of(award))))
+        .when(caseOutcomeService)
+        .getCaseOutcome("caseRef", 123);
+
     assertThrows(
         CaabApplicationException.class,
         () ->
-            caseOutcomeService.removePartyFromAward("caseRef", 123, "cost-award", 7, 999, "user1"));
+            caseOutcomeService.removePartyFromAward("caseRef", 123, "cost-award", 7, 101, "user1"));
     verifyNoMoreInteractions(caabApiClient);
   }
 
