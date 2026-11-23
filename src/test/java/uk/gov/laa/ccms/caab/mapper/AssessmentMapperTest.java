@@ -382,6 +382,38 @@ class AssessmentMapperTest {
   }
 
   @Test
+  @DisplayName("LEAD_PROCEEDING_CHANGED is false when the application has never recorded a change")
+  void leadProceedingChanged_unset_isFalse() {
+    context.getApplication().setLeadProceedingChanged(null);
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.LEAD_PROCEEDING_CHANGED, "false");
+  }
+
+  @Test
+  @DisplayName("NEW_APPL_OR_AMENDMENT is APPLICATION for an amendment to a submitted application")
+  void newApplOrAmendment_amendmentToSubmittedApplication_isApplication() {
+    context.getApplication().setAmendment(true);
+    context.getApplication().setSubmitted(true);
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.NEW_APPL_OR_AMENDMENT, "APPLICATION");
+  }
+
+  @Test
+  @DisplayName("NEW_APPL_OR_AMENDMENT is AMENDMENT for an amendment to a case")
+  void newApplOrAmendment_amendmentToCase_isAmendment() {
+    context.getApplication().setAmendment(true);
+    context.getApplication().setSubmitted(null);
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.NEW_APPL_OR_AMENDMENT, "AMENDMENT");
+  }
+
+  @Test
   public void shouldReturnCorrectOpponentOpaInstanceMappingId() {
     final OpponentDetail opponent = new OpponentDetail().id(123);
     final String expectedOpaInstanceMappingId = "OPPONENT_123";
@@ -432,7 +464,7 @@ class AssessmentMapperTest {
     assertContainsAttribute(attributes, AssessmentAttribute.LAR_SCOPE_FLAG, "true");
     assertContainsAttribute(attributes, AssessmentAttribute.LEAD_PROCEEDING_CHANGED, "true");
     assertContainsAttribute(attributes, AssessmentAttribute.MARITIAL_STATUS, "status");
-    assertContainsAttribute(attributes, AssessmentAttribute.NEW_APPL_OR_AMENDMENT, "AMENDMENT");
+    assertContainsAttribute(attributes, AssessmentAttribute.NEW_APPL_OR_AMENDMENT, "APPLICATION");
     assertContainsAttribute(attributes, AssessmentAttribute.NI_NO, "nino");
     assertContainsAttribute(attributes, AssessmentAttribute.POA_OR_BILL_FLAG, "N/A");
     assertContainsAttribute(attributes, AssessmentAttribute.POST_CODE, "clientpc");

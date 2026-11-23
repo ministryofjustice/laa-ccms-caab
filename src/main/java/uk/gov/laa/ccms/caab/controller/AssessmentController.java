@@ -208,6 +208,7 @@ public class AssessmentController {
     // DEVOLVED_POWERS_CONTRACT_FLAG. Enrich them from the EBS case before building the prepop.
     if (Boolean.TRUE.equals(application.getAmendment())) {
       applicationService.enrichDevolvedPowersFromEbs(application, user);
+      applySubmittedApplicationFlag(session, application);
     }
 
     // A reassessment is always assessed as substantive, whatever the application type on the draft
@@ -392,6 +393,26 @@ public class AssessmentController {
    * @param session the HTTP session
    * @return the application to prepopulate the assessment from
    */
+  /**
+   * Copies the case's "submitted application" flag (all its proceedings still draft) onto the
+   * amendment draft, which caab-api does not persist. The merits prepop needs it to send
+   * NEW_APPL_OR_AMENDMENT as APPLICATION for an application that is not yet a case, as old PUI does
+   * from the session case.
+   *
+   * @param session the session holding the case being amended
+   * @param application the amendment draft
+   */
+  private void applySubmittedApplicationFlag(
+      final HttpSession session, final ApplicationDetail application) {
+    final ApplicationDetail currentCase = (ApplicationDetail) session.getAttribute(CASE);
+    if (application.getSubmitted() == null
+        && currentCase != null
+        && Objects.equals(
+            currentCase.getCaseReferenceNumber(), application.getCaseReferenceNumber())) {
+      application.setSubmitted(currentCase.getSubmitted());
+    }
+  }
+
   private ApplicationDetail resolveAssessmentApplication(final HttpSession session) {
     if (session.getAttribute(APPLICATION_ID) != null) {
       final String applicationId = String.valueOf(session.getAttribute(APPLICATION_ID));

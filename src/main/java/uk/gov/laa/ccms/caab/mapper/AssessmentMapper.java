@@ -969,7 +969,7 @@ public interface AssessmentMapper {
   }
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "value", source = "application.leadProceedingChanged")
+  @Mapping(target = "value", source = "application.leadProceedingChanged", defaultValue = "false")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)

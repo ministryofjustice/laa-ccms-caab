@@ -103,13 +103,18 @@ public final class ApplicationUtil {
   }
 
   /**
-   * Determines if the application is a new application or an amendment.
+   * Determines if the application is a new application or an amendment. An amendment to a submitted
+   * application that is not yet a case (all its proceedings still draft) counts as an application,
+   * matching old PUI's Case.getNewApplicationOrAmendment.
    *
    * @param application the application details
    * @return a string determining if the application is an application or an amendment
    */
   public static String getNewApplicationOrAmendment(final ApplicationDetail application) {
-    return Boolean.TRUE.equals(application.getAmendment()) ? "AMENDMENT" : "APPLICATION";
+    return Boolean.TRUE.equals(application.getAmendment())
+            && !Boolean.TRUE.equals(application.getSubmitted())
+        ? "AMENDMENT"
+        : "APPLICATION";
   }
 
   /**
