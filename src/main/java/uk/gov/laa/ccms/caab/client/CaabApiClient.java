@@ -28,8 +28,10 @@ import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.caab.model.BillCreate;
 import uk.gov.laa.ccms.caab.model.Bills;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeCostsRequest;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeDischargeRequest;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
@@ -906,6 +908,51 @@ public class CaabApiClient {
         .exchangeToMono(CaabApiClient::getIdResponse)
         .onErrorResume(
             e -> caabApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_CASE_OUTCOME));
+  }
+
+  /** Removes incomplete outcome parties and returns the persisted draft for submission checks. */
+  public Mono<CaseOutcomeDetail> prepareCaseOutcomeSubmission(
+      final Integer id, final String loginId, final CaseOutcomeDetail scope) {
+    return caabApiWebClient
+        .post()
+        .uri("/case-outcomes/{id}/prepare-submission", id)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(scope)
+        .retrieve()
+        .bodyToMono(CaseOutcomeDetail.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiUpdateError(
+                    e, RESOURCE_TYPE_CASE_OUTCOME, "id", String.valueOf(id)));
+  }
+
+  /** Updates scalar outcome costs without recreating the outcome aggregate. */
+  public Mono<Void> updateCaseOutcomeCosts(
+      final Integer id, final String loginId, final CaseOutcomeCostsRequest details) {
+    return updateCaseOutcomeDetails(id, loginId, details, "costs");
+  }
+
+  /** Updates or clears only the discharge fields on the existing outcome. */
+  public Mono<Void> updateCaseOutcomeDischarge(
+      final Integer id, final String loginId, final CaseOutcomeDischargeRequest details) {
+    return updateCaseOutcomeDetails(id, loginId, details, "discharge");
+  }
+
+  private Mono<Void> updateCaseOutcomeDetails(
+      final Integer id, final String loginId, final Object details, final String section) {
+    return caabApiWebClient
+        .put()
+        .uri("/case-outcomes/{id}/{section}", id, section)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(details)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiUpdateError(
+                    e, RESOURCE_TYPE_CASE_OUTCOME, "id", String.valueOf(id)));
   }
 
   /**

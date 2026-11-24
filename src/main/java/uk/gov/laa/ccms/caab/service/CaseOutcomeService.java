@@ -5,6 +5,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FIN
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_LAND;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTHER_ASSET;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,6 +20,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.PreCertificateAndLegalHelpCostsFormData;
 import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualLiablePartyFlow;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
@@ -30,6 +32,7 @@ import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LiablePartiesDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.OpponentMapper;
 import uk.gov.laa.ccms.caab.model.BaseAwardDetail;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeCostsRequest;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
@@ -55,6 +58,32 @@ public class CaseOutcomeService {
   private final LiablePartiesDisplayMapper liablePartiesDisplayMapper;
   private final CostAwardMapper costAwardMapper;
   private final OpponentMapper opponentMapper;
+
+  /** Saves validated costs on Next without replacing the outcome or its children. */
+  public void updatePreCertificateAndLegalHelpCosts(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final PreCertificateAndLegalHelpCostsFormData form,
+      final String loginId) {
+    final CaseOutcomeDetail outcome = requireCaseOutcome(caseReferenceNumber, providerId);
+    final var details =
+        new CaseOutcomeCostsRequest()
+            .caseReferenceNumber(caseReferenceNumber)
+            .providerId(String.valueOf(providerId))
+            .preCertificateCosts(costAmount(form.getPreCertificateCosts()))
+            .legalCosts(costAmount(form.getLegalHelpCosts()))
+            .officeCode(
+                StringUtils.hasText(form.getOfficeCode()) ? form.getOfficeCode().trim() : null)
+            .uniqueFileNo(
+                StringUtils.hasText(form.getUniqueFileNumber())
+                    ? form.getUniqueFileNumber().trim()
+                    : null);
+    caabApiClient.updateCaseOutcomeCosts(outcome.getId(), loginId, details).block();
+  }
+
+  private BigDecimal costAmount(final String value) {
+    return StringUtils.hasText(value) ? new BigDecimal(value.trim()) : BigDecimal.ZERO;
+  }
 
   /** Loads both pages of an editable individual linked to the requested award. */
   public IndividualLiablePartyFlow getIndividualLiableParty(
@@ -138,8 +167,7 @@ public class CaseOutcomeService {
     final var award = requireAward(outcome, awardTypeForPath(awardPath), awardId);
     final var opponents =
         caabApiClient
-            .getAwardLiableParties(
-                requireCaseOutcomeId(outcome, caseReference), award.getAwardType(), awardId)
+            .getAwardLiableParties(outcome.getId(), award.getAwardType(), awardId)
             .blockOptional()
             .orElseThrow(() -> new CaabApplicationException("Failed to retrieve award parties"));
     final var opponent =
@@ -200,12 +228,7 @@ public class CaseOutcomeService {
     final var opponent = opponentMapper.toIndividualOpponent(contact);
     opponentMapper.updateIndividualOtherDetails(other, opponent);
     caabApiClient
-        .createAwardLiableParty(
-            requireCaseOutcomeId(outcome, caseReference),
-            award.getAwardType(),
-            awardId,
-            loginId,
-            opponent)
+        .createAwardLiableParty(outcome.getId(), award.getAwardType(), awardId, loginId, opponent)
         .block();
   }
 
@@ -218,19 +241,21 @@ public class CaseOutcomeService {
       final String loginId) {
     final CaseOutcomeDetail caseOutcome = requireCaseOutcome(caseReferenceNumber, providerId);
     requireAward(caseOutcome, awardType, awardId);
-    caabApiClient
-        .deleteAward(
-            requireCaseOutcomeId(caseOutcome, caseReferenceNumber), awardType, awardId, loginId)
-        .block();
+    caabApiClient.deleteAward(caseOutcome.getId(), awardType, awardId, loginId).block();
   }
 
-  private CaseOutcomeDetail requireCaseOutcome(
+  /** Retrieves an existing provider-scoped outcome with the id required by its editing journeys. */
+  public CaseOutcomeDetail requireCaseOutcome(
       final String caseReferenceNumber, final Integer providerId) {
-    return getCaseOutcome(caseReferenceNumber, providerId)
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    "No case outcome exists for case reference number: " + caseReferenceNumber));
+    final CaseOutcomeDetail outcome =
+        getCaseOutcome(caseReferenceNumber, providerId)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "No case outcome exists for case reference number: "
+                            + caseReferenceNumber));
+    requireCaseOutcomeId(outcome, caseReferenceNumber);
+    return outcome;
   }
 
   private BaseAwardDetail requireAward(
@@ -372,9 +397,7 @@ public class CaseOutcomeService {
     if (opponentIds.isEmpty() && opponents.isEmpty()) {
       return;
     }
-    final Integer caseOutcomeId =
-        requireCaseOutcomeId(
-            requireCaseOutcome(caseReferenceNumber, providerId), caseReferenceNumber);
+    final Integer caseOutcomeId = requireCaseOutcome(caseReferenceNumber, providerId).getId();
     final String awardType = awardTypeForPath(awardPath);
     for (final Integer opponentId : opponentIds) {
       caabApiClient
@@ -673,14 +696,7 @@ public class CaseOutcomeService {
       final String loginId) {
     final CaseOutcomeDetail outcome = requireCaseOutcome(caseReferenceNumber, providerId);
     requireAward(outcome, awardType, awardId);
-    caabApiClient
-        .upsertRecovery(
-            requireCaseOutcomeId(outcome, caseReferenceNumber),
-            awardType,
-            awardId,
-            loginId,
-            recovery)
-        .block();
+    caabApiClient.upsertRecovery(outcome.getId(), awardType, awardId, loginId, recovery).block();
   }
 
   /**
