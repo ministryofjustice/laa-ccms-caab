@@ -126,6 +126,8 @@ public class AssessmentService {
   private static final DateTimeFormatter ASSESSMENT_DATE_FORMATTER =
       DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
+  private static final long MINIMUM_START_TO_SUBMIT_MILLIS = 5_000L;
+
   // Prepopulated global inputs that were previously sent empty or with a different value from old
   // PUI, so prepops persisted before that was corrected must be refreshed when reused.
   private static final Set<String> REFRESHED_GLOBAL_INPUTS =
@@ -1094,6 +1096,11 @@ public class AssessmentService {
    * the next start loads the saved answers with refreshed inputs. A COMPLETE submit keeps its
    * checkpoint so the interview can still be viewed.
    *
+   * <p>Only an assessment a submit has saved qualifies. Every start builds a new working assessment
+   * that is INCOMPLETE until it is submitted, so an old confirmation page refreshed after the
+   * interview was reopened finds one that no submit has touched, and the checkpoint then holds the
+   * answers given since. Those exist nowhere else, so it is left alone.
+   *
    * @param assessmentRulebase the rulebase that was submitted
    * @param submittedAssessment the assessment as saved by the submit
    * @param loginId the login id recorded against the update
@@ -1103,7 +1110,8 @@ public class AssessmentService {
       final AssessmentDetail submittedAssessment,
       final String loginId) {
     if (assessmentRulebase.isFinancialAssessment()
-        || !INCOMPLETE.getStatus().equalsIgnoreCase(submittedAssessment.getStatus())) {
+        || !INCOMPLETE.getStatus().equalsIgnoreCase(submittedAssessment.getStatus())
+        || !wasSavedBySubmit(submittedAssessment)) {
       return;
     }
 
@@ -1130,6 +1138,21 @@ public class AssessmentService {
     assessmentApiClient
         .updateAssessment(prepopAssessment.getId(), prepopAssessment, loginId)
         .block();
+  }
+
+  /**
+   * Whether the assessment was saved some time after it was created, which only a submit does. A
+   * submit follows a whole interview, so a save within moments of creation is the creation itself.
+   * Unknown audit dates count as not submitted: leaving a checkpoint in place costs a stale resume,
+   * dropping the wrong one costs the provider's answers.
+   */
+  private static boolean wasSavedBySubmit(final AssessmentDetail assessment) {
+    final AuditDetail audit = assessment.getAuditDetail();
+    return audit != null
+        && audit.getCreated() != null
+        && audit.getLastSaved() != null
+        && audit.getLastSaved().getTime() - audit.getCreated().getTime()
+            >= MINIMUM_START_TO_SUBMIT_MILLIS;
   }
 
   /**
@@ -1614,8 +1637,12 @@ public class AssessmentService {
       // first creation only (edits persist on re-entry), EBS-sourced values on every start. The
       // merge only fills gaps - an attribute already holding a value is left alone - so a later
       // start tops up blanks rather than refreshing. The working assessment gets both.
-      final List<CaseAssessmentDetail> ebsAssessmentData =
+      final List<CaseAssessmentDetail> fetchedEbsData =
           fetchEbsAssessmentData(referenceId, assessmentRulebase);
+      final List<CaseAssessmentDetail> ebsAssessmentData =
+          !assessmentRulebase.isFinancialAssessment() && !isReassessment
+              ? withoutNonReusableAttributes(fetchedEbsData, assessmentRulebase)
+              : fetchedEbsData;
       if (createdNewPrepopAssessment) {
         mergeEbsAssessmentData(prepopAssessment, ebsAssessmentData, true);
       }
@@ -1642,9 +1669,13 @@ public class AssessmentService {
     // standalone means reassessment (StartOpaReassessment) applies no such strip - it reuses the
     // prior EBS data - so the strip is skipped here for the reassessment journey, otherwise the
     // EBS-seeded means inputs would be removed and the means goal (CLIENT_PROV_LA) could not
-    // resolve.
+    // resolve. An existing prepop holds this amendment's own saved answers, which the next start
+    // loads once its checkpoint is released, so only the inherited EBS rows (filtered above) and
+    // a freshly built prepop are stripped.
     if (prepopulateFromEbs && !assessmentRulebase.isFinancialAssessment() && !isReassessment) {
-      removeNonReusableAttributes(prepopAssessment, assessmentRulebase);
+      if (createdNewPrepopAssessment) {
+        removeNonReusableAttributes(prepopAssessment, assessmentRulebase);
+      }
       removeNonReusableAttributes(assessment, assessmentRulebase);
     }
 
@@ -1761,6 +1792,15 @@ public class AssessmentService {
                     entity.getAttributes().stream()
                         .filter(attribute -> !nonReusableAttributes.contains(attribute.getName()))
                         .collect(Collectors.toCollection(ArrayList::new))));
+  }
+
+  private static List<CaseAssessmentDetail> withoutNonReusableAttributes(
+      final List<CaseAssessmentDetail> rows, final AssessmentRulebase assessmentRulebase) {
+    final Set<String> nonReusableAttributes =
+        AssessmentReuseUtil.getNonReusableAttributes(assessmentRulebase);
+    return rows.stream()
+        .filter(row -> !nonReusableAttributes.contains(row.getAttributeName()))
+        .toList();
   }
 
   void prepopulateAssessmentFromEbs(

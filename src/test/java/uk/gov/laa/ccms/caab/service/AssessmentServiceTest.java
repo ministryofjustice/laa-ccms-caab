@@ -46,12 +46,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -95,6 +98,7 @@ import uk.gov.laa.ccms.data.model.AssessmentSummaryAttributeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.CaseAssessmentDetail;
+import uk.gov.laa.ccms.data.model.CaseAssessmentDetails;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -1423,11 +1427,66 @@ public class AssessmentServiceTest {
         new AssessmentDetail()
             .providerId("26517")
             .caseReferenceNumber("300001749512")
-            .status("INCOMPLETE"),
+            .status("INCOMPLETE")
+            .auditDetail(savedAfterCreation(600_000L)),
         "login");
 
     assertNull(prepop.getCheckpoint());
     verify(assessmentApiClient).updateAssessment(7L, prepop, "login");
+  }
+
+  @ParameterizedTest(name = "saved {0}ms after creation -> checkpoint kept")
+  @ValueSource(longs = {0L, 4_999L})
+  @DisplayName(
+      "clearCheckpointAfterIncompleteSubmit keeps the checkpoint of an assessment no submit has "
+          + "saved, such as the one a reopened interview started")
+  void clearCheckpointAfterIncompleteSubmitKeepsTheCheckpointOfAnUnsubmittedAssessment(
+      final long millisAfterCreation) {
+    assessmentService.clearCheckpointAfterIncompleteSubmit(
+        AssessmentRulebase.MERITS,
+        new AssessmentDetail()
+            .providerId("26517")
+            .caseReferenceNumber("300001749512")
+            .status("INCOMPLETE")
+            .auditDetail(savedAfterCreation(millisAfterCreation)),
+        "login");
+
+    verify(assessmentApiClient, never()).getAssessments(any(), any(), any());
+    verify(assessmentApiClient, never()).updateAssessment(any(), any(), any());
+  }
+
+  @ParameterizedTest(name = "audit {0} -> checkpoint kept")
+  @MethodSource("incompleteAuditDetails")
+  @DisplayName(
+      "clearCheckpointAfterIncompleteSubmit keeps the checkpoint when the audit dates cannot show a "
+          + "submit saved the assessment")
+  void clearCheckpointAfterIncompleteSubmitKeepsTheCheckpointWithoutAuditDates(
+      final String description, final AuditDetail audit) {
+    assessmentService.clearCheckpointAfterIncompleteSubmit(
+        AssessmentRulebase.MEANS,
+        new AssessmentDetail()
+            .providerId("26517")
+            .caseReferenceNumber("300001749512")
+            .status("INCOMPLETE")
+            .auditDetail(audit),
+        "login");
+
+    verify(assessmentApiClient, never()).getAssessments(any(), any(), any());
+    verify(assessmentApiClient, never()).updateAssessment(any(), any(), any());
+  }
+
+  private static Stream<Arguments> incompleteAuditDetails() {
+    return Stream.of(
+        Arguments.of("missing", null),
+        Arguments.of("without created", new AuditDetail().lastSaved(new Date())),
+        Arguments.of("without lastSaved", new AuditDetail().created(new Date())));
+  }
+
+  private static AuditDetail savedAfterCreation(final long millisAfterCreation) {
+    final Date created = new Date(1_700_000_000_000L);
+    return new AuditDetail()
+        .created(created)
+        .lastSaved(new Date(created.getTime() + millisAfterCreation));
   }
 
   @ParameterizedTest(name = "{0} {1} -> checkpoint untouched")
@@ -1929,6 +1988,74 @@ public class AssessmentServiceTest {
     // Only the working assessment is mapped; the unchanged prepop is left as-is.
     verify(assessmentMapper, never()).toAssessmentDetail(eq(existingPrepop), any());
     verify(assessmentMapper, times(1)).toAssessmentDetail(any(), any());
+  }
+
+  @Test
+  @DisplayName(
+      "startNewAssessment keeps the answers an amendment's existing prepop already holds and "
+          + "leaves the do-not-reuse EBS answers out of it")
+  void startNewAssessmentKeepsAnExistingPrepopsOwnDoNotReuseAnswers() {
+    final String caseRef = "CASE-123";
+    final String providerId = String.valueOf(user.getProvider().getId());
+    final String providerAnswer = "ADDPROPERTY_INFER_B_4WP2_52A";
+    final String inheritedAnswer = "ADDPROPERTY_INFER_C_20WP2_1A";
+
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .id(1)
+            .caseReferenceNumber(caseRef)
+            .amendment(true)
+            .applicationType(new ApplicationType().id(APP_TYPE_SUBSTANTIVE))
+            .proceedings(new ArrayList<>())
+            .opponents(new ArrayList<>());
+
+    when(assessmentApiClient.getAssessments(List.of(MEANS.getName()), providerId, caseRef))
+        .thenReturn(just(new AssessmentDetails().content(new ArrayList<>())));
+
+    final AssessmentDetail existingPrepop = globalAssessment(caseRef);
+    existingPrepop
+        .id(99L)
+        .name(AssessmentRulebase.MEANS.getPrePopAssessmentName())
+        .caseReferenceNumber(caseRef)
+        .auditDetail(new AuditDetail().lastSaved(auditDate));
+    existingPrepop
+        .getEntityTypes()
+        .getFirst()
+        .getEntities()
+        .getFirst()
+        .addAttributesItem(new AssessmentAttributeDetail().name(providerAnswer).value("provider"));
+    when(assessmentApiClient.getAssessments(
+            List.of(AssessmentRulebase.MEANS.getPrePopAssessmentName()), providerId, caseRef))
+        .thenReturn(
+            just(new AssessmentDetails().content(new ArrayList<>(List.of(existingPrepop)))));
+
+    when(ebsApiClient.getCaseAssessment(eq(caseRef), any()))
+        .thenReturn(
+            just(
+                new CaseAssessmentDetails()
+                    .assessmentDetails(
+                        List.of(
+                            ebsRow("global", caseRef, inheritedAnswer, "inherited", false),
+                            ebsRow("global", caseRef, "REUSABLE_EBS_ANSWER", "kept", false)))));
+    when(assessmentApiClient.createAssessment(any(), eq(user.getLoginId())))
+        .thenReturn(Mono.empty());
+    when(assessmentApiClient.updateAssessment(any(), any(), eq(user.getLoginId())))
+        .thenReturn(Mono.empty());
+
+    assessmentService.startNewAssessment(
+        AssessmentRulebase.MEANS, application, null, user, false, null, null);
+
+    final List<AssessmentAttributeDetail> attributes =
+        existingPrepop.getEntityTypes().getFirst().getEntities().getFirst().getAttributes();
+    assertEquals(
+        "provider",
+        attributes.stream()
+            .filter(attribute -> providerAnswer.equals(attribute.getName()))
+            .findFirst()
+            .orElseThrow()
+            .getValue());
+    assertTrue(attributes.stream().noneMatch(a -> inheritedAnswer.equals(a.getName())));
+    assertTrue(attributes.stream().anyMatch(a -> "REUSABLE_EBS_ANSWER".equals(a.getName())));
   }
 
   @Test
