@@ -14,6 +14,19 @@ public final class OpponentUtil {
   private static final String OPPONENT_TYPE_ORGANISATION = "ORGANISATION";
   private static final String OPPONENT_TYPE_PERSON = "PERSON";
   public static final String INDIVIDUAL_OPPONENT = "Individual";
+  private static final String EBS_PLACEHOLDER_NOT_AVAILABLE = "Not Available";
+
+  /**
+   * Checks whether a free-text EBS field actually carries a value, treating EBS's own "Not
+   * Available" placeholder (used when the field was never populated) as if it were blank.
+   *
+   * @param value the field value
+   * @return true if the value is present and is not the "Not Available" placeholder
+   */
+  public static boolean hasMeaningfulText(final String value) {
+    return StringUtils.hasText(value)
+        && !EBS_PLACEHOLDER_NOT_AVAILABLE.equalsIgnoreCase(value.trim());
+  }
 
   /**
    * Retrieves the assessment mapping ID for the given opponent detail.
