@@ -2,7 +2,9 @@ package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -30,6 +32,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -190,6 +193,7 @@ class EvidenceSectionControllerTest {
     mockMvc
         .perform(
             post("/%s/evidence/add".formatted(caseContext))
+                .sessionAttr(ACTIVE_CASE, buildActiveCase())
                 .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, user))
@@ -219,6 +223,7 @@ class EvidenceSectionControllerTest {
     mockMvc
         .perform(
             post("/%s/evidence/add".formatted(caseContext))
+                .sessionAttr(ACTIVE_CASE, buildActiveCase())
                 .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, user))
@@ -251,6 +256,7 @@ class EvidenceSectionControllerTest {
     mockMvc
         .perform(
             post("/%s/evidence/add".formatted(caseContext))
+                .sessionAttr(ACTIVE_CASE, buildActiveCase())
                 .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, user))
@@ -293,6 +299,7 @@ class EvidenceSectionControllerTest {
     mockMvc
         .perform(
             post("/%s/evidence/add".formatted(caseContext))
+                .sessionAttr(ACTIVE_CASE, buildActiveCase())
                 .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, user))
@@ -304,6 +311,39 @@ class EvidenceSectionControllerTest {
 
     verify(evidenceMapper).toEvidenceDocumentDetail(formData);
     verify(evidenceService).addDocument(evidenceDocumentDetail, user.getLoginId());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"application", "amendments"})
+  @DisplayName("An upload is filed against the open case, whatever the form says")
+  void postAddEvidenceIgnoresPostedCaseIdentity(String caseContext) throws Exception {
+    final EvidenceUploadFormData formData = buildEvidenceUploadFormData();
+    formData.setCaseReferenceNumber("otherCase");
+    formData.setApplicationOrOutcomeId("999");
+    formData.setProviderId(1);
+    final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
+    when(evidenceService.registerDocument(
+            any(), any(), any(), any(), eq("caseRef"), eq(user.getLoginId()), any()))
+        .thenReturn(Mono.just("238476"));
+    when(evidenceMapper.toEvidenceDocumentDetail(any(EvidenceUploadFormData.class)))
+        .thenReturn(evidenceDocumentDetail);
+    when(evidenceService.addDocument(evidenceDocumentDetail, user.getLoginId()))
+        .thenReturn(Mono.just("1"));
+
+    mockMvc
+        .perform(
+            post("/%s/evidence/add".formatted(caseContext))
+                .sessionAttr(ACTIVE_CASE, buildActiveCase())
+                .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
+                .sessionAttr(EVIDENCE_REQUIRED, List.of(new EvidenceRequired("code", "desc")))
+                .sessionAttr(USER_DETAILS, user))
+        .andExpect(status().is3xxRedirection());
+
+    verify(evidenceService, never())
+        .registerDocument(any(), any(), any(), any(), eq("otherCase"), any(), any());
+    assertEquals("123", formData.getApplicationOrOutcomeId());
+    assertEquals(789, formData.getProviderId());
+    assertEquals(expectedModule(caseContext), formData.getCcmsModule());
   }
 
   @ParameterizedTest

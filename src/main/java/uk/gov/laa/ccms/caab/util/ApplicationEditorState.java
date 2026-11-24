@@ -11,6 +11,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_SCOPE_LIMITATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_PROCEEDINGS_ALLOWED;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_REQUIRED;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.IS_ORIGINAL_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ORIGINAL_PROCEEDING_LOOKUP;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRIOR_AUTHORITY_FLOW_FORM_DATA;
@@ -34,6 +35,7 @@ public final class ApplicationEditorState {
           APPLICATION_OPPONENTS,
           LINKED_CASES,
           EVIDENCE_REQUIRED,
+          EVIDENCE_UPLOAD_FORM_DATA,
           ORIGINAL_PROCEEDING_LOOKUP,
           EDIT_PROCEEDINGS_ALLOWED,
           IS_ORIGINAL_PROCEEDING,

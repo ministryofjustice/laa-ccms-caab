@@ -134,13 +134,8 @@ public class EvidenceSectionController {
       @PathVariable(CASE_CONTEXT) CaseContext context,
       final Model model) {
 
-    // Initialise the form data object.
     final EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
-    evidenceUploadFormData.setApplicationOrOutcomeId(String.valueOf(activeCase.getApplicationId()));
-    evidenceUploadFormData.setCaseReferenceNumber(activeCase.getCaseReferenceNumber());
-    evidenceUploadFormData.setProviderId(activeCase.getProviderId());
-    evidenceUploadFormData.setDocumentSender(userDetail.getLoginId());
-    evidenceUploadFormData.setCcmsModule(resolveCcmsModule(context));
+    bindToActiveCase(evidenceUploadFormData, activeCase, userDetail, context);
 
     model.addAttribute(EVIDENCE_UPLOAD_FORM_DATA, evidenceUploadFormData);
     model.addAttribute(CASE_CONTEXT, context);
@@ -163,11 +158,15 @@ public class EvidenceSectionController {
   public String uploadEvidenceDocument(
       @SessionAttribute(EVIDENCE_REQUIRED) final List<EvidenceRequired> evidenceRequired,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
+      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @ModelAttribute(EVIDENCE_UPLOAD_FORM_DATA)
           final EvidenceUploadFormData evidenceUploadFormData,
       final BindingResult bindingResult,
       @PathVariable(CASE_CONTEXT) CaseContext context,
       Model model) {
+
+    // The document is filed against the open case, whatever the request or a kept form says.
+    bindToActiveCase(evidenceUploadFormData, activeCase, userDetail, context);
 
     // Validate the evidence form data
     evidenceUploadValidator.validate(evidenceUploadFormData, bindingResult);
@@ -375,5 +374,17 @@ public class EvidenceSectionController {
     model.addAttribute(
         "validExtensions", getCommaDelimitedString(evidenceUploadValidator.getValidExtensions()));
     model.addAttribute("maxFileSize", evidenceUploadValidator.getMaxFileSize());
+  }
+
+  private void bindToActiveCase(
+      final EvidenceUploadFormData evidenceUploadFormData,
+      final ActiveCase activeCase,
+      final UserDetail userDetail,
+      final CaseContext context) {
+    evidenceUploadFormData.setApplicationOrOutcomeId(String.valueOf(activeCase.getApplicationId()));
+    evidenceUploadFormData.setCaseReferenceNumber(activeCase.getCaseReferenceNumber());
+    evidenceUploadFormData.setProviderId(activeCase.getProviderId());
+    evidenceUploadFormData.setDocumentSender(userDetail.getLoginId());
+    evidenceUploadFormData.setCcmsModule(resolveCcmsModule(context));
   }
 }
