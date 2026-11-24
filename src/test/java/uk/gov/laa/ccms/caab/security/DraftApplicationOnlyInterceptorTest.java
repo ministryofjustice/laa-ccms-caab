@@ -15,6 +15,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -159,6 +161,40 @@ class DraftApplicationOnlyInterceptorTest {
 
     loggedInWith(UserRole.VIEW_CASE_DETAILS.getCode(), UserRole.VIEW_CLIENT_DETAILS.getCode());
     assertThat(interceptor.preHandle(request, response, new Object())).isTrue();
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "/application/validate",
+        "/application/submit/summary",
+        "/application/declaration",
+        "/application/abandon",
+        "/application/abandon/confirmed"
+      })
+  @DisplayName("An amendment cannot be submitted or abandoned through the application's pages")
+  void amendmentCannotUseApplicationSubmission(String path) {
+    session.setAttribute(ACTIVE_CASE, amendment());
+    loggedInWith(
+        UserRole.VIEW_CASE_DETAILS.getCode(),
+        UserRole.SUBMIT_APPLICATION.getCode(),
+        UserRole.VIEW_CLIENT_DETAILS.getCode());
+    MockHttpServletRequest submission = new MockHttpServletRequest("POST", path);
+    submission.setSession(session);
+
+    assertThatThrownBy(() -> interceptor.preHandle(submission, response, new Object()))
+        .isInstanceOf(AccessDeniedException.class);
+  }
+
+  @Test
+  @DisplayName("A draft can still be submitted")
+  void draftCanUseApplicationSubmission() throws Exception {
+    session.setAttribute(ACTIVE_CASE, ActiveCase.builder().draftApplication(true).build());
+    MockHttpServletRequest submission =
+        new MockHttpServletRequest("POST", "/application/declaration");
+    submission.setSession(session);
+
+    assertThat(interceptor.preHandle(submission, response, new Object())).isTrue();
   }
 
   @Test

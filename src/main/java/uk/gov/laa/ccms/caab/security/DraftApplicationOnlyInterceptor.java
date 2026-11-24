@@ -6,9 +6,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.util.List;
+import java.util.stream.Stream;
+import org.springframework.http.server.PathContainer;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.util.UrlPathHelper;
+import org.springframework.web.util.pattern.PathPattern;
+import org.springframework.web.util.pattern.PathPatternParser;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.config.UserRole;
 
@@ -40,6 +44,20 @@ public class DraftApplicationOnlyInterceptor implements HandlerInterceptor {
           "/application/abandon",
           "/application/abandon/**");
 
+  /**
+   * Submitting or abandoning through these creates or ends the application's case, so they are for
+   * a draft only: an amendment is validated and submitted under /amendments, under SUBAMD.
+   */
+  private static final List<PathPattern> DRAFT_ONLY_PATHS =
+      Stream.of(
+              "/application/validate",
+              "/application/submit/**",
+              "/application/declaration",
+              "/application/abandon",
+              "/application/abandon/**")
+          .map(PathPatternParser.defaultInstance::parse)
+          .toList();
+
   @Override
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
       throws Exception {
@@ -47,7 +65,9 @@ public class DraftApplicationOnlyInterceptor implements HandlerInterceptor {
     if (session != null
         && session.getAttribute(ACTIVE_CASE) instanceof ActiveCase activeCase
         && (activeCase.isDraftApplication()
-            || (activeCase.isAmendment() && holdsAmendmentFunctions(request)))) {
+            || (activeCase.isAmendment()
+                && !isDraftOnlyPath(request)
+                && holdsAmendmentFunctions(request)))) {
       return true;
     }
     throw new AccessDeniedException(
@@ -58,6 +78,12 @@ public class DraftApplicationOnlyInterceptor implements HandlerInterceptor {
    * The functions the amendment pages' own rules need: VC, as an amendment is made to an open case,
    * and CD as well for its client's details.
    */
+  private static boolean isDraftOnlyPath(HttpServletRequest request) {
+    PathContainer path =
+        PathContainer.parsePath(UrlPathHelper.defaultInstance.getPathWithinApplication(request));
+    return DRAFT_ONLY_PATHS.stream().anyMatch(pattern -> pattern.matches(path));
+  }
+
   private static boolean holdsAmendmentFunctions(HttpServletRequest request) {
     // Decoded, as MVC matches handlers on decoded segments.
     boolean clientDetails =
