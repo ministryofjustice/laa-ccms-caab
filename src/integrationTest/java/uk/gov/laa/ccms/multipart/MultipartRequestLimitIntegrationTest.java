@@ -29,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @SpringBootTest(
     classes = MultipartRequestLimitIntegrationTest.TestApplication.class,
+    properties = "spring.config.import=file:src/main/resources/application.yml",
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class MultipartRequestLimitIntegrationTest {
 
