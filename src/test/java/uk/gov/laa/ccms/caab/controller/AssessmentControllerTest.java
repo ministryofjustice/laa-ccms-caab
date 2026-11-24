@@ -11,6 +11,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -880,6 +881,50 @@ public class AssessmentControllerTest {
         session.getAttribute(
             AssessmentController.assessmentLaunchKey(
                 AssessmentRulebase.MERITS, "caseReferenceNumber")));
+  }
+
+  @Test
+  public void assessmentConfirm_aReleaseThatFailsCanBeRetriedByReloading() throws Exception {
+    final ContextToken contextToken = new ContextToken();
+    contextToken.setRulebaseId(1L);
+    contextToken.setProviderId("providerId");
+    contextToken.setCaseId("caseReferenceNumber");
+    contextToken.setEzgovId("launch-2");
+
+    when(lookupService.getAssessmentSummaryAttributes("PARENT"))
+        .thenReturn(Mono.just(new AssessmentSummaryEntityLookupDetail()));
+    when(lookupService.getAssessmentSummaryAttributes("CHILD"))
+        .thenReturn(Mono.just(new AssessmentSummaryEntityLookupDetail()));
+    when(contextSecurityUtil.createContextToken(anyString())).thenReturn(contextToken);
+
+    final AssessmentDetail assessment = buildAssessmentDetail(new Date());
+    assessment.setId(1L);
+    when(assessmentService.getAssessments(anyList(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessment)));
+    when(assessmentService.getAssessmentSummaryToDisplay(any(), any(), any()))
+        .thenReturn(new ArrayList<>());
+    doThrow(new CaabApplicationException("assessment-api unavailable"))
+        .doNothing()
+        .when(assessmentService)
+        .clearCheckpointAfterIncompleteSubmit(any(), any(), any());
+
+    final MockHttpSession session = confirmSession("launch-2");
+    final String launchKey =
+        AssessmentController.assessmentLaunchKey(AssessmentRulebase.MEANS, "caseReferenceNumber");
+    final MockHttpServletRequestBuilder request =
+        get("/application/assessments/confirm/caseSummary.do")
+            .param("val", "token")
+            .session(session);
+
+    assertThrows(Exception.class, () -> this.mockMvc.perform(request));
+
+    // The checkpoint was not released, so the launch is still the current one.
+    assertEquals("launch-2", session.getAttribute(launchKey));
+
+    this.mockMvc.perform(request).andExpect(status().isOk());
+
+    verify(assessmentService, times(2)).clearCheckpointAfterIncompleteSubmit(any(), any(), any());
+    assertThat(session.getAttribute(launchKey)).isNull();
   }
 
   private static MockHttpSession confirmSession(final String currentLaunchId) {
