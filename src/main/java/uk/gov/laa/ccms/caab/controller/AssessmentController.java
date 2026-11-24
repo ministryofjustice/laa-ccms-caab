@@ -200,14 +200,13 @@ public class AssessmentController {
             ? resolveBillingCase(session, assessmentRulebase, user)
             : resolveAssessmentApplication(session);
 
-    // A means or merits assessment of an amendment or a means reassessment works on an open case,
-    // which needs VC. The /application form of this URL carries no rule for it.
+    // A means or merits assessment of anything but the open draft works on an open case, which
+    // needs VC. The /application form of this URL carries no rule for it, and the request's own
+    // invoked-from cannot be what exempts a case from it.
     if (!assessmentRulebase.isFinancialAssessment()
-        && (Boolean.TRUE.equals(application.getAmendment())
-            || MEANS_REASSESSMENT_INVOKED_FROM.equals(invokedFrom))
-        && !Optional.ofNullable(user.getFunctions())
-            .orElseGet(List::of)
-            .contains(UserRole.VIEW_CASE_DETAILS.getCode())) {
+        && !(!Boolean.TRUE.equals(application.getAmendment())
+            && isOpenDraftOf(session, application.getCaseReferenceNumber()))
+        && !holdsViewCaseDetails(user)) {
       throw new AccessDeniedException(
           "User does not hold the functions needed to assess an open case");
     }
@@ -501,16 +500,25 @@ public class AssessmentController {
     }
     final boolean openDraft =
         !MEANS_REASSESSMENT_INVOKED_FROM.equals(contextToken.getInvokedForm())
-            && session.getAttribute(ACTIVE_CASE) instanceof ActiveCase activeCase
-            && activeCase.isDraftApplication()
-            && Objects.equals(activeCase.getCaseReferenceNumber(), contextToken.getCaseId());
-    if (!openDraft
-        && !Optional.ofNullable(user.getFunctions())
-            .orElseGet(List::of)
-            .contains(UserRole.VIEW_CASE_DETAILS.getCode())) {
+            && isOpenDraftOf(session, contextToken.getCaseId());
+    if (!openDraft && !holdsViewCaseDetails(user)) {
       throw new AccessDeniedException(
           "User does not hold the functions needed to view this assessment");
     }
+  }
+
+  /** Whether the session's active case is the draft application for this case. */
+  private static boolean isOpenDraftOf(
+      final HttpSession session, final String caseReferenceNumber) {
+    return session.getAttribute(ACTIVE_CASE) instanceof ActiveCase activeCase
+        && activeCase.isDraftApplication()
+        && Objects.equals(activeCase.getCaseReferenceNumber(), caseReferenceNumber);
+  }
+
+  private static boolean holdsViewCaseDetails(final UserDetail user) {
+    return Optional.ofNullable(user.getFunctions())
+        .orElseGet(List::of)
+        .contains(UserRole.VIEW_CASE_DETAILS.getCode());
   }
 
   private String getCancelLinkUrl(final CaseContext caseContext, final String invokedFrom) {

@@ -1074,6 +1074,66 @@ public class AssessmentControllerTest {
             .sessionAttr(APPLICATION_ID, "applicationId"));
   }
 
+  @Test
+  public void assessmentGet_retainedReassessmentSession_cannotSkipTheCheckByChangingInvokedFrom()
+      throws Exception {
+    // VC was refreshed away while the reassessment's session was kept. Asking for the same
+    // assessment under another invoked-from must not turn the check off.
+    final ApplicationDetail liveCase = buildApplicationDetail(1, false, new Date());
+    liveCase.setCaseReferenceNumber("CASE123");
+    when(applicationService.getApplication(anyString())).thenReturn(Mono.just(liveCase));
+
+    assertRefusedLikeTheRouteRules(
+        get("/application/assessments")
+            .param("assessment", "means")
+            .param("invoked-from", "summary")
+            .sessionAttr(USER_DETAILS, buildUserDetail().functions(List.of()))
+            .sessionAttr(APPLICATION_ID, "applicationId")
+            .sessionAttr(ACTIVE_CASE, ActiveCase.builder().caseReferenceNumber("CASE123").build()));
+
+    verify(assessmentService, never())
+        .startAssessment(any(), any(), any(), any(), anyBoolean(), any());
+  }
+
+  @Test
+  public void assessmentGet_openDraft_needsNoViewCaseDetails() throws Exception {
+    final ApplicationDetail draft = buildApplicationDetail(1, false, new Date());
+    draft.setCaseReferenceNumber("DRAFT123");
+    when(applicationService.getApplication(anyString())).thenReturn(Mono.just(draft));
+    when(contextSecurityUtil.createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()))
+        .thenReturn("contextToken");
+    when(clientService.getClient(anyString())).thenReturn(Mono.just(new ClientDetail()));
+    final AssessmentDetail assessmentDetail = buildAssessmentDetail(new Date());
+    assessmentDetail.setId(1L);
+    when(assessmentService.getAssessments(any(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessmentDetail)));
+    when(messageSource.getMessage(anyString(), any(), any(Locale.class)))
+        .thenReturn("returnLinkText");
+
+    mockMvc
+        .perform(
+            get("/application/assessments")
+                .param("assessment", "means")
+                .param("invoked-from", "summary")
+                .sessionAttr(USER_DETAILS, buildUserDetail().functions(List.of()))
+                .sessionAttr(APPLICATION_ID, "applicationId")
+                .sessionAttr(
+                    ACTIVE_CASE,
+                    ActiveCase.builder()
+                        .draftApplication(true)
+                        .caseReferenceNumber("DRAFT123")
+                        .build()))
+        .andExpect(status().isOk());
+  }
+
   /** The refusal is handled as the route rules handle one: back to a page, with the message. */
   private void assertRefusedLikeTheRouteRules(final MockHttpServletRequestBuilder request)
       throws Exception {
