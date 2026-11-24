@@ -829,7 +829,8 @@ public class AwardController {
     // matching EBS id rather than creating a duplicate.
     final List<OpponentDetail> toSubmit =
         selected.stream().map(PartyListCandidate::opponent).toList();
-    final List<String> claimedEbsIds = toSubmit.stream().map(OpponentDetail::getEbsId).toList();
+    final List<String> claimedEbsIds =
+        toSubmit.stream().map(OpponentDetail::getEbsId).filter(StringUtils::hasText).toList();
     if (!claimCreatedEbsIds(session, awardKey, claimedEbsIds)) {
       model.addAttribute(
           "partyListErrorMessage", "case.partyListScreen.unresolvedSelectionErrorMessage");
