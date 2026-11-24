@@ -766,6 +766,7 @@ class EditGeneralDetailsSectionControllerTest {
       final String applicationId = "123";
       final String linkedCaseId = "1";
       final UserDetail user = new UserDetail();
+      stubLinkedCasesOfApplication(applicationId, 1);
 
       mockMvc
           .perform(
@@ -779,6 +780,22 @@ class EditGeneralDetailsSectionControllerTest {
           .andExpect(redirectedUrl("/%s/sections/linked-cases".formatted(caseContext)));
 
       verify(applicationService, times(1)).removeLinkedCase(linkedCaseId, user);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    @DisplayName("Refuses a linked case that is not part of the open application")
+    void refusesLinkedCaseOfAnotherApplication(String caseContext) throws Exception {
+      stubLinkedCasesOfApplication("123", 2);
+
+      mockMvc
+          .perform(
+              post("/%s/sections/linked-cases/{linked-case-id}/remove".formatted(caseContext), "1")
+                  .sessionAttr(APPLICATION_ID, "123")
+                  .sessionAttr(USER_DETAILS, new UserDetail()))
+          .andExpect(redirectedUrl("/home"));
+
+      verify(applicationService, never()).removeLinkedCase(any(), any());
     }
   }
 
@@ -825,6 +842,7 @@ class EditGeneralDetailsSectionControllerTest {
       final String linkedCaseId = "1";
       final UserDetail user = new UserDetail();
       final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
+      stubLinkedCasesOfApplication(applicationId, 1);
 
       mockMvc
           .perform(
@@ -839,6 +857,22 @@ class EditGeneralDetailsSectionControllerTest {
           .andExpect(redirectedUrl("/%s/sections/linked-cases".formatted(caseContext)));
 
       verify(applicationService, times(1)).updateLinkedCase(linkedCaseId, linkedCase, user);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    @DisplayName("Refuses updating a linked case that is not part of the open application")
+    void refusesUpdatingLinkedCaseOfAnotherApplication(String caseContext) throws Exception {
+      stubLinkedCasesOfApplication("123", 2);
+
+      mockMvc
+          .perform(
+              post("/%s/sections/linked-cases/{linked-case-id}/confirm".formatted(caseContext), "1")
+                  .sessionAttr(APPLICATION_ID, "123")
+                  .sessionAttr(USER_DETAILS, new UserDetail()))
+          .andExpect(redirectedUrl("/home"));
+
+      verify(applicationService, never()).updateLinkedCase(any(), any(), any());
     }
 
     @ParameterizedTest
@@ -1114,5 +1148,13 @@ class EditGeneralDetailsSectionControllerTest {
       verify(applicationService, never())
           .addLinkedCase(anyString(), any(LinkedCaseResultRowDisplay.class), any(UserDetail.class));
     }
+  }
+
+  private void stubLinkedCasesOfApplication(final String applicationId, final Integer id) {
+    final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
+    linkedCase.setId(id);
+    final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases = new ResultsDisplay<>();
+    linkedCases.setContent(List.of(linkedCase));
+    when(applicationService.getLinkedCases(applicationId)).thenReturn(linkedCases);
   }
 }

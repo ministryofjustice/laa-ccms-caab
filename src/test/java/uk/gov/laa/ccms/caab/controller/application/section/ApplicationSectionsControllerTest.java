@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -25,6 +26,7 @@ import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 
 import jakarta.servlet.ServletException;
 import java.util.Date;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,6 +38,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -45,9 +48,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationSectionValidator;
 import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -100,6 +107,35 @@ class ApplicationSectionsControllerTest {
 
     assertInstanceOf(AccessDeniedException.class, exception.getCause());
     verify(applicationService, never()).getApplicationSections(any(), any());
+  }
+
+  @Test
+  @DisplayName("Opening a draft drops the state an amendment left in the session")
+  void openingDraftDropsAmendmentEditorState() throws Exception {
+    final MockHttpSession session = new MockHttpSession();
+    session.setAttribute(
+        "activeCase", ActiveCase.builder().applicationId(9).amendment(true).build());
+    session.setAttribute("caseApplication", new ApplicationDetail().id(9));
+    session.setAttribute("costs", new CostStructureDetail());
+    session.setAttribute("opponents", List.of());
+    session.setAttribute("priorAuthorities", List.of(new PriorAuthorityDetail().id(5)));
+    session.setAttribute("proceeding", new ProceedingDetail().id(7));
+    session.setAttribute("applicationId", "1");
+    session.setAttribute("user", new UserDetail());
+
+    final ApplicationDetail draft = buildApplicationDetail(1, true, new Date());
+    draft.setAmendment(false);
+    when(applicationService.getApplication("1")).thenReturn(Mono.just(draft));
+    when(applicationService.getApplicationSections(any(), any()))
+        .thenReturn(ApplicationSectionDisplay.builder().build());
+
+    mockMvc.perform(get("/application/sections").session(session)).andExpect(status().isOk());
+
+    assertThat(session.getAttribute("caseApplication")).isNull();
+    assertThat(session.getAttribute("costs")).isNull();
+    assertThat(session.getAttribute("opponents")).isNull();
+    assertThat(session.getAttribute("priorAuthorities")).isNull();
+    assertThat(session.getAttribute("proceeding")).isNull();
   }
 
   @Test

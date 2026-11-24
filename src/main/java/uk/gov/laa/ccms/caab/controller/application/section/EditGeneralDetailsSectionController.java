@@ -25,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.Nullable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -450,10 +451,12 @@ public class EditGeneralDetailsSectionController {
   public String removeLinkedCasePost(
       @PathVariable("linked-case-id") final String linkedCaseId,
       @PathVariable final CaseContext caseContext,
+      @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user) {
 
     log.info(
         "Removing linked-case to remove with id: {} caseContext: {}", linkedCaseId, caseContext);
+    requireLinkedCaseOfOpenApplication(applicationId, linkedCaseId);
     applicationService.removeLinkedCase(linkedCaseId, user);
 
     return "redirect:/%s/sections/linked-cases".formatted(caseContext.getPathValue());
@@ -507,6 +510,7 @@ public class EditGeneralDetailsSectionController {
   public String confirmLinkedCasePost(
       @PathVariable("linked-case-id") final String linkedCaseId,
       @PathVariable final CaseContext caseContext,
+      @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @ModelAttribute("currentLinkedCase") final LinkedCaseResultRowDisplay linkedCase,
       final BindingResult bindingResult,
@@ -522,6 +526,7 @@ public class EditGeneralDetailsSectionController {
       return "application/sections/application-linked-case-confirm";
     }
 
+    requireLinkedCaseOfOpenApplication(applicationId, linkedCaseId);
     applicationService.updateLinkedCase(linkedCaseId, linkedCase, user);
 
     return "redirect:/%s/sections/linked-cases".formatted(caseContext.getPathValue());
@@ -761,5 +766,20 @@ public class EditGeneralDetailsSectionController {
 
     model.addAttribute("feeEarners", providerService.getAllFeeEarners(providerDetail));
     model.addAttribute("offices", user.getProvider().getOffices());
+  }
+
+  private void requireLinkedCaseOfOpenApplication(
+      final String applicationId, final String linkedCaseId) {
+    final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases =
+        applicationService.getLinkedCases(applicationId);
+    final boolean belongs =
+        linkedCases != null
+            && linkedCases.getContent() != null
+            && linkedCases.getContent().stream()
+                .anyMatch(lc -> String.valueOf(lc.getId()).equals(linkedCaseId));
+    if (!belongs) {
+      throw new AccessDeniedException(
+          "Linked case %s is not part of the open application".formatted(linkedCaseId));
+    }
   }
 }

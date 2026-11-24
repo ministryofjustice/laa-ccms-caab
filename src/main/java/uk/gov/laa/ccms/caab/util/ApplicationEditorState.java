@@ -1,10 +1,18 @@
 package uk.gov.laa.ccms.caab.util;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.LINKED_CASES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_OPPONENTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PRIOR_AUTHORITIES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PROCEEDINGS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_SCOPE_LIMITATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_PROCEEDINGS_ALLOWED;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_REQUIRED;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.IS_ORIGINAL_PROCEEDING;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ORIGINAL_PROCEEDING_LOOKUP;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRIOR_AUTHORITY_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA_OLD;
@@ -21,6 +29,14 @@ public final class ApplicationEditorState {
 
   private static final List<String> EDITOR_ATTRIBUTES =
       List.of(
+          APPLICATION,
+          APPLICATION_COSTS,
+          APPLICATION_OPPONENTS,
+          LINKED_CASES,
+          EVIDENCE_REQUIRED,
+          ORIGINAL_PROCEEDING_LOOKUP,
+          EDIT_PROCEEDINGS_ALLOWED,
+          IS_ORIGINAL_PROCEEDING,
           APPLICATION_PRIOR_AUTHORITIES,
           PRIOR_AUTHORITY_FLOW_FORM_DATA,
           APPLICATION_PROCEEDINGS,

@@ -1010,6 +1010,9 @@ class OpponentsSectionControllerTest {
   void editOpponentPost_noValidationErrors_editsOpponent() throws Exception {
     String selectedOpponentId = "123";
     OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
+    OrganisationOpponentFormData existing = new OrganisationOpponentFormData();
+    existing.setId(123);
+    when(applicationService.getOpponents("456")).thenReturn(List.of(existing));
 
     mockMvc
         .perform(
@@ -1023,6 +1026,39 @@ class OpponentsSectionControllerTest {
 
     verify(opponentService)
         .updateOpponent("456", Integer.valueOf(selectedOpponentId), opponentFormData, user);
+  }
+
+  @Test
+  void editOpponentPost_refusesOpponentOfAnotherApplication() throws Exception {
+    when(applicationService.getOpponents("456")).thenReturn(List.of());
+
+    mockMvc
+        .perform(
+            post("/application/sections/opponents/{id}/edit", "123")
+                .sessionAttr(CURRENT_OPPONENT, new OrganisationOpponentFormData())
+                .sessionAttr(APPLICATION_ID, "456")
+                .sessionAttr(USER_DETAILS, user))
+        .andExpect(redirectedUrl("/home"));
+
+    verify(opponentService, never()).updateOpponent(any(), any(), any(), any());
+  }
+
+  @Test
+  void removeOpponentPost_refusesOpponentKeptFromAnotherApplication() throws Exception {
+    OrganisationOpponentFormData amendmentOpponent = new OrganisationOpponentFormData();
+    amendmentOpponent.setId(2);
+    amendmentOpponent.setDeletable(true);
+    when(applicationService.getOpponents("456")).thenReturn(List.of());
+
+    mockMvc
+        .perform(
+            post("/application/sections/opponents/{id}/remove", 2)
+                .sessionAttr(APPLICATION_OPPONENTS, List.of(amendmentOpponent))
+                .sessionAttr(APPLICATION_ID, "456")
+                .sessionAttr(USER_DETAILS, user))
+        .andExpect(redirectedUrl("/home"));
+
+    verify(opponentService, never()).deleteOpponent(any(), any());
   }
 
   @Test
@@ -1390,11 +1426,13 @@ class OpponentsSectionControllerTest {
         List.of(individualOpponent, organisationOpponent);
 
     Integer selectedOpponentId = 2;
+    when(applicationService.getOpponents("456")).thenReturn(applicationOpponents);
 
     mockMvc
         .perform(
             post("/application/sections/opponents/{id}/remove", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents)
+                .sessionAttr(APPLICATION_ID, "456")
                 .sessionAttr(USER_DETAILS, user))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
