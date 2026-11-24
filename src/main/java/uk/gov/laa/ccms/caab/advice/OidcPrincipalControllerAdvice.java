@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
 import uk.gov.laa.ccms.caab.controller.HomeController;
+import uk.gov.laa.ccms.caab.security.ProviderContext;
 import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -71,6 +72,7 @@ public class OidcPrincipalControllerAdvice {
       model.addAttribute("userAttributes", oidcUser.getClaims());
 
       session.setAttribute("user", user);
+      ProviderContext.setFromUser(user);
     }
   }
 

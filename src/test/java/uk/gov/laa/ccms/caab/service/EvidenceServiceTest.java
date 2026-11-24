@@ -47,6 +47,7 @@ import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.caab.security.ProviderContext;
 import uk.gov.laa.ccms.caab.util.AssessmentModelUtils;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupValueDetail;
@@ -147,6 +148,41 @@ class EvidenceServiceTest {
     StepVerifier.create(resultMono).expectNext(evidenceDocumentDetail).verifyComplete();
 
     verify(caabApiClient).getEvidenceDocument(evidenceDocumentId);
+  }
+
+  @Test
+  void getEvidenceDocument_rejectsCrossProviderDocumentWhenProviderContextActive() {
+    final Integer evidenceDocumentId = 123;
+    final EvidenceDocumentDetail otherProviderDocument =
+        new EvidenceDocumentDetail().id(evidenceDocumentId).providerId("99999");
+    when(caabApiClient.getEvidenceDocument(evidenceDocumentId))
+        .thenReturn(Mono.just(otherProviderDocument));
+
+    ProviderContext.setProviderId("456");
+    try {
+      StepVerifier.create(evidenceService.getEvidenceDocument(evidenceDocumentId))
+          .expectError(CaabApplicationException.class)
+          .verify();
+    } finally {
+      ProviderContext.clear();
+    }
+  }
+
+  @Test
+  void getEvidenceDocument_allowsMatchingProviderDocumentWhenProviderContextActive() {
+    final Integer evidenceDocumentId = 123;
+    final EvidenceDocumentDetail ownDocument =
+        new EvidenceDocumentDetail().id(evidenceDocumentId).providerId("456");
+    when(caabApiClient.getEvidenceDocument(evidenceDocumentId)).thenReturn(Mono.just(ownDocument));
+
+    ProviderContext.setProviderId("456");
+    try {
+      StepVerifier.create(evidenceService.getEvidenceDocument(evidenceDocumentId))
+          .expectNext(ownDocument)
+          .verifyComplete();
+    } finally {
+      ProviderContext.clear();
+    }
   }
 
   @Test

@@ -33,6 +33,7 @@ import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.caab.security.ProviderContext;
 import uk.gov.laa.ccms.caab.util.EvidenceUtil;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupValueDetail;
@@ -91,7 +92,33 @@ public class EvidenceService {
    * @return EvidenceDocumentDetail for the supplied id.
    */
   public Mono<EvidenceDocumentDetail> getEvidenceDocument(final Integer evidenceDocumentId) {
-    return caabApiClient.getEvidenceDocument(evidenceDocumentId);
+    final String threadProviderId = ProviderContext.getProviderId();
+    final Mono<EvidenceDocumentDetail> documentMono =
+        caabApiClient.getEvidenceDocument(evidenceDocumentId);
+    if (documentMono == null) {
+      return null;
+    }
+    return Mono.deferContextual(
+        contextView -> {
+          final String resolved = ProviderContext.resolveProviderId(contextView);
+          final String activeProviderId = resolved != null ? resolved : threadProviderId;
+          return documentMono.handle(
+              (document, sink) -> {
+                final String ownerId =
+                    document.getProviderId() != null ? document.getProviderId().trim() : null;
+                if (activeProviderId != null
+                    && ownerId != null
+                    && !ownerId.isEmpty()
+                    && !activeProviderId.equals(ownerId)) {
+                  sink.error(
+                      new CaabApplicationException(
+                          "Evidence document %s does not belong to active provider"
+                              .formatted(evidenceDocumentId)));
+                  return;
+                }
+                sink.next(document);
+              });
+        });
   }
 
   /**

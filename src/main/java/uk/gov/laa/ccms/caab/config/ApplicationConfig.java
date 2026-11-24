@@ -287,7 +287,10 @@ public class ApplicationConfig implements WebMvcConfigurer {
             .build();
 
     final WebClient.Builder builder =
-        WebClient.builder().baseUrl(apiProperties.getUrl()).exchangeStrategies(strategies);
+        WebClient.builder()
+            .baseUrl(apiProperties.getUrl())
+            .exchangeStrategies(strategies)
+            .filter(new ProviderIdHeaderFilter());
 
     if (registered(registrationId)) {
       builder.filter(new ClientCredentialsTokenFilter(authorizedClientManager, registrationId));

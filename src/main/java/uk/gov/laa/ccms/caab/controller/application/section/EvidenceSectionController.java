@@ -161,6 +161,7 @@ public class EvidenceSectionController {
    */
   @PostMapping("/{caseContext}/evidence/add")
   public String uploadEvidenceDocument(
+      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(EVIDENCE_REQUIRED) final List<EvidenceRequired> evidenceRequired,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       @ModelAttribute(EVIDENCE_UPLOAD_FORM_DATA)
@@ -168,6 +169,22 @@ public class EvidenceSectionController {
       final BindingResult bindingResult,
       @PathVariable(CASE_CONTEXT) CaseContext context,
       Model model) {
+
+    final Integer userProviderId =
+        userDetail.getProvider() != null ? userDetail.getProvider().getId() : null;
+    if (userProviderId != null
+        && activeCase.getProviderId() != null
+        && !userProviderId.equals(activeCase.getProviderId())) {
+      throw new CaabApplicationException("Active case does not belong to current provider");
+    }
+
+    evidenceUploadFormData.setApplicationOrOutcomeId(String.valueOf(activeCase.getApplicationId()));
+    evidenceUploadFormData.setCaseReferenceNumber(activeCase.getCaseReferenceNumber());
+    evidenceUploadFormData.setProviderId(
+        userProviderId != null ? userProviderId : activeCase.getProviderId());
+    evidenceUploadFormData.setDocumentSender(userDetail.getLoginId());
+    evidenceUploadFormData.setCcmsModule(resolveCcmsModule(context));
+    evidenceUploadFormData.setRegisteredDocumentId(null);
 
     // Validate the evidence form data
     evidenceUploadValidator.validate(evidenceUploadFormData, bindingResult);

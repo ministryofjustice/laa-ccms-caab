@@ -93,6 +93,7 @@ import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
+import uk.gov.laa.ccms.caab.security.ProviderContext;
 import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.util.AmendmentUtil;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
@@ -608,7 +609,33 @@ public class ApplicationService {
   }
 
   public Mono<ApplicationDetail> getApplication(final String id) {
-    return caabApiClient.getApplication(id);
+    final String threadProviderId = ProviderContext.getProviderId();
+    final Mono<ApplicationDetail> applicationMono = caabApiClient.getApplication(id);
+    if (applicationMono == null) {
+      return null;
+    }
+    return Mono.deferContextual(
+        contextView -> {
+          final String resolved = ProviderContext.resolveProviderId(contextView);
+          final String activeProviderId = resolved != null ? resolved : threadProviderId;
+          return applicationMono.handle(
+              (application, sink) -> {
+                final Integer ownerId =
+                    Optional.ofNullable(application.getProviderDetails())
+                        .map(ApplicationProviderDetails::getProvider)
+                        .map(IntDisplayValue::getId)
+                        .orElse(null);
+                if (activeProviderId != null
+                    && ownerId != null
+                    && !activeProviderId.equals(String.valueOf(ownerId))) {
+                  sink.error(
+                      new CaabApplicationException(
+                          "Application %s does not belong to active provider".formatted(id)));
+                  return;
+                }
+                sink.next(application);
+              });
+        });
   }
 
   /**

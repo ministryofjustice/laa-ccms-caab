@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -60,6 +62,7 @@ import uk.gov.laa.ccms.caab.service.AvScanResultHandler;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -191,6 +194,7 @@ class EvidenceSectionControllerTest {
         .perform(
             post("/%s/evidence/add".formatted(caseContext))
                 .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
+                .sessionAttr(ACTIVE_CASE, buildActiveCase())
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, user))
         .andExpect(status().isOk())
@@ -220,6 +224,7 @@ class EvidenceSectionControllerTest {
         .perform(
             post("/%s/evidence/add".formatted(caseContext))
                 .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
+                .sessionAttr(ACTIVE_CASE, buildActiveCase())
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, user))
         .andExpect(status().isOk())
@@ -252,6 +257,7 @@ class EvidenceSectionControllerTest {
         .perform(
             post("/%s/evidence/add".formatted(caseContext))
                 .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
+                .sessionAttr(ACTIVE_CASE, buildActiveCase())
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, user))
         .andExpect(status().isOk())
@@ -294,6 +300,7 @@ class EvidenceSectionControllerTest {
         .perform(
             post("/%s/evidence/add".formatted(caseContext))
                 .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
+                .sessionAttr(ACTIVE_CASE, buildActiveCase())
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, user))
         .andExpect(status().is3xxRedirection())
@@ -304,6 +311,92 @@ class EvidenceSectionControllerTest {
 
     verify(evidenceMapper).toEvidenceDocumentDetail(formData);
     verify(evidenceService).addDocument(evidenceDocumentDetail, user.getLoginId());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"application", "amendments"})
+  void postAddEvidenceRestampsTamperedSessionFormFieldsFromAuthoritativeSession(String caseContext)
+      throws Exception {
+    final String registeredDocumentId = "238476";
+    final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
+    final EvidenceUploadFormData formData = buildEvidenceUploadFormData();
+    final ActiveCase activeCase = buildActiveCase();
+    final UserDetail providerUser =
+        new UserDetail()
+            .userId(1)
+            .userType("testUserType")
+            .loginId("authoritativeUser")
+            .provider(new BaseProvider().id(789).name("Firm 789"));
+    final List<EvidenceRequired> evidenceRequired = List.of(new EvidenceRequired("code", "desc"));
+
+    when(evidenceService.registerDocument(
+            formData.getDocumentType(),
+            "pdf",
+            formData.getDocumentDescription(),
+            ELECTRONIC.getCode(),
+            activeCase.getCaseReferenceNumber(),
+            providerUser.getLoginId(),
+            providerUser.getUserType()))
+        .thenReturn(Mono.just(registeredDocumentId));
+    when(evidenceMapper.toEvidenceDocumentDetail(any(EvidenceUploadFormData.class)))
+        .thenReturn(evidenceDocumentDetail);
+    when(evidenceService.addDocument(evidenceDocumentDetail, providerUser.getLoginId()))
+        .thenReturn(Mono.just("123"));
+
+    mockMvc
+        .perform(
+            post("/%s/evidence/add".formatted(caseContext))
+                .sessionAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
+                .sessionAttr(USER_DETAILS, providerUser)
+                .param("providerId", "99999")
+                .param("caseReferenceNumber", "TAMPERED_CASE")
+                .param("applicationOrOutcomeId", "99999")
+                .param("documentSender", "attacker")
+                .param("registeredDocumentId", "TAMPERED_DOC"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl(expectedRedirect(caseContext)));
+
+    final ArgumentCaptor<EvidenceUploadFormData> captor =
+        ArgumentCaptor.forClass(EvidenceUploadFormData.class);
+    verify(evidenceMapper).toEvidenceDocumentDetail(captor.capture());
+    assertThat(captor.getValue().getProviderId()).isEqualTo(789);
+    assertThat(captor.getValue().getCaseReferenceNumber()).isEqualTo("caseRef");
+    assertThat(captor.getValue().getApplicationOrOutcomeId()).isEqualTo("123");
+    assertThat(captor.getValue().getDocumentSender()).isEqualTo("authoritativeUser");
+    assertThat(captor.getValue().getCcmsModule()).isEqualTo(expectedModule(caseContext));
+    assertThat(captor.getValue().getRegisteredDocumentId()).isEqualTo(registeredDocumentId);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"application", "amendments"})
+  void postAddEvidenceRejectsWhenActiveCaseBelongsToDifferentProvider(String caseContext)
+      throws Exception {
+    final EvidenceUploadFormData formData = buildEvidenceUploadFormData();
+    final ActiveCase activeCase = buildActiveCase();
+    final UserDetail switchedFirmUser =
+        new UserDetail()
+            .userId(1)
+            .userType("testUserType")
+            .loginId("switchedUser")
+            .provider(new BaseProvider().id(111).name("Different Firm"));
+    final List<EvidenceRequired> evidenceRequired = List.of(new EvidenceRequired("code", "desc"));
+
+    mockMvc
+        .perform(
+            post("/%s/evidence/add".formatted(caseContext))
+                .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
+                .sessionAttr(USER_DETAILS, switchedFirmUser))
+        .andExpect(status().isOk())
+        .andExpect(view().name("error"));
+
+    verify(evidenceService, never())
+        .registerDocument(any(), any(), any(), any(), any(), any(), any());
+    verify(evidenceService, never())
+        .addDocument(any(EvidenceDocumentDetail.class), any(String.class));
   }
 
   @ParameterizedTest

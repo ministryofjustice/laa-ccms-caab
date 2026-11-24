@@ -17,6 +17,8 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 
 import jakarta.servlet.http.HttpSession;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,6 +37,7 @@ import uk.gov.laa.ccms.caab.advice.GlobalBinderAdvice;
 import uk.gov.laa.ccms.caab.bean.provider.ProviderFirmFormData;
 import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
 import uk.gov.laa.ccms.caab.bean.validators.provider.ProviderFirmValidator;
+import uk.gov.laa.ccms.caab.security.ProviderContext;
 import uk.gov.laa.ccms.caab.service.NotificationSearchOptionsCache;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
@@ -60,10 +63,16 @@ public class ProviderControllerTest {
 
   @BeforeEach
   public void setup() {
+    ProviderContext.clear();
     mockMvc =
         standaloneSetup(providerController)
             .setControllerAdvice(new GlobalBinderAdvice(new BaselineTextValidator()))
             .build();
+  }
+
+  @AfterEach
+  public void tearDown() {
+    ProviderContext.clear();
   }
 
   @Test
@@ -131,8 +140,14 @@ public class ProviderControllerTest {
     ProviderFirmFormData providerFirmFormData = new ProviderFirmFormData();
     providerFirmFormData.setProviderFirmId(67890);
 
+    ProviderContext.setProviderId("12345");
+    AtomicReference<String> providerDuringUpdateCall = new AtomicReference<>();
     when(userService.updateUserOptions(67890, loginId, userType))
-        .thenReturn(Mono.just(new ClientTransactionResponse()));
+        .thenAnswer(
+            invocation -> {
+              providerDuringUpdateCall.set(ProviderContext.getProviderId());
+              return Mono.just(new ClientTransactionResponse());
+            });
 
     HttpSession session =
         this.mockMvc
@@ -147,7 +162,9 @@ public class ProviderControllerTest {
             .getRequest()
             .getSession();
 
-    // Check session has been updated with new provider
+    // Check session and ProviderContext have been updated after SOA call ran under old provider
+    assertEquals("12345", providerDuringUpdateCall.get());
+    assertEquals("67890", ProviderContext.getProviderId());
     assertEquals(providerFirm2, ((UserDetail) session.getAttribute("user")).getProvider());
     verify(notificationSearchOptionsCache).clear();
   }

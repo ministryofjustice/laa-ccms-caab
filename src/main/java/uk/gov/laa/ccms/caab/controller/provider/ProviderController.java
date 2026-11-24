@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.provider.ProviderFirmFormData;
 import uk.gov.laa.ccms.caab.bean.validators.provider.ProviderFirmValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.security.ProviderContext;
 import uk.gov.laa.ccms.caab.service.NotificationSearchOptionsCache;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
@@ -91,6 +92,7 @@ public class ProviderController {
         .block();
 
     user.setProvider(newProvider);
+    ProviderContext.setFromUser(user);
     notificationSearchOptionsCache.clear();
 
     session.setAttribute("user", user);
