@@ -135,6 +135,11 @@ public class AssessmentService {
           AssessmentAttribute.NEW_APPL_OR_AMENDMENT.name(),
           AssessmentAttribute.POST_CODE.name());
 
+  // Set true by the interview on its submission page and written into the prepop by the
+  // connector's submit save.
+  private static final String MERITS_SUBMISSION_PAGE_CLEANSE = "MERITS_SUBMISSION_PAGE_CLEANSE";
+  private static final String MEANS_SUBMISSION_PAGE_CLEANSE = "MEANS_SUBMISSION_PAGE_CLEANSE";
+
   private final AssessmentApiClient assessmentApiClient;
   private final CaabApiClient caabApiClient;
   private final EbsApiClient ebsApiClient;
@@ -1044,8 +1049,14 @@ public class AssessmentService {
    * Brings a persisted (reused) means or merits prepop up to date with the inputs CAAB used to map
    * differently from old PUI, without rebuilding it - the prepop also holds the provider's answers.
    * The values are refreshed in place, keeping attribute ids, and for merits any linked-case
-   * instance is removed. When anything changed the checkpoint is dropped, since resuming from it
-   * would restore the old values into the interview.
+   * instance is removed.
+   *
+   * <p>Resuming from the checkpoint would restore the old values into the interview, but the
+   * checkpoint is also the only copy of answers given since the last submit - the connector writes
+   * answers into the prepop only on submit. So the checkpoint is dropped only when something
+   * changed and the prepop records a submit (its submission-page flag is true), in which case the
+   * answers are already in the prepop. A draft that was never submitted keeps its checkpoint; its
+   * first submit saves the answers, and the next start refreshes it.
    *
    * @param prepopAssessment the persisted prepop assessment, updated in place
    * @param assessmentRulebase the rulebase being started
@@ -1055,31 +1066,50 @@ public class AssessmentService {
       final AssessmentDetail prepopAssessment,
       final AssessmentRulebase assessmentRulebase,
       final AssessmentMappingContext context) {
-    boolean changed = refreshGlobalInputs(prepopAssessment, context);
+    final AssessmentEntityDetail globalEntity = findGlobalEntity(prepopAssessment);
+    if (globalEntity == null) {
+      return;
+    }
+
+    boolean changed = refreshGlobalInputs(globalEntity, context);
     if (AssessmentRulebase.MERITS == assessmentRulebase) {
       changed |= removeLinkedCaseInstances(prepopAssessment);
     }
 
-    if (changed && prepopAssessment.getCheckpoint() != null) {
+    if (changed
+        && prepopAssessment.getCheckpoint() != null
+        && hasBeenSubmitted(globalEntity, assessmentRulebase)) {
       log.info(
-          "Dropping checkpoint for {} [{}]: its prepopulated inputs were refreshed",
+          "Dropping checkpoint for {} [{}]: its prepopulated inputs were refreshed and its"
+              + " answers were saved by an earlier submit",
           prepopAssessment.getName(),
           prepopAssessment.getCaseReferenceNumber());
       prepopAssessment.setCheckpoint(null);
     }
   }
 
+  private AssessmentEntityDetail findGlobalEntity(final AssessmentDetail assessment) {
+    final AssessmentEntityTypeDetail globalEntityType = getAssessmentEntityType(assessment, GLOBAL);
+    return globalEntityType == null
+        ? null
+        : getAssessmentEntity(globalEntityType, assessment.getCaseReferenceNumber());
+  }
+
+  private boolean hasBeenSubmitted(
+      final AssessmentEntityDetail globalEntity, final AssessmentRulebase assessmentRulebase) {
+    final String submissionPageFlag =
+        AssessmentRulebase.MERITS == assessmentRulebase
+            ? MERITS_SUBMISSION_PAGE_CLEANSE
+            : MEANS_SUBMISSION_PAGE_CLEANSE;
+    return globalEntity.getAttributes().stream()
+        .anyMatch(
+            attribute ->
+                submissionPageFlag.equals(attribute.getName())
+                    && "true".equalsIgnoreCase(attribute.getValue()));
+  }
+
   private boolean refreshGlobalInputs(
-      final AssessmentDetail prepopAssessment, final AssessmentMappingContext context) {
-    final AssessmentEntityTypeDetail globalEntityType =
-        getAssessmentEntityType(prepopAssessment, GLOBAL);
-    final AssessmentEntityDetail globalEntity =
-        globalEntityType == null
-            ? null
-            : getAssessmentEntity(globalEntityType, prepopAssessment.getCaseReferenceNumber());
-    if (globalEntity == null) {
-      return false;
-    }
+      final AssessmentEntityDetail globalEntity, final AssessmentMappingContext context) {
 
     boolean changed = false;
     for (final AssessmentAttributeDetail fresh : assessmentMapper.globalToAttributeList(context)) {

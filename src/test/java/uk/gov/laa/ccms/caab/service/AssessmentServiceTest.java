@@ -52,6 +52,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -1344,18 +1345,24 @@ public class AssessmentServiceTest {
     assertTrue(globalEntity.getRelations().getFirst().getRelationshipTargets().isEmpty());
   }
 
-  @Test
-  @DisplayName(
-      "refreshPersistedPrepop refreshes stale inputs in place and drops the merits checkpoint")
-  void refreshPersistedPrepopRefreshesStaleInputsAndDropsCheckpoint() {
+  @ParameterizedTest(name = "submitted before={0} -> checkpoint dropped={0}")
+  @ValueSource(booleans = {true, false})
+  void refreshPersistedPrepopRefreshesStaleInputsAndDropsCheckpointOnlyOnceSubmitted(
+      final boolean submittedBefore) {
     final AssessmentAttributeDetail staleCostLimitChanged =
         new AssessmentAttributeDetail().id(11L).name("COST_LIMIT_CHANGED_FLAG").value(null);
     final AssessmentAttributeDetail providerAnswer =
         new AssessmentAttributeDetail().id(12L).name("FIRST_NAME").value("answered");
+    final List<AssessmentAttributeDetail> globalAttributes =
+        new ArrayList<>(List.of(staleCostLimitChanged, providerAnswer));
+    if (submittedBefore) {
+      globalAttributes.add(
+          new AssessmentAttributeDetail().name("MERITS_SUBMISSION_PAGE_CLEANSE").value("true"));
+    }
     final AssessmentEntityDetail globalEntity =
         new AssessmentEntityDetail()
             .name("300001749512")
-            .attributes(new ArrayList<>(List.of(staleCostLimitChanged, providerAnswer)))
+            .attributes(globalAttributes)
             .relations(new ArrayList<>());
     final AssessmentDetail prepop =
         new AssessmentDetail()
@@ -1393,7 +1400,8 @@ public class AssessmentServiceTest {
                         && "No Fixed Abode".equals(attribute.getValue())));
     assertEquals("answered", providerAnswer.getValue());
     assertTrue(getAssessmentEntitiesForEntityType(prepop, LINKED_CASE).isEmpty());
-    assertNull(prepop.getCheckpoint());
+    // Unsubmitted answers live only in the checkpoint, so it is kept until a submit saves them.
+    assertEquals(submittedBefore, prepop.getCheckpoint() == null);
   }
 
   @Test
