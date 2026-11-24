@@ -834,8 +834,7 @@ public class AwardController {
           "partyListErrorMessage", "case.partyListScreen.unresolvedSelectionErrorMessage");
       return renderPartyList(candidates, awardPath, awardId, model);
     }
-    final List<String> claimedEbsIds =
-        toSubmit.stream().map(OpponentDetail::getEbsId).toList();
+    final List<String> claimedEbsIds = toSubmit.stream().map(OpponentDetail::getEbsId).toList();
     if (!claimCreatedEbsIds(session, awardKey, claimedEbsIds)) {
       model.addAttribute(
           "partyListErrorMessage", "case.partyListScreen.unresolvedSelectionErrorMessage");
