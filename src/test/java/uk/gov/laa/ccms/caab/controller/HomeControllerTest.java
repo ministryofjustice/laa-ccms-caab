@@ -112,6 +112,17 @@ public class HomeControllerTest {
   }
 
   @Test
+  public void testHomeHandlesContextRootWithoutTrailingSlash() throws Exception {
+    when(notificationService.getNotificationsSummary(userDetails.getUserId()))
+        .thenReturn(Mono.empty());
+
+    this.mockMvc
+        .perform(get("/civil").contextPath("/civil").flashAttr("user", userDetails))
+        .andExpect(status().isOk())
+        .andExpect(view().name("home"));
+  }
+
+  @Test
   public void testHomeHandlesNullNotifications() throws Exception {
 
     // Mock the SOA Gateway service to return the notification summary

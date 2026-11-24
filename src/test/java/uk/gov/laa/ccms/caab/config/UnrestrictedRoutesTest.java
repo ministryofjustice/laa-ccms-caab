@@ -135,13 +135,18 @@ class UnrestrictedRoutesTest {
         for (String prefix : prefixes) {
           for (String path : paths) {
             for (RequestMethod requestMethod : methods) {
-              routes.add(new Route(requestMethod.asHttpMethod(), prefix + path));
+              routes.add(new Route(requestMethod.asHttpMethod(), rootIfEmpty(prefix + path)));
             }
           }
         }
       }
     }
     return routes;
+  }
+
+  /** An empty mapping is the context root, which the container serves as "/". */
+  private static String rootIfEmpty(String path) {
+    return path.isEmpty() ? "/" : path;
   }
 
   /** Test sources declare their own controllers in the same packages; only the app's count. */

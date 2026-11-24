@@ -69,6 +69,24 @@ class SecurityEventsEndToEndTest {
   }
 
   @Test
+  void securityHeadersDependOnTransport() throws Exception {
+    var secure =
+        mockMvc
+            .perform(get("/home").secure(true).with(user("jane").authorities()))
+            .andReturn()
+            .getResponse();
+    assertThat(secure.getHeader("Strict-Transport-Security"))
+        .isEqualTo("max-age=31536000 ; includeSubDomains");
+    assertThat(secure.getHeader("Referrer-Policy")).isEqualTo("strict-origin-when-cross-origin");
+    assertThat(secure.getHeader("Permissions-Policy"))
+        .isEqualTo("camera=(), microphone=(), geolocation=(), payment=(), usb=()");
+    assertThat(secure.getHeader("X-Frame-Options")).isEqualTo("SAMEORIGIN");
+    var insecure =
+        mockMvc.perform(get("/home").with(user("jane").authorities())).andReturn().getResponse();
+    assertThat(insecure.getHeader("Strict-Transport-Security")).isNull();
+  }
+
+  @Test
   void aRouteTheUserLacksTheFunctionForIsRefusedAndLoggedAsADenial() throws Exception {
     // A refused page load is returned to a page the user may see, as the legacy PUI does, so the
     // refusal shows as a redirect rather than a 403.
