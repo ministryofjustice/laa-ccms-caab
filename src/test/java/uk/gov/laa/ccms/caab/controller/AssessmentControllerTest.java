@@ -12,6 +12,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -49,6 +50,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.format.support.FormattingConversionService;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -200,6 +202,59 @@ public class AssessmentControllerTest {
         .andExpect(model().attributeExists("username"))
         .andExpect(model().attributeExists("resumeId"))
         .andExpect(model().attributeExists("assessmentType"));
+  }
+
+  @Test
+  public void assessmentGet_recordsTheLaunchIdItGivesTheConnector() throws Exception {
+    when(applicationService.getApplication(anyString()))
+        .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
+    when(contextSecurityUtil.createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()))
+        .thenReturn("contextToken");
+    when(clientService.getClient(anyString())).thenReturn(Mono.just(new ClientDetail()));
+    when(messageSource.getMessage(anyString(), any(), any(Locale.class)))
+        .thenReturn("returnLinkText");
+
+    final AssessmentDetail assessmentDetail = buildAssessmentDetail(new Date());
+    assessmentDetail.setId(1L);
+    when(assessmentService.getAssessments(any(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessmentDetail)));
+
+    final MockHttpSession session = new MockHttpSession();
+    session.setAttribute(USER_DETAILS, userDetails);
+    session.setAttribute(APPLICATION_ID, "applicationId");
+    session.setAttribute(ACTIVE_CASE, activeCase);
+
+    mockMvc
+        .perform(
+            get("/application/assessments")
+                .param("assessment", "means")
+                .param("invoked-from", "summary")
+                .session(session))
+        .andExpect(status().isOk());
+
+    final ArgumentCaptor<String> launchId = ArgumentCaptor.forClass(String.class);
+    verify(contextSecurityUtil)
+        .createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            launchId.capture(),
+            anyString());
+    assertEquals(
+        launchId.getValue(),
+        session.getAttribute(
+            AssessmentController.assessmentLaunchKey(AssessmentRulebase.MEANS, "1")));
   }
 
   @Test
@@ -737,6 +792,7 @@ public class AssessmentControllerTest {
     contextToken.setRulebaseId(1L);
     contextToken.setProviderId("providerId");
     contextToken.setCaseId("caseReferenceNumber");
+    contextToken.setEzgovId("launch-2");
 
     when(lookupService.getAssessmentSummaryAttributes("PARENT"))
         .thenReturn(Mono.just(new AssessmentSummaryEntityLookupDetail()));
@@ -757,23 +813,84 @@ public class AssessmentControllerTest {
     when(assessmentService.getAssessmentSummaryToDisplay(any(), any(), any()))
         .thenReturn(new ArrayList<>());
 
+    final MockHttpSession session = confirmSession("launch-2");
+
+    // The confirmation is loaded twice, as by a browser refresh.
+    for (int i = 0; i < 2; i++) {
+      this.mockMvc
+          .perform(
+              get("/application/assessments/confirm/caseSummary.do")
+                  .param("val", token)
+                  .session(session))
+          .andExpect(status().isOk());
+    }
+
+    final ArgumentCaptor<AssessmentDetail> captor = ArgumentCaptor.forClass(AssessmentDetail.class);
+    verify(assessmentService, times(2))
+        .getAssessmentSummaryToDisplay(captor.capture(), any(), any());
+    assertThat(captor.getValue().getId()).isEqualTo(2L);
+
+    // The launch's own confirmation releases the checkpoint once, against the most recent
+    // assessment and as the session user; the reload finds the launch id consumed.
+    verify(assessmentService, times(1))
+        .clearCheckpointAfterIncompleteSubmit(
+            eq(AssessmentRulebase.MEANS), eq(mostRecent), eq(userDetails.getLoginId()));
+  }
+
+  @Test
+  public void assessmentConfirm_confirmationOfAnEarlierLaunchReleasesNothing() throws Exception {
+    // An old confirmation reloaded after the interview was reopened: the session now records the
+    // newer launch, whose checkpoint holds the answers given since.
+    final ContextToken contextToken = new ContextToken();
+    contextToken.setRulebaseId(2L);
+    contextToken.setProviderId("providerId");
+    contextToken.setCaseId("caseReferenceNumber");
+    contextToken.setEzgovId("launch-1");
+
+    when(lookupService.getAssessmentSummaryAttributes("PARENT"))
+        .thenReturn(Mono.just(new AssessmentSummaryEntityLookupDetail()));
+    when(lookupService.getAssessmentSummaryAttributes("CHILD"))
+        .thenReturn(Mono.just(new AssessmentSummaryEntityLookupDetail()));
+    when(contextSecurityUtil.createContextToken(anyString())).thenReturn(contextToken);
+
+    final AssessmentDetail assessment = buildAssessmentDetail(new Date());
+    assessment.setId(1L);
+    when(assessmentService.getAssessments(anyList(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessment)));
+    when(assessmentService.getAssessmentSummaryToDisplay(any(), any(), any()))
+        .thenReturn(new ArrayList<>());
+
+    final MockHttpSession session = new MockHttpSession();
+    session.setAttribute(USER_DETAILS, userDetails);
+    session.setAttribute(ACTIVE_CASE, activeCase);
+    session.setAttribute(
+        AssessmentController.assessmentLaunchKey(AssessmentRulebase.MERITS, "caseReferenceNumber"),
+        "launch-2");
+
     this.mockMvc
         .perform(
             get("/application/assessments/confirm/caseSummary.do")
-                .param("val", token)
-                .sessionAttr(USER_DETAILS, userDetails)
-                .sessionAttr(APPLICATION_ID, "applicationId")
-                .sessionAttr(ACTIVE_CASE, activeCase))
+                .param("val", "token")
+                .session(session))
         .andExpect(status().isOk());
 
-    final ArgumentCaptor<AssessmentDetail> captor = ArgumentCaptor.forClass(AssessmentDetail.class);
-    verify(assessmentService).getAssessmentSummaryToDisplay(captor.capture(), any(), any());
-    assertThat(captor.getValue().getId()).isEqualTo(2L);
+    verify(assessmentService, never()).clearCheckpointAfterIncompleteSubmit(any(), any(), any());
+    assertEquals(
+        "launch-2",
+        session.getAttribute(
+            AssessmentController.assessmentLaunchKey(
+                AssessmentRulebase.MERITS, "caseReferenceNumber")));
+  }
 
-    // The submit's outcome is checked against the same assessment, recorded as the session user.
-    verify(assessmentService)
-        .clearCheckpointAfterIncompleteSubmit(
-            eq(AssessmentRulebase.MEANS), eq(mostRecent), eq(userDetails.getLoginId()));
+  private static MockHttpSession confirmSession(final String currentLaunchId) {
+    final MockHttpSession session = new MockHttpSession();
+    session.setAttribute(USER_DETAILS, userDetails);
+    session.setAttribute(APPLICATION_ID, "applicationId");
+    session.setAttribute(ACTIVE_CASE, activeCase);
+    session.setAttribute(
+        AssessmentController.assessmentLaunchKey(AssessmentRulebase.MEANS, "caseReferenceNumber"),
+        currentLaunchId);
+    return session;
   }
 
   @Test

@@ -272,6 +272,8 @@ public class AssessmentController {
 
     // Required for the connector
     final String ezgovId = UUID.randomUUID().toString();
+    session.setAttribute(
+        assessmentLaunchKey(assessmentRulebase, application.getCaseReferenceNumber()), ezgovId);
 
     // start opa assessment. The standalone means reassessment (CCMS_MNA05) reuses the prior
     // assessment data, so it must not have the "do not reuse" attributes stripped (old PUI's
@@ -413,6 +415,36 @@ public class AssessmentController {
     }
   }
 
+  static String assessmentLaunchKey(
+      final AssessmentRulebase assessmentRulebase, final String caseReferenceNumber) {
+    return "assessmentLaunch." + assessmentRulebase.name() + "." + caseReferenceNumber;
+  }
+
+  /**
+   * Whether this confirmation is the first one for the interview launch currently open for the
+   * case, identified by the launch id (ezgovId) its context token carries. A confirmation reloaded
+   * after the interview was reopened carries an older launch id, and a repeat of the same one finds
+   * it already consumed, so neither can release a checkpoint holding answers given since.
+   *
+   * @param session the session the launch id was recorded in
+   * @param assessmentRulebase the rulebase that was submitted
+   * @param caseReferenceNumber the case the assessment belongs to
+   * @param launchId the launch id from the confirmation's context token
+   * @return true at most once per launch, for its own confirmation
+   */
+  private boolean consumeAssessmentLaunch(
+      final HttpSession session,
+      final AssessmentRulebase assessmentRulebase,
+      final String caseReferenceNumber,
+      final String launchId) {
+    final String key = assessmentLaunchKey(assessmentRulebase, caseReferenceNumber);
+    if (launchId == null || !launchId.equals(session.getAttribute(key))) {
+      return false;
+    }
+    session.removeAttribute(key);
+    return true;
+  }
+
   private ApplicationDetail resolveAssessmentApplication(final HttpSession session) {
     if (session.getAttribute(APPLICATION_ID) != null) {
       final String applicationId = String.valueOf(session.getAttribute(APPLICATION_ID));
@@ -533,6 +565,7 @@ public class AssessmentController {
       @PathVariable("caseContext") final CaseContext caseContext,
       @RequestParam(value = "val") final String token,
       @SessionAttribute(value = USER_DETAILS, required = false) final UserDetail user,
+      final HttpSession session,
       final Model model) {
     final ContextToken contextToken = contextSecurityUtil.createContextToken(token);
     final Long rulebaseId = contextToken.getRulebaseId();
@@ -573,10 +606,13 @@ public class AssessmentController {
             .orElseThrow(
                 () -> new CaabApplicationException("Failed to retrieve assessment details"));
 
-    assessmentService.clearCheckpointAfterIncompleteSubmit(
-        assessmentRulebase,
-        assessment,
-        user != null ? user.getLoginId() : contextToken.getUserId());
+    if (consumeAssessmentLaunch(
+        session, assessmentRulebase, caseReferenceNumber, contextToken.getEzgovId())) {
+      assessmentService.clearCheckpointAfterIncompleteSubmit(
+          assessmentRulebase,
+          assessment,
+          user != null ? user.getLoginId() : contextToken.getUserId());
+    }
 
     final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups =
         assessmentDataMonos.getT2();

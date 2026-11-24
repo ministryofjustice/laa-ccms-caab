@@ -46,15 +46,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -1427,66 +1424,11 @@ public class AssessmentServiceTest {
         new AssessmentDetail()
             .providerId("26517")
             .caseReferenceNumber("300001749512")
-            .status("INCOMPLETE")
-            .auditDetail(savedAfterCreation(600_000L)),
+            .status("INCOMPLETE"),
         "login");
 
     assertNull(prepop.getCheckpoint());
     verify(assessmentApiClient).updateAssessment(7L, prepop, "login");
-  }
-
-  @ParameterizedTest(name = "saved {0}ms after creation -> checkpoint kept")
-  @ValueSource(longs = {0L, 4_999L})
-  @DisplayName(
-      "clearCheckpointAfterIncompleteSubmit keeps the checkpoint of an assessment no submit has "
-          + "saved, such as the one a reopened interview started")
-  void clearCheckpointAfterIncompleteSubmitKeepsTheCheckpointOfAnUnsubmittedAssessment(
-      final long millisAfterCreation) {
-    assessmentService.clearCheckpointAfterIncompleteSubmit(
-        AssessmentRulebase.MERITS,
-        new AssessmentDetail()
-            .providerId("26517")
-            .caseReferenceNumber("300001749512")
-            .status("INCOMPLETE")
-            .auditDetail(savedAfterCreation(millisAfterCreation)),
-        "login");
-
-    verify(assessmentApiClient, never()).getAssessments(any(), any(), any());
-    verify(assessmentApiClient, never()).updateAssessment(any(), any(), any());
-  }
-
-  @ParameterizedTest(name = "audit {0} -> checkpoint kept")
-  @MethodSource("incompleteAuditDetails")
-  @DisplayName(
-      "clearCheckpointAfterIncompleteSubmit keeps the checkpoint when the audit dates cannot show a "
-          + "submit saved the assessment")
-  void clearCheckpointAfterIncompleteSubmitKeepsTheCheckpointWithoutAuditDates(
-      final String description, final AuditDetail audit) {
-    assessmentService.clearCheckpointAfterIncompleteSubmit(
-        AssessmentRulebase.MEANS,
-        new AssessmentDetail()
-            .providerId("26517")
-            .caseReferenceNumber("300001749512")
-            .status("INCOMPLETE")
-            .auditDetail(audit),
-        "login");
-
-    verify(assessmentApiClient, never()).getAssessments(any(), any(), any());
-    verify(assessmentApiClient, never()).updateAssessment(any(), any(), any());
-  }
-
-  private static Stream<Arguments> incompleteAuditDetails() {
-    return Stream.of(
-        Arguments.of("missing", null),
-        Arguments.of("without created", new AuditDetail().lastSaved(new Date())),
-        Arguments.of("without lastSaved", new AuditDetail().created(new Date())));
-  }
-
-  private static AuditDetail savedAfterCreation(final long millisAfterCreation) {
-    final Date created = new Date(1_700_000_000_000L);
-    return new AuditDetail()
-        .created(created)
-        .lastSaved(new Date(created.getTime() + millisAfterCreation));
   }
 
   @ParameterizedTest(name = "{0} {1} -> checkpoint untouched")

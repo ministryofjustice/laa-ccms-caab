@@ -126,8 +126,6 @@ public class AssessmentService {
   private static final DateTimeFormatter ASSESSMENT_DATE_FORMATTER =
       DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
-  private static final long MINIMUM_START_TO_SUBMIT_MILLIS = 5_000L;
-
   // Prepopulated global inputs that were previously sent empty or with a different value from old
   // PUI, so prepops persisted before that was corrected must be refreshed when reused.
   private static final Set<String> REFRESHED_GLOBAL_INPUTS =
@@ -1096,10 +1094,10 @@ public class AssessmentService {
    * the next start loads the saved answers with refreshed inputs. A COMPLETE submit keeps its
    * checkpoint so the interview can still be viewed.
    *
-   * <p>Only an assessment a submit has saved qualifies. Every start builds a new working assessment
-   * that is INCOMPLETE until it is submitted, so an old confirmation page refreshed after the
-   * interview was reopened finds one that no submit has touched, and the checkpoint then holds the
-   * answers given since. Those exist nowhere else, so it is left alone.
+   * <p>Call it only for the submit of the interview launch the confirmation belongs to, and at most
+   * once: every start builds a new working assessment that is INCOMPLETE until submitted, so an old
+   * confirmation reloaded after the interview was reopened would otherwise release a checkpoint
+   * holding answers given since. AssessmentController enforces this with a one-time launch id.
    *
    * @param assessmentRulebase the rulebase that was submitted
    * @param submittedAssessment the assessment as saved by the submit
@@ -1110,8 +1108,7 @@ public class AssessmentService {
       final AssessmentDetail submittedAssessment,
       final String loginId) {
     if (assessmentRulebase.isFinancialAssessment()
-        || !INCOMPLETE.getStatus().equalsIgnoreCase(submittedAssessment.getStatus())
-        || !wasSavedBySubmit(submittedAssessment)) {
+        || !INCOMPLETE.getStatus().equalsIgnoreCase(submittedAssessment.getStatus())) {
       return;
     }
 
@@ -1138,21 +1135,6 @@ public class AssessmentService {
     assessmentApiClient
         .updateAssessment(prepopAssessment.getId(), prepopAssessment, loginId)
         .block();
-  }
-
-  /**
-   * Whether the assessment was saved some time after it was created, which only a submit does. A
-   * submit follows a whole interview, so a save within moments of creation is the creation itself.
-   * Unknown audit dates count as not submitted: leaving a checkpoint in place costs a stale resume,
-   * dropping the wrong one costs the provider's answers.
-   */
-  private static boolean wasSavedBySubmit(final AssessmentDetail assessment) {
-    final AuditDetail audit = assessment.getAuditDetail();
-    return audit != null
-        && audit.getCreated() != null
-        && audit.getLastSaved() != null
-        && audit.getLastSaved().getTime() - audit.getCreated().getTime()
-            >= MINIMUM_START_TO_SUBMIT_MILLIS;
   }
 
   /**
