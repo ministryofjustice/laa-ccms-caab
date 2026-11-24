@@ -22,12 +22,14 @@ import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2Clien
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @SpringBootTest(
     classes = MultipartRequestLimitIntegrationTest.TestApplication.class,
+    properties = "spring.config.import=file:src/main/resources/application.yml",
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class MultipartRequestLimitIntegrationTest {
 
@@ -64,6 +66,24 @@ class MultipartRequestLimitIntegrationTest {
     }
   }
 
+  @Test
+  void rejectsUrlEncodedFormPostLargerThanTomcatFormLimit() throws Exception {
+    String body = "value=" + "x".repeat(2 * MIB + 1);
+    HttpRequest request =
+        HttpRequest.newBuilder(
+                URI.create("http://localhost:" + port + contextPath + "/form-boundary"))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .POST(HttpRequest.BodyPublishers.ofString(body))
+            .build();
+
+    try (HttpClient client = HttpClient.newHttpClient()) {
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      assertTrue(
+          response.statusCode() >= 400 && response.statusCode() < 500,
+          "Expected a 4xx response but received " + response.statusCode());
+    }
+  }
+
   private static void addFile(ByteArrayOutputStream body, String name, byte[] content)
       throws IOException {
     body.write(
@@ -96,6 +116,11 @@ class MultipartRequestLimitIntegrationTest {
     String accept(
         @RequestPart("first") MultipartFile first, @RequestPart("second") MultipartFile second) {
       return first.getSize() + ":" + second.getSize();
+    }
+
+    @PostMapping("/form-boundary")
+    String acceptForm(@RequestParam("value") String value) {
+      return String.valueOf(value.length());
     }
   }
 }

@@ -226,6 +226,9 @@ class UnrestrictedRoutesTest {
 
   /** The route as listed: variables the rules distinguish written out, others as placeholders. */
   static String displayPath(String template, String path) {
+    if (template.isEmpty()) {
+      return "(context-root)";
+    }
     String[] templateSegments = template.split("/", -1);
     String[] pathSegments = path.split("/", -1);
     for (int i = 0; i < templateSegments.length; i++) {

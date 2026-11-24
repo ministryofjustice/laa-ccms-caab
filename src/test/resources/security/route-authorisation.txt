@@ -2,6 +2,7 @@
 # GET entries also specify implicit HEAD access. + means all; | separates alternatives.
 # AUTHENTICATED flows preserve deliberately function-unrestricted access pending the ADR.
 # Expectations are not obtained from SecurityConfiguration.
+GET (context-root) => AUTHENTICATED
 GET / => AUTHENTICATED
 GET /allocate-cost-limit => VC
 GET /allocate-cost-limit/counsel/{index}/remove => VC

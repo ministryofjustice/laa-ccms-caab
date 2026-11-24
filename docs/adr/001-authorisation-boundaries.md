@@ -143,13 +143,13 @@ replay store.
 
 ## Deployment compatibility
 
-[#947](https://github.com/ministryofjustice/laa-ccms-caab/pull/947) (updated at
-`584aa6f3` with EntraID/OIDC and agreed **`SameSite=Lax`**, `Secure`, `HttpOnly`
-cookies) and
+[#947](https://github.com/ministryofjustice/laa-ccms-caab/pull/947) (now merged on
+`main` at `6ef2987e` with EntraID/OIDC and agreed **`SameSite=Lax`**, `Secure`,
+`HttpOnly` cookies, HSTS, `Referrer-Policy` and `Permissions-Policy` headers) and
 [ministryofjustice/laa-ccms-caab-helm-charts#373](https://github.com/ministryofjustice/laa-ccms-caab-helm-charts/pull/373)
-(updated at `7de96a72`) provide separate cookie, browser-header, transport,
-container and ingress-exposure controls. They complement, rather than replace,
-function and provider authorisation.
+provide separate cookie, browser-header, transport, container and
+ingress-exposure controls. They complement, rather than replace, function and
+provider authorisation.
 
 API calls use internal Kubernetes services rather than the backend ingresses
 disabled by the chart change, and this PR adds no writable filesystem paths or

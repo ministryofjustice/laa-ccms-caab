@@ -5,6 +5,7 @@
 # add a rule to SecurityConfiguration.authorizeUserFunctions instead.
 
 # Home, provider switch and shared pages
+GET (context-root)
 GET /
 POST /csp/report
 GET /home
