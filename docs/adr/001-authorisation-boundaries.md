@@ -45,25 +45,34 @@ those URL function rules and template controls:
 
 ## Decision 1: runtime default-deny and authenticated-only routes (U1)
 
-**Current state:** `SecurityConfiguration` retains `anyRequest().authenticated()`.
-In legacy PUI (`laa-ccms-provider-ui`, `CheckActionAllowed.java`), function checks
-were applied only to explicit action transitions, leaving session-bound section
-editing authenticated-only. The independent route manifest currently classifies
-all discovered routes into explicit function rules, 2 `PUBLIC` routes and the
-remaining `AUTHENTICATED` routes.
+**Implemented state:** `SecurityConfiguration` enforces runtime
+`anyRequest().denyAll()` after three explicit rule layers:
+1. `authorizePublicRoutes` — static assets, actuator health/prometheus probes,
+   internal servlet `DispatcherType.ERROR` dispatches, `/authentication-error`
+   and `POST /csp/report`.
+2. `authorizeUserFunctions` — action-specific function rules.
+3. `authorizeAuthenticatedRoutes` — exact, method-scoped `GET`/`HEAD` and `POST`
+   paths for routes intended for any signed-in user (Home, provider switch,
+   court/counsel pickers, submission progress/result pages and session-bound
+   draft application pages), with no `**` catch-all wildcards.
 
-**Recommendation for Paul K:** Adopt runtime `anyRequest().denyAll()` backed by
-an explicit allowlist of genuinely `PUBLIC` routes, agreed `AUTHENTICATED` routes
-and required framework paths (`/error`, `/login/**`, `/oauth2/**`, `/logout`).
-Because the manifest already enumerates every non-function route, the allowlist is
-concrete and low-risk, and fails closed even if a route is introduced outside the
-test inventory. Until Paul K approves this change, `anyRequest().authenticated()`
-is retained with the exhaustive inventory as a mandatory build check.
+Any unlisted route or unmapped HTTP method is denied at runtime even for a user
+holding every `UserRole` function, and also fails `RouteAuthorizationTest` /
+`UnrestrictedRoutesTest` at build time.
 
-**Open question:** Confirm whether `/application/sections/**` and
-`/application/abandon` should remain `AUTHENTICATED` (relying on session-bound
-draft application state, matching legacy PUI) or require explicit entry functions
-such as `CA` / `YCA`.
+**Draft application sections (`/application/sections/...`, `/application/abandon`):**
+In legacy PUI (`laa-ccms-provider-ui`, `CheckActionAllowed.java`), function
+checks applied only to explicit action transitions, leaving session-bound draft
+section pages authenticated-only. In CAAB, users also open existing firm drafts
+via Search (`SCA` on `/application/search` and `/application/{ref}/view`) to
+review or submit (`SA`) them without necessarily holding `CA` (Create
+Application). Keeping those draft pages explicitly `AUTHENTICATED` preserves
+that separation of duties while still gating proceedings (`AP`/`VP`/`DP`),
+client updates (`SU`) and final submission (`SA`).
+
+**Sign-off requested from Paul K:** Confirm agreement with runtime
+`anyRequest().denyAll()` plus this explicit `AUTHENTICATED` allowlist for
+session-bound draft application pages.
 
 ## Decision 2: URL rules vs method/service-layer authorisation (U2)
 

@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.config;
 
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
@@ -95,20 +97,10 @@ public class SecurityConfiguration {
 
     return http.authorizeHttpRequests(
             authorize -> {
-              authorize
-                  .requestMatchers(
-                      "/assets/**",
-                      "/ccms/**",
-                      "/govuk-dialect/**",
-                      "/favicon.ico",
-                      AUTHENTICATION_ERROR_PATH)
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/actuator/prometheus", "/actuator/health/**")
-                  .permitAll() // Ensure Actuator endpoints are excluded
-                  .requestMatchers(HttpMethod.POST, "/csp/report")
-                  .permitAll();
+              authorizePublicRoutes(authorize);
               authorizeUserFunctions(authorize);
-              authorize.anyRequest().authenticated();
+              authorizeAuthenticatedRoutes(authorize);
+              authorize.anyRequest().denyAll();
             })
         .csrf(
             csrf ->
@@ -161,6 +153,27 @@ public class SecurityConfiguration {
                     .successHandler(new SessionStartRecordingSuccessHandler())
                     .failureHandler(authenticationFailureHandler()))
         .build();
+  }
+
+  /** Permits static assets, probes, container error dispatches and deliberate public endpoints. */
+  static void authorizePublicRoutes(
+      AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
+          authorize) {
+    authorize
+        .dispatcherTypeMatchers(DispatcherType.ERROR)
+        .permitAll()
+        .requestMatchers(
+            "/assets/**",
+            "/ccms/**",
+            "/govuk-dialect/**",
+            "/favicon.ico",
+            AUTHENTICATION_ERROR_PATH)
+        .permitAll()
+        .requestMatchers(
+            HttpMethod.GET, "/actuator/prometheus", "/actuator/health", "/actuator/health/**")
+        .permitAll() // Ensure Actuator endpoints are excluded
+        .requestMatchers(HttpMethod.POST, "/csp/report")
+        .permitAll();
   }
 
   /**
@@ -338,6 +351,142 @@ public class SecurityConfiguration {
         .access(outcomeAction())
         .requestMatchers("/case/**")
         .access(caseAction());
+  }
+
+  /**
+   * Explicitly allows routes intended for any signed-in user (Home, provider switch, shared
+   * court/counsel pickers and session-bound draft application pages) before the final {@code
+   * denyAll()} catch-all.
+   */
+  static void authorizeAuthenticatedRoutes(
+      AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
+          authorize) {
+    authorize.requestMatchers(SecurityConfiguration::isContextRootGetOrHead).authenticated();
+    allowGetAndHead(
+        authorize,
+        "/",
+        "/home",
+        "/provider-switch",
+        "/submissions/alreadySubmitted",
+        "/counsel/results",
+        "/counsel/search",
+        "/counsel/select",
+        "/court/results",
+        "/court/search",
+        "/court/select",
+        "/application/counsel/confirm",
+        "/application/submit-case",
+        "/application/submit-case/confirmed",
+        "/application/submit-case/failed",
+        "/application/submit-case/undertaking",
+        "/application/submit-case/undertaking/confirmed",
+        "/application/submit-case/undertaking/failed",
+        "/application/client-update",
+        "/application/client-update/confirmed",
+        "/application/client-update/failed",
+        "/application/abandon",
+        "/application/assessments",
+        "/application/assessments/confirm",
+        "/application/assessments/confirm/caseSummary.do",
+        "/application/assessments/*/remove",
+        "/application/case-costs",
+        "/application/evidence/add",
+        "/application/evidence/*/remove",
+        "/application/evidence/*/view",
+        "/application/prior-authorities/add/details",
+        "/application/prior-authorities/add/type",
+        "/application/prior-authorities/edit/details",
+        "/application/prior-authorities/*/confirm",
+        "/application/prior-authorities/*/remove",
+        "/application/proceedings-and-costs",
+        "/application/proceedings/*/make-lead",
+        "/application/sections",
+        "/application/sections/application-type",
+        "/application/sections/client/details/address",
+        "/application/sections/client/details/address/search",
+        "/application/sections/client/details/basic",
+        "/application/sections/client/details/contact",
+        "/application/sections/client/details/deceased",
+        "/application/sections/client/details/equal-opportunities-monitoring",
+        "/application/sections/client/details/summary",
+        "/application/sections/correspondence-address",
+        "/application/sections/correspondence-address/search",
+        "/application/sections/evidence",
+        "/application/sections/linked-cases",
+        "/application/sections/linked-cases/search",
+        "/application/sections/linked-cases/search/results",
+        "/application/sections/linked-cases/*/add",
+        "/application/sections/linked-cases/*/confirm",
+        "/application/sections/linked-cases/*/remove",
+        "/application/sections/opponents",
+        "/application/sections/opponents/individual/create",
+        "/application/sections/opponents/organisation/create",
+        "/application/sections/opponents/organisation/search",
+        "/application/sections/opponents/organisation/search/results",
+        "/application/sections/opponents/organisation/*/select",
+        "/application/sections/opponents/*/edit",
+        "/application/sections/opponents/*/remove",
+        "/application/sections/provider-details",
+        "/application/sections/summary",
+        "/application/summary/print");
+    authorize
+        .requestMatchers(
+            HttpMethod.POST,
+            "/provider-switch",
+            "/counsel/search",
+            "/court/search",
+            "/application/counsel/confirm",
+            "/application/submit-case/confirmed",
+            "/application/submit-case/failed",
+            "/application/submit-case/undertaking/confirmed",
+            "/application/submit-case/undertaking/failed",
+            "/application/client-update/confirmed",
+            "/application/client-update/failed",
+            "/application/abandon/confirmed",
+            "/application/assessments/*/remove",
+            "/application/case-costs",
+            "/application/evidence/add",
+            "/application/prior-authorities/add/details",
+            "/application/prior-authorities/add/type",
+            "/application/prior-authorities/edit/details",
+            "/application/prior-authorities/edit/type",
+            "/application/prior-authorities/*/remove",
+            "/application/sections/application-type",
+            "/application/sections/client/details/address",
+            "/application/sections/client/details/address/search",
+            "/application/sections/client/details/basic",
+            "/application/sections/client/details/contact",
+            "/application/sections/client/details/deceased",
+            "/application/sections/client/details/equal-opportunities-monitoring",
+            "/application/sections/correspondence-address",
+            "/application/sections/correspondence-address/search",
+            "/application/sections/linked-cases/add",
+            "/application/sections/linked-cases/search",
+            "/application/sections/linked-cases/*/confirm",
+            "/application/sections/linked-cases/*/remove",
+            "/application/sections/opponents/individual/create",
+            "/application/sections/opponents/organisation/create",
+            "/application/sections/opponents/organisation/search",
+            "/application/sections/opponents/organisation/shared/create",
+            "/application/sections/opponents/*/edit",
+            "/application/sections/opponents/*/remove",
+            "/application/sections/provider-details")
+        .authenticated();
+  }
+
+  private static boolean isContextRootGetOrHead(HttpServletRequest request) {
+    return (HttpMethod.GET.matches(request.getMethod())
+            || HttpMethod.HEAD.matches(request.getMethod()))
+        && request.getServletPath().isEmpty()
+        && request.getPathInfo() == null;
+  }
+
+  private static void allowGetAndHead(
+      AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
+          authorize,
+      String... patterns) {
+    authorize.requestMatchers(HttpMethod.GET, patterns).authenticated();
+    authorize.requestMatchers(HttpMethod.HEAD, patterns).authenticated();
   }
 
   /** Requires every one of the given functions. */

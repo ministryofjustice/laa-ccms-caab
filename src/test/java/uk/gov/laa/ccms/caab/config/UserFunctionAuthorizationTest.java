@@ -59,9 +59,12 @@ class UserFunctionAuthorizationTest {
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
       return http.authorizeHttpRequests(
               authorize -> {
+                SecurityConfiguration.authorizePublicRoutes(authorize);
                 SecurityConfiguration.authorizeUserFunctions(authorize);
-                authorize.anyRequest().authenticated();
+                SecurityConfiguration.authorizeAuthenticatedRoutes(authorize);
+                authorize.anyRequest().denyAll();
               })
+          .csrf(csrf -> csrf.ignoringRequestMatchers("/csp/report"))
           .exceptionHandling(
               exceptions -> exceptions.accessDeniedHandler(new NotAuthorisedAccessDeniedHandler()))
           .build();
@@ -467,11 +470,33 @@ class UserFunctionAuthorizationTest {
   }
 
   @Test
-  @DisplayName("Routes outside the rules only need the user to be logged in")
+  @DisplayName("Explicitly allowlisted routes only need the user to be logged in")
   void unrestrictedRouteNeedsOnlyAuthentication() throws Exception {
     mockMvc
         .perform(request(HttpMethod.GET, "/home").with(user("user").authorities(() -> "OTHER")))
         .andExpect(status().isNotFound());
+  }
+
+  @Test
+  @DisplayName("Unlisted routes are denied by default even when the user holds every function")
+  void unlistedRouteIsDeniedEvenWithEveryFunction() throws Exception {
+    List<GrantedAuthority> allFunctions =
+        java.util.Arrays.stream(UserRole.values())
+            .map(role -> (GrantedAuthority) new SimpleGrantedAuthority(role.getCode()))
+            .toList();
+
+    mockMvc
+        .perform(
+            request(HttpMethod.GET, "/unlisted-route").with(user("user").authorities(allFunctions)))
+        .andExpect(redirectedUrl("/home"))
+        .andExpect(notAuthorisedPending());
+    mockMvc
+        .perform(
+            request(HttpMethod.POST, "/home")
+                .with(user("user").authorities(allFunctions))
+                .with(csrf()))
+        .andExpect(redirectedUrl("/home"))
+        .andExpect(notAuthorisedPending());
   }
 
   @Test

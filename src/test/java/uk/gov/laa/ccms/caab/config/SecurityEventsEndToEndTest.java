@@ -330,6 +330,102 @@ class SecurityEventsEndToEndTest {
         .isEqualTo(uk.gov.laa.ccms.caab.logging.UserIdentifier.pseudonymise("jane"));
   }
 
+  @Test
+  void unlistedRoutesAreDeniedByDefaultAndErrorAndLogoutRemainFunctional() throws Exception {
+    var allFunctions =
+        java.util.Arrays.stream(UserRole.values())
+            .map(
+                role ->
+                    new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                        role.getCode()))
+            .toList();
+    final var csrf =
+        org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+            .csrf();
+
+    // Even with every user function, an unmapped path or unmapped method is denied and logged.
+    MvcResult unlistedGet =
+        mockMvc
+            .perform(get("/unlisted-future-endpoint").with(user("jane").authorities(allFunctions)))
+            .andReturn();
+    assertThat(unlistedGet.getResponse().getStatus()).isEqualTo(302);
+    assertThat(unlistedGet.getResponse().getRedirectedUrl()).isEqualTo("/home");
+    assertThat(eventTypes()).contains("AUTHORIZATION_DENIED");
+
+    MvcResult unlistedPost =
+        mockMvc
+            .perform(
+                post("/unlisted-future-endpoint")
+                    .header("Sec-Fetch-Mode", "cors")
+                    .with(user("jane").authorities(allFunctions))
+                    .with(csrf))
+            .andReturn();
+    assertThat(unlistedPost.getResponse().getStatus()).isEqualTo(403);
+
+    // Unauthenticated probes redirect to sign-in without distinguishing existing vs unlisted paths.
+    assertThat(
+            mockMvc.perform(get("/unlisted-future-endpoint")).andReturn().getResponse().getStatus())
+        .isEqualTo(302);
+
+    // Direct external GET /error is denied, while internal servlet ERROR dispatches are permitted.
+    assertThat(
+            mockMvc
+                .perform(
+                    get("/error")
+                        .header("Sec-Fetch-Mode", "cors")
+                        .with(user("jane").authorities(allFunctions)))
+                .andReturn()
+                .getResponse()
+                .getStatus())
+        .isEqualTo(403);
+    assertThat(
+            mockMvc
+                .perform(
+                    get("/error")
+                        .with(
+                            req -> {
+                              req.setDispatcherType(jakarta.servlet.DispatcherType.ERROR);
+                              return req;
+                            })
+                        .with(user("jane").authorities()))
+                .andReturn()
+                .getResponse()
+                .getStatus())
+        .isEqualTo(404);
+
+    // Sign-out confirmation (GET /logout), sign-out submission (POST /logout), and bare context
+    // root (GET /civil) remain reachable, while POST /civil is denied.
+    assertThat(
+            mockMvc
+                .perform(get("/civil").contextPath("/civil").with(user("jane").authorities()))
+                .andReturn()
+                .getResponse()
+                .getStatus())
+        .isEqualTo(404);
+    assertThat(
+            mockMvc
+                .perform(
+                    post("/civil")
+                        .contextPath("/civil")
+                        .header("Sec-Fetch-Mode", "cors")
+                        .with(user("jane").authorities(allFunctions))
+                        .with(csrf))
+                .andReturn()
+                .getResponse()
+                .getStatus())
+        .isEqualTo(403);
+    assertThat(
+            mockMvc
+                .perform(get("/logout").with(user("jane").authorities()))
+                .andReturn()
+                .getResponse()
+                .getStatus())
+        .isEqualTo(200);
+    MvcResult logoutPost =
+        mockMvc.perform(post("/logout").with(user("jane").authorities()).with(csrf)).andReturn();
+    assertThat(logoutPost.getResponse().getStatus()).isEqualTo(302);
+  }
+
   private String keyValue(String eventType, String key) {
     return appender.list.stream()
         .filter(
