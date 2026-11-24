@@ -9,9 +9,11 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CORRESPONDENCE_ADD
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATE_CLIENT_ADDRESS_FLOW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_CLIENT_ADDRESS_FLOW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SECTIONS_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,7 @@ import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.security.HeldFunctions;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.util.ApplicationEditorState;
+import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /** Controller for the application sections. */
@@ -82,9 +85,13 @@ public class ApplicationSectionsController {
     model.addAttribute("summary", sections);
     model.addAttribute("backUrl", backUrl);
 
+    final boolean draft =
+        !Boolean.TRUE.equals(application.getAmendment())
+            && !isSentAndNotFailed(session, application.getId());
+
     final ActiveCase activeCase =
         ActiveCase.builder()
-            .draftApplication(!Boolean.TRUE.equals(application.getAmendment()))
+            .draftApplication(draft)
             .amendment(Boolean.TRUE.equals(application.getAmendment()))
             .applicationId(application.getId())
             .caseReferenceNumber(sections.getCaseReferenceNumber())
@@ -108,6 +115,25 @@ public class ApplicationSectionsController {
     model.addAttribute("formData", new Object());
 
     return "application/sections/task-page";
+  }
+
+  /**
+   * Whether this session has sent the application and the submission has not failed. A sent
+   * application stays in the draft store until its submission is confirmed and cleaned up, so until
+   * then it must not be reopened for editing; one whose submission failed is still the user's to
+   * correct.
+   */
+  private boolean isSentAndNotFailed(final HttpSession session, final Integer applicationId) {
+    if (!(session.getAttribute(ACTIVE_CASE) instanceof ActiveCase sent)
+        || sent.isDraftApplication()
+        || sent.isAmendment()
+        || !Objects.equals(sent.getApplicationId(), applicationId)
+        || !(session.getAttribute(SUBMISSION_TRANSACTION_ID) instanceof String transactionId)
+        || transactionId.isBlank()) {
+      return false;
+    }
+    final TransactionStatus status = applicationService.getCaseStatus(transactionId).block();
+    return status == null || !"ERROR".equalsIgnoreCase(status.getSubmissionStatus());
   }
 
   /**

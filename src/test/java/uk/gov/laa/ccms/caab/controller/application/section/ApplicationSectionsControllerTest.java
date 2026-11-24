@@ -20,8 +20,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SECTIONS_BACK_URL;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SECTIONS_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 
 import jakarta.servlet.ServletException;
@@ -57,6 +59,7 @@ import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
@@ -265,5 +268,71 @@ class ApplicationSectionsControllerTest {
             model().attribute("activeCase", hasProperty("draftApplication", is(draftApplication))))
         .andExpect(
             model().attribute("activeCase", hasProperty("amendment", is(!draftApplication))));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"PENDING,false", "SUCCESS,false", "ERROR,true"})
+  @DisplayName(
+      "An application this session has sent is a draft again only if its submission failed")
+  void aSentApplicationIsReopenedOnlyWhenItsSubmissionFailed(
+      final String submissionStatus, final boolean draftApplication) throws Exception {
+    stubApplicationWithSections();
+    when(applicationService.getCaseStatus("transaction1"))
+        .thenReturn(Mono.just(new TransactionStatus().submissionStatus(submissionStatus)));
+
+    this.mockMvc
+        .perform(
+            get("/application/sections")
+                .sessionAttr("applicationId", "123")
+                .sessionAttr("user", new UserDetail())
+                .sessionAttr(
+                    ACTIVE_CASE,
+                    ActiveCase.builder().applicationId(1).draftApplication(false).build())
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction1"))
+        .andExpect(status().isOk())
+        .andExpect(
+            model().attribute("activeCase", hasProperty("draftApplication", is(draftApplication))));
+  }
+
+  @Test
+  @DisplayName("Only a submission recorded for this application locks it")
+  void aSubmissionRecordedForAnotherApplicationOrNoneDoesNotLockThisOne() throws Exception {
+    stubApplicationWithSections();
+
+    // The active case is a different application, which a transaction was recorded for.
+    this.mockMvc
+        .perform(
+            get("/application/sections")
+                .sessionAttr("applicationId", "123")
+                .sessionAttr("user", new UserDetail())
+                .sessionAttr(
+                    ACTIVE_CASE,
+                    ActiveCase.builder().applicationId(99).draftApplication(false).build())
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction1"))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("activeCase", hasProperty("draftApplication", is(true))));
+
+    // The same application, with no transaction recorded.
+    this.mockMvc
+        .perform(
+            get("/application/sections")
+                .sessionAttr("applicationId", "123")
+                .sessionAttr("user", new UserDetail())
+                .sessionAttr(
+                    ACTIVE_CASE,
+                    ActiveCase.builder().applicationId(1).draftApplication(false).build()))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("activeCase", hasProperty("draftApplication", is(true))));
+
+    verify(applicationService, never()).getCaseStatus(anyString());
+  }
+
+  private void stubApplicationWithSections() {
+    final ApplicationDetail application = buildApplicationDetail(1, false, new Date());
+    application.setId(1);
+    when(applicationService.getApplication(anyString())).thenReturn(Mono.just(application));
+    when(applicationService.getApplicationSections(
+            any(ApplicationDetail.class), any(UserDetail.class)))
+        .thenReturn(ApplicationSectionDisplay.builder().build());
   }
 }
