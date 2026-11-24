@@ -288,7 +288,7 @@ class AwardControllerTest {
     private static final String AWARD_KEY = "300000001:land:7";
 
     private final PartyListCandidate existing =
-        new PartyListCandidate("id-1", new OpponentDetail().id(1), false);
+        new PartyListCandidate("id-1", new OpponentDetail().id(1).ebsId("E-EXIST"), false);
     private final PartyListCandidate newFirst =
         new PartyListCandidate("ebs-E1", new OpponentDetail().ebsId("E1"), false);
     private final PartyListCandidate newSecond =
@@ -410,18 +410,18 @@ class AwardControllerTest {
               eq(123),
               eq("land"),
               eq(7),
-              eq(List.of(1)),
-              eq(List.of(newFirst.opponent())),
+              eq(List.of(existing.opponent(), newFirst.opponent())),
               eq(user.getLoginId()),
               any());
-      assertThat(createdEbsIds()).containsExactly("E1");
+      assertThat(createdEbsIds()).containsExactlyInAnyOrder("E-EXIST", "E1");
 
       mockMvc.perform(
           get(PARTY_LIST_URL)
               .session(session)
               .sessionAttr(CASE, ebsCase)
               .sessionAttr(USER_DETAILS, user));
-      verify(partyListService).getCandidates(ebsCase, null, 123, "land", 7, Set.of("E1"));
+      verify(partyListService)
+          .getCandidates(ebsCase, null, 123, "land", 7, Set.of("E-EXIST", "E1"));
     }
 
     @Test
@@ -445,12 +445,12 @@ class AwardControllerTest {
     void releasesUncreatedClaimsOnFailure() {
       doAnswer(
               invocation -> {
-                final Consumer<OpponentDetail> onCreated = invocation.getArgument(7);
+                final Consumer<OpponentDetail> onCreated = invocation.getArgument(6);
                 onCreated.accept(newFirst.opponent());
                 throw new CaabApplicationException("failed");
               })
           .when(caseOutcomeService)
-          .addLiableParties(any(), any(), any(), any(), any(), any(), any(), any());
+          .addLiableParties(any(), any(), any(), any(), any(), any(), any());
 
       assertThat(mockMvc.perform(submit("ebs-E1", "ebs-E2")))
           .hasViewName("application/party-list-screen")
@@ -470,12 +470,12 @@ class AwardControllerTest {
           .thenThrow(new CaabApiClientException("unavailable"));
       doAnswer(
               invocation -> {
-                final Consumer<OpponentDetail> onCreated = invocation.getArgument(7);
+                final Consumer<OpponentDetail> onCreated = invocation.getArgument(6);
                 onCreated.accept(newFirst.opponent());
                 throw new CaabApiClientException("failed");
               })
           .when(caseOutcomeService)
-          .addLiableParties(any(), any(), any(), any(), any(), any(), any(), any());
+          .addLiableParties(any(), any(), any(), any(), any(), any(), any());
 
       assertThat(mockMvc.perform(submit("ebs-E1", "ebs-E2")))
           .hasViewName("application/party-list-screen")
