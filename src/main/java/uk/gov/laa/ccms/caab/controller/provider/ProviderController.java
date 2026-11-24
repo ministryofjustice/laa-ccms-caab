@@ -22,6 +22,7 @@ import uk.gov.laa.ccms.caab.bean.validators.provider.ProviderFirmValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.logging.SessionCorrelationFilter;
 import uk.gov.laa.ccms.caab.security.AbsoluteSessionTimeoutFilter;
+import uk.gov.laa.ccms.caab.security.ProviderContext;
 import uk.gov.laa.ccms.caab.security.UserFunctionAuthorities;
 import uk.gov.laa.ccms.caab.service.NotificationSearchOptionsCache;
 import uk.gov.laa.ccms.caab.service.UserService;
@@ -105,6 +106,7 @@ public class ProviderController {
         || reloadedUser.getProvider() == null
         || !newProvider.getId().equals(reloadedUser.getProvider().getId())) {
       log.error("User {} could not be reloaded for the selected provider", user.getLoginId());
+      ProviderContext.clear();
       SecurityContextHolder.clearContext();
       session.invalidate();
       return "redirect:/home";
@@ -113,6 +115,7 @@ public class ProviderController {
     user.setProvider(newProvider);
     UserFunctionAuthorities.replace(authentication, user, reloadedUser, session);
     user.setFunctions(reloadedUser.getFunctions());
+    ProviderContext.setFromUser(user);
     clearProviderSessionState(session);
     notificationSearchOptionsCache.clear();
 

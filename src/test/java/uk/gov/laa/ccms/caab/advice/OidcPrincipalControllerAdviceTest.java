@@ -16,6 +16,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -39,8 +41,10 @@ import org.springframework.web.servlet.HandlerMapping;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.controller.HomeController;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.security.ProviderContext;
 import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.service.UserService;
+import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(SpringExtension.class)
@@ -75,6 +79,12 @@ class OidcPrincipalControllerAdviceTest {
     when(userService.getUser(any())).thenReturn(Mono.just(userDetails));
     when(userService.getUserByLoginId(any())).thenReturn(Mono.just(userDetails));
     when(authentication.getName()).thenReturn("test");
+    ProviderContext.clear();
+  }
+
+  @AfterEach
+  public void tearDown() {
+    ProviderContext.clear();
   }
 
   @Nested
@@ -262,6 +272,43 @@ class OidcPrincipalControllerAdviceTest {
       advice.addOidcPrincipalToModel(authentication, model, session, request);
 
       verifyNoInteractions(securityEventLogger);
+    }
+
+    @Test
+    @DisplayName("Seeds ProviderContext after loading user on first post-login request")
+    public void seedsProviderContextOnFirstPostLoginLoad() {
+      userDetails.setProvider(new BaseProvider().id(12345).name("Firm A"));
+      when(session.getAttribute("user")).thenReturn(null);
+      AtomicReference<String> providerDuringLookup = new AtomicReference<>("unexpected");
+      when(userService.getUserByLoginId("test"))
+          .thenAnswer(
+              invocation -> {
+                providerDuringLookup.set(ProviderContext.getProviderId());
+                return Mono.just(userDetails);
+              });
+
+      advice.addOidcPrincipalToModel(authentication, model, session, request);
+
+      assertThat(providerDuringLookup.get()).isNull();
+      assertThat(ProviderContext.getProviderId()).isEqualTo("12345");
+    }
+
+    @Test
+    @DisplayName("Refreshes ProviderContext when home page reloads user with updated provider")
+    public void refreshesProviderContextWhenHomePageReloadsUser() {
+      UserDetail sessionUser =
+          new UserDetail().loginId("test").provider(new BaseProvider().id(11111).name("Old Firm"));
+      userDetails.setProvider(new BaseProvider().id(22222).name("New Firm"));
+      ProviderContext.setProviderId("11111");
+      when(session.getAttribute("user")).thenReturn(sessionUser);
+      HandlerMethod handler = mock(HandlerMethod.class);
+      when(request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE))
+          .thenReturn(handler);
+      doReturn(HomeController.class).when(handler).getBeanType();
+
+      advice.addOidcPrincipalToModel(authentication, model, session, request);
+
+      assertThat(ProviderContext.getProviderId()).isEqualTo("22222");
     }
 
     @Test
