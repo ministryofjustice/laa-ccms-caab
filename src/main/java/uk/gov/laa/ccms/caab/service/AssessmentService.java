@@ -1099,6 +1099,11 @@ public class AssessmentService {
    * confirmation reloaded after the interview was reopened would otherwise release a checkpoint
    * holding answers given since. AssessmentController enforces this with a one-time launch id.
    *
+   * <p>The launch id is held in the HTTP session, while the prepop is shared, and assessment-api
+   * offers no conditional delete. A newer launch of the same case in another session, or one
+   * started between the check and the delete, can still lose its checkpoint. Only the checkpoint
+   * row is deleted, so answers saved concurrently into the prepop are never overwritten.
+   *
    * @param assessmentRulebase the rulebase that was submitted
    * @param submittedAssessment the assessment as saved by the submit
    * @param loginId the login id recorded against the update
@@ -1131,10 +1136,7 @@ public class AssessmentService {
         "Releasing checkpoint for {} [{}]: the submit left it INCOMPLETE and saved its answers",
         prepopAssessment.getName(),
         prepopAssessment.getCaseReferenceNumber());
-    prepopAssessment.setCheckpoint(null);
-    assessmentApiClient
-        .updateAssessment(prepopAssessment.getId(), prepopAssessment, loginId)
-        .block();
+    assessmentApiClient.deleteAssessmentCheckpoint(prepopAssessment.getId(), loginId).block();
   }
 
   /**

@@ -1417,7 +1417,7 @@ public class AssessmentServiceTest {
     when(assessmentApiClient.getAssessments(
             List.of(AssessmentRulebase.MERITS.getPrePopAssessmentName()), "26517", "300001749512"))
         .thenReturn(Mono.just(new AssessmentDetails().addContentItem(prepop)));
-    when(assessmentApiClient.updateAssessment(any(), any(), any())).thenReturn(Mono.empty());
+    when(assessmentApiClient.deleteAssessmentCheckpoint(any(), any())).thenReturn(Mono.empty());
 
     assessmentService.clearCheckpointAfterIncompleteSubmit(
         AssessmentRulebase.MERITS,
@@ -1427,8 +1427,9 @@ public class AssessmentServiceTest {
             .status("INCOMPLETE"),
         "login");
 
-    assertNull(prepop.getCheckpoint());
-    verify(assessmentApiClient).updateAssessment(7L, prepop, "login");
+    // Only the checkpoint row is deleted; the prepop itself is never rewritten.
+    verify(assessmentApiClient).deleteAssessmentCheckpoint(7L, "login");
+    verify(assessmentApiClient, never()).updateAssessment(any(), any(), any());
   }
 
   @ParameterizedTest(name = "{0} {1} -> checkpoint untouched")
@@ -1444,7 +1445,7 @@ public class AssessmentServiceTest {
         "login");
 
     verify(assessmentApiClient, never()).getAssessments(any(), any(), any());
-    verify(assessmentApiClient, never()).updateAssessment(any(), any(), any());
+    verify(assessmentApiClient, never()).deleteAssessmentCheckpoint(any(), any());
   }
 
   @Test

@@ -120,6 +120,27 @@ class AssessmentApiClientTest {
   }
 
   @Test
+  void deleteAssessmentCheckpoint_success() {
+    final Long assessmentId = 123L;
+    final String userLoginId = "user123";
+
+    when(assessmentApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri("/assessments/{assessment-id}/checkpoint", assessmentId))
+        .thenReturn(requestHeadersMock);
+    when(requestHeadersMock.header("Caab-User-Login-Id", userLoginId))
+        .thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result =
+        assessmentApiClient.deleteAssessmentCheckpoint(assessmentId, userLoginId);
+
+    StepVerifier.create(result).verifyComplete();
+
+    verify(responseMock).bodyToMono(Void.class);
+  }
+
+  @Test
   void patchAssessment_success() {
     final Long assessmentId = 123L;
     final String userLoginId = "user456";
