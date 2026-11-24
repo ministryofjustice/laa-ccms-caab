@@ -1345,9 +1345,9 @@ public class AssessmentServiceTest {
     assertTrue(globalEntity.getRelations().getFirst().getRelationshipTargets().isEmpty());
   }
 
-  @ParameterizedTest(name = "submitted before={0} -> checkpoint dropped={0}")
+  @ParameterizedTest(name = "submitted before={0}")
   @ValueSource(booleans = {true, false})
-  void refreshPersistedPrepopRefreshesStaleInputsAndDropsCheckpointOnlyOnceSubmitted(
+  void refreshPersistedPrepopRefreshesStaleInputsAndKeepsTheCheckpoint(
       final boolean submittedBefore) {
     final AssessmentAttributeDetail staleCostLimitChanged =
         new AssessmentAttributeDetail().id(11L).name("COST_LIMIT_CHANGED_FLAG").value(null);
@@ -1400,8 +1400,50 @@ public class AssessmentServiceTest {
                         && "No Fixed Abode".equals(attribute.getValue())));
     assertEquals("answered", providerAnswer.getValue());
     assertTrue(getAssessmentEntitiesForEntityType(prepop, LINKED_CASE).isEmpty());
-    // Unsubmitted answers live only in the checkpoint, so it is kept until a submit saves them.
-    assertEquals(submittedBefore, prepop.getCheckpoint() == null);
+    // The checkpoint may hold answers newer than any submit, so the refresh never drops it.
+    assertNotNull(prepop.getCheckpoint());
+  }
+
+  @Test
+  @DisplayName("clearCheckpointAfterIncompleteSubmit releases the prepop checkpoint")
+  void clearCheckpointAfterIncompleteSubmitReleasesThePrepopCheckpoint() {
+    final AssessmentDetail prepop =
+        new AssessmentDetail()
+            .id(7L)
+            .name("meritsAssessment_PREPOP")
+            .caseReferenceNumber("300001749512")
+            .checkpoint(new uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail());
+    when(assessmentApiClient.getAssessments(
+            List.of(AssessmentRulebase.MERITS.getPrePopAssessmentName()), "26517", "300001749512"))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(prepop)));
+    when(assessmentApiClient.updateAssessment(any(), any(), any())).thenReturn(Mono.empty());
+
+    assessmentService.clearCheckpointAfterIncompleteSubmit(
+        AssessmentRulebase.MERITS,
+        new AssessmentDetail()
+            .providerId("26517")
+            .caseReferenceNumber("300001749512")
+            .status("INCOMPLETE"),
+        "login");
+
+    assertNull(prepop.getCheckpoint());
+    verify(assessmentApiClient).updateAssessment(7L, prepop, "login");
+  }
+
+  @ParameterizedTest(name = "{0} {1} -> checkpoint untouched")
+  @CsvSource({"MERITS,COMPLETE", "BILLING,INCOMPLETE"})
+  void clearCheckpointAfterIncompleteSubmitLeavesOtherSubmitsAlone(
+      final AssessmentRulebase rulebase, final String status) {
+    assessmentService.clearCheckpointAfterIncompleteSubmit(
+        rulebase,
+        new AssessmentDetail()
+            .providerId("26517")
+            .caseReferenceNumber("300001749512")
+            .status(status),
+        "login");
+
+    verify(assessmentApiClient, never()).getAssessments(any(), any(), any());
+    verify(assessmentApiClient, never()).updateAssessment(any(), any(), any());
   }
 
   @Test

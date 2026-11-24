@@ -769,6 +769,11 @@ public class AssessmentControllerTest {
     final ArgumentCaptor<AssessmentDetail> captor = ArgumentCaptor.forClass(AssessmentDetail.class);
     verify(assessmentService).getAssessmentSummaryToDisplay(captor.capture(), any(), any());
     assertThat(captor.getValue().getId()).isEqualTo(2L);
+
+    // The submit's outcome is checked against the same assessment, recorded as the session user.
+    verify(assessmentService)
+        .clearCheckpointAfterIncompleteSubmit(
+            eq(AssessmentRulebase.MEANS), eq(mostRecent), eq(userDetails.getLoginId()));
   }
 
   @Test

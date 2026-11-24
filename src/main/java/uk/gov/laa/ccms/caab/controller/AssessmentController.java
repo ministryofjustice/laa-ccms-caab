@@ -532,6 +532,7 @@ public class AssessmentController {
   public String assessmentConfirm(
       @PathVariable("caseContext") final CaseContext caseContext,
       @RequestParam(value = "val") final String token,
+      @SessionAttribute(value = USER_DETAILS, required = false) final UserDetail user,
       final Model model) {
     final ContextToken contextToken = contextSecurityUtil.createContextToken(token);
     final Long rulebaseId = contextToken.getRulebaseId();
@@ -571,6 +572,12 @@ public class AssessmentController {
         Optional.ofNullable(getMostRecentAssessmentDetail(assessmentDataMonos.getT1().getContent()))
             .orElseThrow(
                 () -> new CaabApplicationException("Failed to retrieve assessment details"));
+
+    assessmentService.clearCheckpointAfterIncompleteSubmit(
+        assessmentRulebase,
+        assessment,
+        user != null ? user.getLoginId() : contextToken.getUserId());
+
     final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups =
         assessmentDataMonos.getT2();
     final List<AssessmentSummaryEntityLookupValueDetail> childSummaryLookups =

@@ -135,11 +135,6 @@ public class AssessmentService {
           AssessmentAttribute.NEW_APPL_OR_AMENDMENT.name(),
           AssessmentAttribute.POST_CODE.name());
 
-  // Set true by the interview on its submission page and written into the prepop by the
-  // connector's submit save.
-  private static final String MERITS_SUBMISSION_PAGE_CLEANSE = "MERITS_SUBMISSION_PAGE_CLEANSE";
-  private static final String MEANS_SUBMISSION_PAGE_CLEANSE = "MEANS_SUBMISSION_PAGE_CLEANSE";
-
   private final AssessmentApiClient assessmentApiClient;
   private final CaabApiClient caabApiClient;
   private final EbsApiClient ebsApiClient;
@@ -1032,9 +1027,8 @@ public class AssessmentService {
    * clears instances from prepops persisted before the mapper stopped emitting them.
    *
    * @param assessment the merits assessment to clean
-   * @return true if any linked-case instance was removed
    */
-  boolean removeLinkedCaseInstances(final AssessmentDetail assessment) {
+  void removeLinkedCaseInstances(final AssessmentDetail assessment) {
     final List<String> linkedCaseNames =
         getAssessmentEntitiesForEntityType(assessment, LINKED_CASE).stream()
             .map(AssessmentEntityDetail::getName)
@@ -1042,7 +1036,6 @@ public class AssessmentService {
 
     deleteEntityAndRelationship(
         assessment, LINKED_CASE, AssessmentRelationship.LINKED_CASE, linkedCaseNames);
-    return !linkedCaseNames.isEmpty();
   }
 
   /**
@@ -1051,12 +1044,9 @@ public class AssessmentService {
    * The values are refreshed in place, keeping attribute ids, and for merits any linked-case
    * instance is removed.
    *
-   * <p>Resuming from the checkpoint would restore the old values into the interview, but the
-   * checkpoint is also the only copy of answers given since the last submit - the connector writes
-   * answers into the prepop only on submit. So the checkpoint is dropped only when something
-   * changed and the prepop records a submit (its submission-page flag is true), in which case the
-   * answers are already in the prepop. A draft that was never submitted keeps its checkpoint; its
-   * first submit saves the answers, and the next start refreshes it.
+   * <p>The checkpoint is left alone: it is the only copy of answers given since the last submit,
+   * and nothing records whether it is newer than that submit. It is released instead straight after
+   * a submit that did not complete - see {@link #clearCheckpointAfterIncompleteSubmit}.
    *
    * @param prepopAssessment the persisted prepop assessment, updated in place
    * @param assessmentRulebase the rulebase being started
@@ -1066,71 +1056,80 @@ public class AssessmentService {
       final AssessmentDetail prepopAssessment,
       final AssessmentRulebase assessmentRulebase,
       final AssessmentMappingContext context) {
-    final AssessmentEntityDetail globalEntity = findGlobalEntity(prepopAssessment);
-    if (globalEntity == null) {
-      return;
+    final AssessmentEntityTypeDetail globalEntityType =
+        getAssessmentEntityType(prepopAssessment, GLOBAL);
+    final AssessmentEntityDetail globalEntity =
+        globalEntityType == null
+            ? null
+            : getAssessmentEntity(globalEntityType, prepopAssessment.getCaseReferenceNumber());
+    if (globalEntity != null) {
+      refreshGlobalInputs(globalEntity, context);
     }
-
-    boolean changed = refreshGlobalInputs(globalEntity, context);
     if (AssessmentRulebase.MERITS == assessmentRulebase) {
-      changed |= removeLinkedCaseInstances(prepopAssessment);
-    }
-
-    if (changed
-        && prepopAssessment.getCheckpoint() != null
-        && hasBeenSubmitted(globalEntity, assessmentRulebase)) {
-      log.info(
-          "Dropping checkpoint for {} [{}]: its prepopulated inputs were refreshed and its"
-              + " answers were saved by an earlier submit",
-          prepopAssessment.getName(),
-          prepopAssessment.getCaseReferenceNumber());
-      prepopAssessment.setCheckpoint(null);
+      removeLinkedCaseInstances(prepopAssessment);
     }
   }
 
-  private AssessmentEntityDetail findGlobalEntity(final AssessmentDetail assessment) {
-    final AssessmentEntityTypeDetail globalEntityType = getAssessmentEntityType(assessment, GLOBAL);
-    return globalEntityType == null
-        ? null
-        : getAssessmentEntity(globalEntityType, assessment.getCaseReferenceNumber());
-  }
-
-  private boolean hasBeenSubmitted(
-      final AssessmentEntityDetail globalEntity, final AssessmentRulebase assessmentRulebase) {
-    final String submissionPageFlag =
-        AssessmentRulebase.MERITS == assessmentRulebase
-            ? MERITS_SUBMISSION_PAGE_CLEANSE
-            : MEANS_SUBMISSION_PAGE_CLEANSE;
-    return globalEntity.getAttributes().stream()
-        .anyMatch(
-            attribute ->
-                submissionPageFlag.equals(attribute.getName())
-                    && "true".equalsIgnoreCase(attribute.getValue()));
-  }
-
-  private boolean refreshGlobalInputs(
+  private void refreshGlobalInputs(
       final AssessmentEntityDetail globalEntity, final AssessmentMappingContext context) {
-
-    boolean changed = false;
     for (final AssessmentAttributeDetail fresh : assessmentMapper.globalToAttributeList(context)) {
       if (!REFRESHED_GLOBAL_INPUTS.contains(fresh.getName())) {
         continue;
       }
 
-      final Optional<AssessmentAttributeDetail> existing =
-          globalEntity.getAttributes().stream()
-              .filter(attribute -> fresh.getName().equals(attribute.getName()))
-              .findFirst();
-
-      if (existing.isEmpty()) {
-        globalEntity.getAttributes().add(fresh);
-        changed = true;
-      } else if (!Objects.equals(existing.get().getValue(), fresh.getValue())) {
-        existing.get().setValue(fresh.getValue());
-        changed = true;
-      }
+      globalEntity.getAttributes().stream()
+          .filter(attribute -> fresh.getName().equals(attribute.getName()))
+          .findFirst()
+          .ifPresentOrElse(
+              existing -> existing.setValue(fresh.getValue()),
+              () -> globalEntity.getAttributes().add(fresh));
     }
-    return changed;
+  }
+
+  /**
+   * Releases the prepop checkpoint straight after a means or merits submit that left the assessment
+   * INCOMPLETE ("In progress"). The connector has just written every answer into the prepop, so
+   * nothing newer exists in the checkpoint and dropping it loses nothing. Resuming from it would
+   * otherwise restore any stale prepopulated input into the interview on every reopen; without it
+   * the next start loads the saved answers with refreshed inputs. A COMPLETE submit keeps its
+   * checkpoint so the interview can still be viewed.
+   *
+   * @param assessmentRulebase the rulebase that was submitted
+   * @param submittedAssessment the assessment as saved by the submit
+   * @param loginId the login id recorded against the update
+   */
+  public void clearCheckpointAfterIncompleteSubmit(
+      final AssessmentRulebase assessmentRulebase,
+      final AssessmentDetail submittedAssessment,
+      final String loginId) {
+    if (assessmentRulebase.isFinancialAssessment()
+        || !INCOMPLETE.getStatus().equalsIgnoreCase(submittedAssessment.getStatus())) {
+      return;
+    }
+
+    final AssessmentDetail prepopAssessment =
+        Optional.ofNullable(
+                getAssessments(
+                        List.of(assessmentRulebase.getPrePopAssessmentName()),
+                        submittedAssessment.getProviderId(),
+                        submittedAssessment.getCaseReferenceNumber())
+                    .block())
+            .map(AssessmentDetails::getContent)
+            .map(content -> getMostRecentAssessmentDetail(content))
+            .orElse(null);
+
+    if (prepopAssessment == null || prepopAssessment.getCheckpoint() == null) {
+      return;
+    }
+
+    log.info(
+        "Releasing checkpoint for {} [{}]: the submit left it INCOMPLETE and saved its answers",
+        prepopAssessment.getName(),
+        prepopAssessment.getCaseReferenceNumber());
+    prepopAssessment.setCheckpoint(null);
+    assessmentApiClient
+        .updateAssessment(prepopAssessment.getId(), prepopAssessment, loginId)
+        .block();
   }
 
   /**
