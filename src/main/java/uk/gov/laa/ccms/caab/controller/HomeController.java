@@ -29,7 +29,7 @@ public class HomeController {
    * @param model Model for the view.
    * @return The name of the view to render.
    */
-  @GetMapping({"/home", "/"})
+  @GetMapping({"/home", "/", ""})
   public String home(Model model, HttpSession session) {
     session.removeAttribute(NOTIFICATION_SEARCH_CRITERIA);
     UserDetail user = (UserDetail) model.getAttribute(USER_DETAILS);

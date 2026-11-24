@@ -77,9 +77,12 @@ spring:
       enabled: true
 
 server:
+  forward-headers-strategy: native
   tomcat:
-    max-swallow-size: -1
-    max-http-form-post-size: -1
+    # Honor forwarded HTTPS before handling the context root.
+    redirect-context-root: false
+    max-swallow-size: 50MB
+    max-http-form-post-size: 2MB
   servlet:
     session:
       timeout: 60m
@@ -88,6 +91,7 @@ server:
         # the cookie on that hop, losing the authorization request mid sign-in.
         same-site: lax
         secure: ${SESSION_COOKIE_SECURE:true}
+        http-only: true
     # required to be on civil in order for OPA integration with OWD,
     # otherwise issues occur with the JSESSIONID cookie
     context-path: /civil
