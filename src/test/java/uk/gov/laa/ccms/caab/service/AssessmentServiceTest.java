@@ -1405,19 +1405,25 @@ public class AssessmentServiceTest {
     assertNotNull(prepop.getCheckpoint());
   }
 
-  @Test
-  @DisplayName("clearCheckpointAfterIncompleteSubmit releases the prepop checkpoint")
-  void clearCheckpointAfterIncompleteSubmitReleasesThePrepopCheckpoint() {
+  @ParameterizedTest(name = "assessment-api deleted it={0}")
+  @ValueSource(booleans = {true, false})
+  @DisplayName(
+      "clearCheckpointAfterIncompleteSubmit deletes the checkpoint only if it is still the one read")
+  void clearCheckpointAfterIncompleteSubmitDeletesOnlyTheCheckpointItRead(final boolean deleted) {
+    // "abc", base64 encoded as assessment-api returns it; the checksum is SHA-256 of "abc".
     final AssessmentDetail prepop =
         new AssessmentDetail()
             .id(7L)
             .name("meritsAssessment_PREPOP")
             .caseReferenceNumber("300001749512")
-            .checkpoint(new uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail());
+            .checkpoint(
+                new uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail()
+                    .interviewData("YWJj"));
     when(assessmentApiClient.getAssessments(
             List.of(AssessmentRulebase.MERITS.getPrePopAssessmentName()), "26517", "300001749512"))
         .thenReturn(Mono.just(new AssessmentDetails().addContentItem(prepop)));
-    when(assessmentApiClient.deleteAssessmentCheckpoint(any(), any())).thenReturn(Mono.empty());
+    when(assessmentApiClient.deleteAssessmentCheckpoint(any(), any(), any()))
+        .thenReturn(Mono.just(deleted));
 
     assessmentService.clearCheckpointAfterIncompleteSubmit(
         AssessmentRulebase.MERITS,
@@ -1427,9 +1433,35 @@ public class AssessmentServiceTest {
             .status("INCOMPLETE"),
         "login");
 
-    // Only the checkpoint row is deleted; the prepop itself is never rewritten.
-    verify(assessmentApiClient).deleteAssessmentCheckpoint(7L, "login");
+    // A checkpoint a newer launch rewrote is kept by assessment-api, which is not an error here.
+    verify(assessmentApiClient)
+        .deleteAssessmentCheckpoint(
+            7L, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad", "login");
     verify(assessmentApiClient, never()).updateAssessment(any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("clearCheckpointAfterIncompleteSubmit leaves a checkpoint with no data alone")
+  void clearCheckpointAfterIncompleteSubmitLeavesACheckpointWithoutDataAlone() {
+    final AssessmentDetail prepop =
+        new AssessmentDetail()
+            .id(7L)
+            .name("meritsAssessment_PREPOP")
+            .caseReferenceNumber("300001749512")
+            .checkpoint(new uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail());
+    when(assessmentApiClient.getAssessments(
+            List.of(AssessmentRulebase.MERITS.getPrePopAssessmentName()), "26517", "300001749512"))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(prepop)));
+
+    assessmentService.clearCheckpointAfterIncompleteSubmit(
+        AssessmentRulebase.MERITS,
+        new AssessmentDetail()
+            .providerId("26517")
+            .caseReferenceNumber("300001749512")
+            .status("INCOMPLETE"),
+        "login");
+
+    verify(assessmentApiClient, never()).deleteAssessmentCheckpoint(any(), any(), any());
   }
 
   @ParameterizedTest(name = "{0} {1} -> checkpoint untouched")
@@ -1445,7 +1477,7 @@ public class AssessmentServiceTest {
         "login");
 
     verify(assessmentApiClient, never()).getAssessments(any(), any(), any());
-    verify(assessmentApiClient, never()).deleteAssessmentCheckpoint(any(), any());
+    verify(assessmentApiClient, never()).deleteAssessmentCheckpoint(any(), any(), any());
   }
 
   @Test

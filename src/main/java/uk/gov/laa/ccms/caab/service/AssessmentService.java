@@ -38,14 +38,18 @@ import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getAssessmentMappingId;
 import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getRequestedScopeForAssessmentInput;
 
 import java.math.BigDecimal;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -1099,10 +1103,11 @@ public class AssessmentService {
    * confirmation reloaded after the interview was reopened would otherwise release a checkpoint
    * holding answers given since. AssessmentController enforces this with a one-time launch id.
    *
-   * <p>The launch id is held in the HTTP session, while the prepop is shared, and assessment-api
-   * offers no conditional delete. A newer launch of the same case in another session, or one
-   * started between the check and the delete, can still lose its checkpoint. Only the checkpoint
-   * row is deleted, so answers saved concurrently into the prepop are never overwritten.
+   * <p>The launch id is held in the HTTP session, while the prepop is shared, so the delete is also
+   * made conditional on the checkpoint being the one read here: assessment-api deletes it only if
+   * its interview data still has the same checksum. A checkpoint rewritten by a newer launch of the
+   * same case, in this session or another, is therefore kept. Only the checkpoint row is deleted,
+   * so answers saved concurrently into the prepop are never overwritten.
    *
    * @param assessmentRulebase the rulebase that was submitted
    * @param submittedAssessment the assessment as saved by the submit
@@ -1128,15 +1133,50 @@ public class AssessmentService {
             .map(content -> getMostRecentAssessmentDetail(content))
             .orElse(null);
 
-    if (prepopAssessment == null || prepopAssessment.getCheckpoint() == null) {
+    if (prepopAssessment == null
+        || prepopAssessment.getCheckpoint() == null
+        || prepopAssessment.getCheckpoint().getInterviewData() == null) {
       return;
     }
 
-    log.info(
-        "Releasing checkpoint for {} [{}]: the submit left it INCOMPLETE and saved its answers",
-        prepopAssessment.getName(),
-        prepopAssessment.getCaseReferenceNumber());
-    assessmentApiClient.deleteAssessmentCheckpoint(prepopAssessment.getId(), loginId).block();
+    final boolean released =
+        Boolean.TRUE.equals(
+            assessmentApiClient
+                .deleteAssessmentCheckpoint(
+                    prepopAssessment.getId(),
+                    checkpointChecksum(prepopAssessment.getCheckpoint().getInterviewData()),
+                    loginId)
+                .block());
+
+    if (released) {
+      log.info(
+          "Released checkpoint for {} [{}]: the submit left it INCOMPLETE and saved its answers",
+          prepopAssessment.getName(),
+          prepopAssessment.getCaseReferenceNumber());
+    } else {
+      log.info(
+          "Kept checkpoint for {} [{}]: it changed after it was read, so belongs to a newer launch",
+          prepopAssessment.getName(),
+          prepopAssessment.getCaseReferenceNumber());
+    }
+  }
+
+  /**
+   * Returns the checksum assessment-api compares a conditional checkpoint delete against: the
+   * SHA-256, as hex, of the stored interview data, which the API returns base64 encoded.
+   *
+   * @param base64InterviewData the checkpoint's interview data as returned by assessment-api
+   * @return the checksum
+   */
+  static String checkpointChecksum(final String base64InterviewData) {
+    try {
+      return HexFormat.of()
+          .formatHex(
+              MessageDigest.getInstance("SHA-256")
+                  .digest(Base64.getDecoder().decode(base64InterviewData)));
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException("SHA-256 is not available", e);
+    }
   }
 
   /**
