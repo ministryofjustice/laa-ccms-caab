@@ -69,7 +69,7 @@ class SecurityEventLoggerTest {
   }
 
   @Test
-  void authorizationDeniedLogsMethodAndPathWithoutQueryString() {
+  void authorisationDeniedLogsMethodAndPathWithoutQueryString() {
     var request = new MockHttpServletRequest("GET", "/case/billing/poa");
     request.setQueryString("ref=SENSITIVE");
     request.setAttribute(
@@ -84,6 +84,20 @@ class SecurityEventLoggerTest {
     ILoggingEvent event = appender.list.getFirst();
     assertEquals("AUTHORIZATION_DENIED", keyValue(event, "event_type"));
     assertEquals("GET /case/billing/poa", keyValue(event, "event_detail"));
+  }
+
+  @Test
+  void aControllerDenialCountsAndLogsWithoutTheAssessmentToken() {
+    var request = new MockHttpServletRequest("GET", "/application/assessments/confirm");
+    request.setQueryString("val=sensitive-token");
+    request.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE,
+        "/application/assessments/confirm");
+    logger.authorisationDenied(request);
+    ILoggingEvent event = appender.list.getFirst();
+    assertEquals("AUTHORIZATION_DENIED", keyValue(event, "event_type"));
+    assertEquals("GET /application/assessments/confirm", keyValue(event, "event_detail"));
+    verify(metrics).incrementSecurityEvents("AUTHORIZATION_DENIED", "DENIED");
   }
 
   @Test

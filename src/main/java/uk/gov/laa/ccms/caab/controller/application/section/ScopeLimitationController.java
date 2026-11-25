@@ -134,7 +134,7 @@ public class ScopeLimitationController {
    * @param session the HTTP session containing any in-progress scope limitation flow.
    * @return the scope limitation details view.
    */
-  @GetMapping("/{caseContext}/proceedings/scope-limitations/{action}/details")
+  @GetMapping("/{caseContext}/proceedings/scope-limitations/{action:add|edit}/details")
   public String scopeLimitationDetails(
       @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("action") final String scopeLimitationAction,
@@ -176,7 +176,7 @@ public class ScopeLimitationController {
    * @param bindingResult the validation result.
    * @return a redirect to confirmation, or the details view when validation fails.
    */
-  @PostMapping("/{caseContext}/proceedings/scope-limitations/{action}/details")
+  @PostMapping("/{caseContext}/proceedings/scope-limitations/{action:add|edit}/details")
   public String scopeLimitationDetailsPost(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,

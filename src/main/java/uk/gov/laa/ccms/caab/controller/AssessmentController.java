@@ -9,7 +9,11 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDetail;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
@@ -20,8 +24,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,6 +39,7 @@ import reactor.util.function.Tuple3;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
@@ -43,6 +51,8 @@ import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryEntityDisplay;
 import uk.gov.laa.ccms.caab.opa.context.ContextToken;
 import uk.gov.laa.ccms.caab.opa.util.SecurityUtils;
+import uk.gov.laa.ccms.caab.security.NotAuthorisedAccessDeniedHandler;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.BillingService;
@@ -67,6 +77,7 @@ public class AssessmentController {
   private final ClientService clientService;
   private final SecurityUtils contextSecurityUtil;
   private final MessageSource messageSource;
+  private final SecurityEventLogger securityEventLogger;
 
   @Value("${laa.ccms.oracle-web-determination-server.url}")
   protected String owdUrl;
@@ -195,7 +206,7 @@ public class AssessmentController {
     // submit), so use the session application when there is no persisted id.
     final ApplicationDetail application =
         assessmentRulebase.isFinancialAssessment()
-            ? resolveBillingCase(session, assessmentRulebase)
+            ? resolveBillingCase(session, assessmentRulebase, user)
             : resolveAssessmentApplication(session);
 
     // The TDS draft application does not carry a computed default cost limitation, which the OPA
@@ -424,7 +435,9 @@ public class AssessmentController {
    * @return the case to prepopulate the assessment from
    */
   private ApplicationDetail resolveBillingCase(
-      final HttpSession session, final AssessmentRulebase assessmentRulebase) {
+      final HttpSession session,
+      final AssessmentRulebase assessmentRulebase,
+      final UserDetail user) {
     final ApplicationDetail ebsCase =
         Optional.ofNullable((ApplicationDetail) session.getAttribute(CASE))
             .orElseThrow(() -> new CaabApplicationException("Failed to retrieve case"));
@@ -441,6 +454,21 @@ public class AssessmentController {
         || !ebsCase.getAvailableFunctions().contains(requiredFunction)) {
       throw new CaabApplicationException(
           "User is not authorised to run the %s assessment for this case"
+              .formatted(assessmentRulebase.getType()));
+    }
+
+    // The case supporting the action says nothing about whether this user holds it: available
+    // functions are a property of the case, as BillingController reads them to decide whether
+    // billing is offered at all. This interview sits under /application, which carries no
+    // user-function rule, so the functions /case/billing/** requires are checked here too.
+    final List<String> userFunctions = Optional.ofNullable(user.getFunctions()).orElseGet(List::of);
+    if (!userFunctions.containsAll(
+        List.of(
+            UserRole.VIEW_CASE_DETAILS.getCode(),
+            UserRole.VIEW_CASE_BILL.getCode(),
+            requiredFunction))) {
+      throw new CaabApplicationException(
+          "User does not hold the functions needed to run the %s assessment"
               .formatted(assessmentRulebase.getType()));
     }
 
@@ -511,14 +539,42 @@ public class AssessmentController {
   public String assessmentConfirm(
       @PathVariable("caseContext") final CaseContext caseContext,
       @RequestParam(value = "val") final String token,
+      @SessionAttribute(value = USER_DETAILS, required = false) final UserDetail user,
+      @SessionAttribute(value = ACTIVE_CASE, required = false) final ActiveCase activeCase,
       final Model model) {
-    final ContextToken contextToken = contextSecurityUtil.createContextToken(token);
+    final ContextToken contextToken;
+    try {
+      contextToken = contextSecurityUtil.createContextToken(token);
+    } catch (CaabApplicationException exception) {
+      throw new AccessDeniedException("Invalid assessment confirmation token", exception);
+    }
+    if (contextToken == null
+        || user == null
+        || user.getProvider() == null
+        || user.getProvider().getId() == null
+        || activeCase == null
+        || (activeCase.getProviderId() != null
+            && !user.getProvider().getId().equals(activeCase.getProviderId()))
+        || !StringUtils.hasText(activeCase.getCaseReferenceNumber())
+        || !StringUtils.hasText(contextToken.getProviderId())
+        || !StringUtils.hasText(contextToken.getCaseId())
+        || !String.valueOf(user.getProvider().getId()).equals(contextToken.getProviderId())
+        || !activeCase.getCaseReferenceNumber().equals(contextToken.getCaseId())) {
+      throw new AccessDeniedException(
+          "Assessment token does not match the current provider and case");
+    }
     final Long rulebaseId = contextToken.getRulebaseId();
-    final String providerId = contextToken.getProviderId();
-    final String caseReferenceNumber = contextToken.getCaseId();
+    if (rulebaseId == null) {
+      throw new AccessDeniedException("Invalid assessment rulebase");
+    }
+    final String providerId = String.valueOf(user.getProvider().getId());
+    final String caseReferenceNumber = activeCase.getCaseReferenceNumber();
 
     // get the rulebase from the token
     final AssessmentRulebase assessmentRulebase = AssessmentRulebase.findById(rulebaseId);
+    if (assessmentRulebase == null) {
+      throw new AccessDeniedException("Invalid assessment rulebase");
+    }
 
     // get the assessment details mono
     final Mono<AssessmentDetails> assessmentDetailsMono =
@@ -574,5 +630,13 @@ public class AssessmentController {
             : getReturnLinkText(caseContext, contextToken.getInvokedForm()));
 
     return "application/assessments/assessment-confirm";
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  public void assessmentDenied(
+      AccessDeniedException exception, HttpServletRequest request, HttpServletResponse response)
+      throws IOException, ServletException {
+    securityEventLogger.authorisationDenied(request);
+    new NotAuthorisedAccessDeniedHandler().handle(request, response, exception);
   }
 }

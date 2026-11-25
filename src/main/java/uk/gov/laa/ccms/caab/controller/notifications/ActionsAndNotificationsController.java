@@ -52,7 +52,6 @@ import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationSearchValid
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.constants.SendBy;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
-import uk.gov.laa.ccms.caab.logging.ChangesData;
 import uk.gov.laa.ccms.caab.mapper.NotificationAttachmentMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
@@ -555,15 +554,14 @@ public class ActionsAndNotificationsController {
    * @param attachmentId the ID of the notification attachment to remove.
    * @return the provide documents or evidence page.
    */
-  @ChangesData
-  @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/remove")
+  @PostMapping("/notifications/{notification_id}/attachments/{attachment_id}/remove")
   public String removeDraftNotificationAttachment(
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @PathVariable(NOTIFICATION_ID) String notificationId,
       @PathVariable(ATTACHMENT_ID) Integer attachmentId) {
 
     notificationService.removeDraftNotificationAttachment(
-        notificationId, attachmentId, user.getLoginId(), user.getUserId());
+        notificationId, attachmentId, user.getLoginId(), user.getProvider().getId());
     return "redirect:/notifications/%s/provide-documents-or-evidence".formatted(notificationId);
   }
 
@@ -620,7 +618,7 @@ public class ActionsAndNotificationsController {
 
     NotificationAttachmentDetails notificationAttachmentDetails =
         notificationService
-            .getDraftNotificationAttachments(notificationId, user.getUserId())
+            .getDraftNotificationAttachments(notificationId, user.getProvider().getId())
             .block();
 
     if (notificationAttachmentDetails.getContent().isEmpty()) {
@@ -634,7 +632,7 @@ public class ActionsAndNotificationsController {
     }
 
     notificationService.submitNotificationAttachments(
-        notificationId, user.getLoginId(), user.getUserType(), user.getUserId());
+        notificationId, user.getLoginId(), user.getUserType(), user.getProvider().getId());
 
     return "redirect:/application/notification-attachments/confirmed";
   }
@@ -718,7 +716,7 @@ public class ActionsAndNotificationsController {
       String notificationId, UserDetail user, Integer attachmentId) {
     boolean belongsToNotification =
         notificationService
-            .getDraftNotificationAttachments(notificationId, user.getUserId())
+            .getDraftNotificationAttachments(notificationId, user.getProvider().getId())
             .map(NotificationAttachmentDetails::getContent)
             .blockOptional()
             .orElseThrow(() -> new CaabApplicationException("Failed to retrieve draft attachments"))
@@ -829,11 +827,11 @@ public class ActionsAndNotificationsController {
       if (notificationAttachmentDetail.getId() != null) {
         throw new CaabApplicationException("Mismatched notification attachment id");
       }
-      Long attachmentNumber = getNextAttachmentNumber(notification, user.getUserId());
+      Long attachmentNumber = getNextAttachmentNumber(notification, user.getProvider().getId());
       notificationAttachmentDetail.setStatus(STATUS_READY_TO_SUBMIT);
       notificationAttachmentDetail.setNotificationReference(notificationId);
       notificationAttachmentDetail.setNumber(attachmentNumber);
-      notificationAttachmentDetail.setProviderId(String.valueOf(user.getUserId()));
+      notificationAttachmentDetail.setProviderId(String.valueOf(user.getProvider().getId()));
       notificationService.addDraftNotificationAttachment(
           notificationAttachmentDetail, user.getLoginId());
     }
@@ -845,14 +843,14 @@ public class ActionsAndNotificationsController {
    * Get the next attachment number by incrementing the number of the attachment last added.
    *
    * @param notification the notification.
-   * @param userId the ID of the currently logged-in user.
+   * @param providerId the ID of the currently selected provider.
    * @return the next attachment number.
    */
-  private Long getNextAttachmentNumber(Notification notification, Integer userId) {
+  private Long getNextAttachmentNumber(Notification notification, Integer providerId) {
     int numberOfUploadedDocs = notification.getUploadedDocuments().size();
     int numberOfDraftDocs =
         notificationService
-            .getDraftNotificationAttachments(notification.getNotificationId(), userId)
+            .getDraftNotificationAttachments(notification.getNotificationId(), providerId)
             .map(notificationAttachmentDetails -> notificationAttachmentDetails.getContent().size())
             .blockOptional()
             .orElseThrow(
@@ -907,7 +905,7 @@ public class ActionsAndNotificationsController {
 
     List<BaseNotificationAttachmentDetail> draftNotificationAttachments =
         notificationService
-            .getDraftNotificationAttachments(notificationId, user.getUserId())
+            .getDraftNotificationAttachments(notificationId, user.getProvider().getId())
             .block()
             .getContent();
 

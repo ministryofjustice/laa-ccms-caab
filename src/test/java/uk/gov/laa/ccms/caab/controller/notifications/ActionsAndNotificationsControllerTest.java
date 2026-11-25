@@ -18,6 +18,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -45,6 +46,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -983,8 +986,21 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /notifications/{notification-id}/attachments/{attachment-id}/remove")
+  @DisplayName("POST: /notifications/{notification-id}/attachments/{attachment-id}/remove")
   class RemoveAttachmentTests {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"GET", "HEAD"})
+    void aReadRequestCannotDeleteAnAttachment(String method) throws Exception {
+      oldmockMvc
+          .perform(
+              org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request(
+                      org.springframework.http.HttpMethod.valueOf(method),
+                      "/notifications/234/attachments/567/remove")
+                  .sessionAttr("user", userDetails))
+          .andExpect(status().isMethodNotAllowed());
+      verifyNoInteractions(notificationService);
+    }
 
     @Test
     @DisplayName("Should redirect to provide documents or evidence page")
@@ -995,7 +1011,7 @@ class ActionsAndNotificationsControllerTest {
 
       assertThat(
               mockMvc.perform(
-                  get("/notifications/234/attachments/567/remove")
+                  post("/notifications/234/attachments/567/remove")
                       .sessionAttr("user", userDetails)
                       .flashAttrs(flashMap)))
           .hasStatus3xxRedirection()
@@ -1003,7 +1019,7 @@ class ActionsAndNotificationsControllerTest {
 
       verify(notificationService)
           .removeDraftNotificationAttachment(
-              "234", 567, userDetails.getLoginId(), userDetails.getUserId());
+              "234", 567, userDetails.getLoginId(), userDetails.getProvider().getId());
     }
   }
 
@@ -1058,7 +1074,8 @@ class ActionsAndNotificationsControllerTest {
       BaseNotificationAttachmentDetail scopedDraft = new BaseNotificationAttachmentDetail();
       scopedDraft.setId(567);
       drafts.setContent(List.of(scopedDraft));
-      when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
+      when(notificationService.getDraftNotificationAttachments(
+              "234", userDetails.getProvider().getId()))
           .thenReturn(Mono.just(drafts));
       doThrow(new MaxUploadSizeExceededException(8 * 1024 * 1024))
           .when(notificationAttachmentUploadValidator)
@@ -1107,7 +1124,8 @@ class ActionsAndNotificationsControllerTest {
       BaseNotificationAttachmentDetail scopedDraft = new BaseNotificationAttachmentDetail();
       scopedDraft.setId(567);
       drafts.setContent(List.of(scopedDraft));
-      when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
+      when(notificationService.getDraftNotificationAttachments(
+              "234", userDetails.getProvider().getId()))
           .thenReturn(Mono.just(drafts));
       when(notificationService.getDraftNotificationAttachment(567)).thenReturn(Mono.just(draft));
       when(notificationAttachmentMapper.toNotificationAttachmentUploadFormData(draft))
@@ -1226,7 +1244,8 @@ class ActionsAndNotificationsControllerTest {
     void rejectsDraftOutsideCurrentNotification() {
       NotificationAttachmentDetails drafts = new NotificationAttachmentDetails();
       drafts.setContent(List.of());
-      when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
+      when(notificationService.getDraftNotificationAttachments(
+              "234", userDetails.getProvider().getId()))
           .thenReturn(Mono.just(drafts));
       when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
           .thenReturn(Mono.just(new CommonLookupDetail()));
@@ -1251,7 +1270,8 @@ class ActionsAndNotificationsControllerTest {
       BaseNotificationAttachmentDetail scopedDraft = new BaseNotificationAttachmentDetail();
       scopedDraft.setId(567);
       drafts.setContent(List.of(scopedDraft));
-      when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
+      when(notificationService.getDraftNotificationAttachments(
+              "234", userDetails.getProvider().getId()))
           .thenReturn(Mono.just(drafts));
       when(notificationService.getDraftNotificationAttachment(567)).thenReturn(Mono.empty());
       when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
@@ -1360,7 +1380,8 @@ class ActionsAndNotificationsControllerTest {
 
       when(notificationAttachmentMapper.toNotificationAttachmentDetail(attachmentUploadFormData))
           .thenReturn(notificationAttachment);
-      when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
+      when(notificationService.getDraftNotificationAttachments(
+              "234", userDetails.getProvider().getId()))
           .thenReturn(Mono.just(notificationAttachmentDetails));
 
       Notification notification = buildNotification();
@@ -1376,6 +1397,9 @@ class ActionsAndNotificationsControllerTest {
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/notifications/234/provide-documents-or-evidence");
 
+      assertEquals(
+          String.valueOf(userDetails.getProvider().getId()),
+          notificationAttachment.getProviderId());
       verify(notificationService)
           .addDraftNotificationAttachment(notificationAttachment, userDetails.getLoginId());
     }
@@ -1405,7 +1429,8 @@ class ActionsAndNotificationsControllerTest {
 
       when(notificationAttachmentMapper.toNotificationAttachmentDetail(attachmentUploadFormData))
           .thenReturn(notificationAttachment);
-      when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
+      when(notificationService.getDraftNotificationAttachments(
+              "234", userDetails.getProvider().getId()))
           .thenReturn(Mono.just(notificationAttachmentDetails));
 
       Notification notification = buildNotification();
@@ -1474,7 +1499,8 @@ class ActionsAndNotificationsControllerTest {
       BaseNotificationAttachmentDetail otherDraft = new BaseNotificationAttachmentDetail();
       otherDraft.setId(456);
       scopedDrafts.setContent(List.of(otherDraft));
-      when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
+      when(notificationService.getDraftNotificationAttachments(
+              "234", userDetails.getProvider().getId()))
           .thenReturn(Mono.just(scopedDrafts));
 
       assertThrows(CaabApplicationException.class, () -> submitDraft(form, 123));
@@ -1545,7 +1571,8 @@ class ActionsAndNotificationsControllerTest {
 
       when(notificationAttachmentMapper.toNotificationAttachmentDetail(attachmentUploadFormData))
           .thenReturn(notificationAttachment);
-      when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
+      when(notificationService.getDraftNotificationAttachments(
+              "234", userDetails.getProvider().getId()))
           .thenReturn(Mono.just(notificationAttachmentDetails));
       when(avScanResultHandler.isScanRejected(any(), any(), any())).thenReturn(false);
 
@@ -1562,6 +1589,9 @@ class ActionsAndNotificationsControllerTest {
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/notifications/234/provide-documents-or-evidence");
 
+      assertEquals(
+          String.valueOf(userDetails.getProvider().getId()),
+          notificationAttachment.getProviderId());
       verify(avScanResultHandler).isScanRejected(any(), any(), any());
       verify(notificationService)
           .addDraftNotificationAttachment(notificationAttachment, userDetails.getLoginId());
@@ -1607,7 +1637,7 @@ class ActionsAndNotificationsControllerTest {
           .thenReturn(Mono.just(documentTypes));
 
       when(notificationService.getDraftNotificationAttachments(
-              notification.getNotificationId(), userDetails.getUserId()))
+              notification.getNotificationId(), userDetails.getProvider().getId()))
           .thenReturn(Mono.just(notificationAttachmentDetails));
       when(notificationService.getDraftDocumentLinks(List.of(baseNotificationAttachment)))
           .thenReturn(draftDocumentLinks);
@@ -1634,7 +1664,7 @@ class ActionsAndNotificationsControllerTest {
 
       verify(notificationService)
           .getDraftNotificationAttachments(
-              notification.getNotificationId(), userDetails.getUserId());
+              notification.getNotificationId(), userDetails.getProvider().getId());
       verify(notificationService).getDraftDocumentLinks(List.of(baseNotificationAttachment));
       verify(notificationService).getDocumentLinks(notification.getUploadedDocuments());
     }
@@ -1659,7 +1689,7 @@ class ActionsAndNotificationsControllerTest {
       notificationAttachmentDetails.setContent(List.of(baseNotificationAttachment));
 
       when(notificationService.getDraftNotificationAttachments(
-              notification.getNotificationId(), userDetails.getUserId()))
+              notification.getNotificationId(), userDetails.getProvider().getId()))
           .thenReturn(Mono.just(notificationAttachmentDetails));
 
       Map<String, Object> flashMap = new HashMap<>();
@@ -1678,7 +1708,7 @@ class ActionsAndNotificationsControllerTest {
               notification.getNotificationId(),
               userDetails.getLoginId(),
               userDetails.getUserType(),
-              userDetails.getUserId());
+              userDetails.getProvider().getId());
     }
 
     @Test
@@ -1706,7 +1736,7 @@ class ActionsAndNotificationsControllerTest {
           .thenReturn(Mono.just(documentTypes));
 
       when(notificationService.getDraftNotificationAttachments(
-              notification.getNotificationId(), userDetails.getUserId()))
+              notification.getNotificationId(), userDetails.getProvider().getId()))
           .thenReturn(Mono.just(notificationAttachmentDetails));
       when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
               any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
@@ -1726,7 +1756,7 @@ class ActionsAndNotificationsControllerTest {
 
       verify(notificationService, times(2))
           .getDraftNotificationAttachments(
-              notification.getNotificationId(), userDetails.getUserId());
+              notification.getNotificationId(), userDetails.getProvider().getId());
     }
   }
 

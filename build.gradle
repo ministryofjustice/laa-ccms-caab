@@ -184,7 +184,7 @@ test {
 jacocoTestReport {
     afterEvaluate {
         classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: ['**/CaabApplication.class', '**/SecurityConfiguration.class'])
+            fileTree(dir: it, exclude: ['**/CaabApplication.class'])
         }))
     }
 }
@@ -192,7 +192,7 @@ jacocoTestReport {
 jacocoTestCoverageVerification {
     afterEvaluate {
         classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: ['**/CaabApplication.class', '**/SecurityConfiguration.class'])
+            fileTree(dir: it, exclude: ['**/CaabApplication.class'])
         }))
     }
 }
@@ -215,6 +215,7 @@ tasks.withType(Checkstyle).configureEach {
  * Automatically installs the git pre-commit hook to run spotlessApply.
  */
 tasks.register('installGitHooks', Copy) {
+    onlyIf { rootProject.file('.git').isDirectory() }
     from "scripts/pre-commit"
     into "${rootProject.rootDir}/.git/hooks"
 

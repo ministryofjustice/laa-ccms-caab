@@ -1,21 +1,28 @@
 package uk.gov.laa.ccms.caab.config;
 
-import static org.springframework.security.authorization.AuthorityAuthorizationManager.hasAuthority;
-import static org.springframework.security.authorization.AuthorizationManagers.allOf;
-
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authorization.AllAuthoritiesAuthorizationManager;
+import org.springframework.security.authorization.AuthorityAuthorizationManager;
+import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.authorization.AuthorizationManagers;
+import org.springframework.security.config.ObjectPostProcessor;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
@@ -24,9 +31,11 @@ import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
 import uk.gov.laa.ccms.caab.logging.UserContextFilter;
@@ -37,6 +46,7 @@ import uk.gov.laa.ccms.caab.security.CcmsUserResolutionException;
 import uk.gov.laa.ccms.caab.security.CspNonceFilter;
 import uk.gov.laa.ccms.caab.security.CsrfLoggingAccessDeniedHandler;
 import uk.gov.laa.ccms.caab.security.IdentityProviderLogoutHandler;
+import uk.gov.laa.ccms.caab.security.NotAuthorisedAccessDeniedHandler;
 import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.security.SessionStartRecordingSuccessHandler;
 import uk.gov.laa.ccms.caab.service.UserService;
@@ -86,105 +96,29 @@ public class SecurityConfiguration {
   SecurityFilterChain configure(HttpSecurity http) throws Exception {
 
     return http.authorizeHttpRequests(
-            authorize ->
-                authorize
-                    .requestMatchers(
-                        "/assets/**",
-                        "/ccms/**",
-                        "/govuk-dialect/**",
-                        "/favicon.ico",
-                        AUTHENTICATION_ERROR_PATH)
-                    .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/actuator/prometheus", "/actuator/health/**")
-                    .permitAll() // Ensure Actuator endpoints are excluded
-                    .requestMatchers(HttpMethod.POST, "/csp/report")
-                    .permitAll()
-                    .requestMatchers(
-                        HttpMethod.GET, "/general-provider-requests/*", "/case-provider-requests/*")
-                    .hasAuthority(UserRole.CREATE_PROVIDER_REQUEST.getCode())
-                    .requestMatchers(
-                        HttpMethod.GET,
-                        "/application/office",
-                        "/application/category-of-law",
-                        "/application/application-type",
-                        "/application/delegated-functions",
-                        "/application/copy-case/search",
-                        "/application/client/search",
-                        "/application/client/*/confirm")
-                    .hasAuthority(UserRole.CREATE_APPLICATION.getCode())
-                    .requestMatchers(
-                        HttpMethod.GET, "/application/search", "/application/search/results")
-                    .hasAuthority(UserRole.VIEW_CASES_AND_APPLICATIONS.getCode())
-                    .requestMatchers(
-                        HttpMethod.GET,
-                        "/notifications/search",
-                        "/notifications/search-results",
-                        "/notifications/search-options/prefetch")
-                    .hasAuthority(UserRole.VIEW_NOTIFICATIONS.getCode())
-                    .requestMatchers(HttpMethod.GET, "/application/proceedings/add/matter-type")
-                    .hasAuthority(UserRole.ADD_PROCEEDING.getCode())
-                    .requestMatchers("/notifications/*/attachments/*")
-                    .hasAuthority(UserRole.VIEW_NOTIFICATION_ATTACHMENT.getCode())
-                    .requestMatchers("/notifications/*/attachments/*/download")
-                    .hasAuthority(UserRole.VIEW_NOTIFICATION_ATTACHMENT.getCode())
-                    .requestMatchers("/notifications/*/attachments/*/downloadDraft")
-                    .hasAuthority(UserRole.UPLOAD_EVIDENCE.getCode())
-                    .requestMatchers("/application/proceedings/*/remove")
-                    .hasAuthority(UserRole.DELETE_PROCEEDING.getCode())
-                    .requestMatchers("/application/proceedings/*/summary")
-                    .hasAuthority(UserRole.VIEW_PROCEEDING.getCode())
-                    .requestMatchers(
-                        HttpMethod.GET, "/notifications/*/provide-documents-or-evidence")
-                    .hasAuthority(UserRole.UPLOAD_EVIDENCE.getCode())
-                    .requestMatchers(
-                        HttpMethod.POST, "/notifications/*/provide-documents-or-evidence")
-                    .hasAuthority(UserRole.SUBMIT_DOCUMENT_UPLOAD.getCode())
-                    .requestMatchers(
-                        HttpMethod.POST, "/application/sections/client/details/summary")
-                    .hasAuthority(UserRole.SUBMIT_UPDATE_CLIENT.getCode())
-                    .requestMatchers(HttpMethod.POST, "/application/sections")
-                    .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
-                    .requestMatchers("/case/overview")
-                    .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode())
-                    .requestMatchers("/case/outcome-and-awards/submit")
-                    .hasAuthority(UserRole.SUBMIT_CASE_OUTCOME.getCode())
-                    // This discharge page is part of the submission journey; legacy additionally
-                    // requires POD, case eligibility and completed proceeding outcomes.
-                    .requestMatchers("/case/outcome-and-awards/discharge")
-                    .access(
-                        allOf(
-                            hasAuthority(UserRole.SUBMIT_CASE_OUTCOME.getCode()),
-                            hasAuthority(UserRole.REQUEST_CASE_DISCHARGE.getCode())))
-                    .requestMatchers(HttpMethod.GET, "/case/details/costs/allocation")
-                    .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode())
-                    // Creating and deleting a payment on account both need the POA function, as
-                    // they do in the legacy PUI.
-                    .requestMatchers("/case/billing/poa", "/case/billing/poa/**")
-                    .hasAuthority(UserRole.CREATE_PAYMENT_ON_ACCOUNT.getCode())
-                    // Submitting and deleting a bill are separate permissions from creating one in
-                    // the legacy PUI, which gates them on the subbill and delete-bill functions.
-                    // The bill rules are exact paths, not a prefix, so every route that submits
-                    // a bill has to be listed - "/case/billing/bill" alone does not cover them.
-                    .requestMatchers(
-                        "/case/billing/bill/submit",
-                        "/case/billing/bill/declaration",
-                        "/case/billing/bill/confirmation")
-                    .hasAuthority(UserRole.SUBMIT_BILL.getCode())
-                    .requestMatchers("/case/billing/bill/remove")
-                    .hasAuthority(UserRole.DELETE_BILL.getCode())
-                    // Copying creates a bill, and the summary reports on the one being created, so
-                    // both take the create permission.
-                    .requestMatchers("/case/billing/bill/copy", "/case/billing/bill/summary")
-                    .hasAuthority(UserRole.CREATE_BILL.getCode())
-                    .requestMatchers("/case/billing/bill")
-                    .hasAuthority(UserRole.CREATE_BILL.getCode())
-                    .anyRequest()
-                    .authenticated())
-        .csrf(csrf -> csrf.ignoringRequestMatchers("/csp/report"))
+            routeRules -> {
+              authorisePublicRoutes(routeRules);
+              authoriseUserFunctions(routeRules);
+              authoriseAuthenticatedRoutes(routeRules);
+              routeRules.anyRequest().denyAll();
+            })
+        .csrf(
+            csrf ->
+                csrf.ignoringRequestMatchers("/csp/report")
+                    .withObjectPostProcessor(
+                        new ObjectPostProcessor<CsrfFilter>() {
+                          @Override
+                          public <O extends CsrfFilter> O postProcess(O filter) {
+                            filter.setAccessDeniedHandler(
+                                new CsrfLoggingAccessDeniedHandler(securityEventLogger));
+                            return filter;
+                          }
+                        }))
         .exceptionHandling(
             exceptions ->
                 exceptions.accessDeniedHandler(
-                    new CsrfLoggingAccessDeniedHandler(securityEventLogger)))
+                    new NotAuthorisedAccessDeniedHandler(
+                        new CsrfLoggingAccessDeniedHandler(securityEventLogger))))
         .headers(
             headers ->
                 headers
@@ -219,6 +153,377 @@ public class SecurityConfiguration {
                     .successHandler(new SessionStartRecordingSuccessHandler())
                     .failureHandler(authenticationFailureHandler()))
         .build();
+  }
+
+  /** Permits static assets, probes, container error dispatches and deliberate public endpoints. */
+  static void authorisePublicRoutes(
+      AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
+          routeRules) {
+    routeRules
+        .dispatcherTypeMatchers(DispatcherType.ERROR)
+        .permitAll()
+        .requestMatchers(
+            "/assets/**",
+            "/ccms/**",
+            "/govuk-dialect/**",
+            "/favicon.ico",
+            AUTHENTICATION_ERROR_PATH)
+        .permitAll()
+        .requestMatchers(
+            HttpMethod.GET, "/actuator/prometheus", "/actuator/health", "/actuator/health/**")
+        .permitAll() // Ensure Actuator endpoints are excluded
+        .requestMatchers(HttpMethod.POST, "/csp/report")
+        .permitAll();
+  }
+
+  /**
+   * Restricts each action to the users who hold its function, matching the actions the legacy PUI
+   * checks. The first matching rule applies, so specific paths come before the prefixes they sit
+   * under.
+   *
+   * @param routeRules the request authorisation registry to add the rules to.
+   */
+  static void authoriseUserFunctions(
+      AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
+          routeRules) {
+    routeRules
+        .requestMatchers(
+            "/general-provider-requests/**",
+            "/application/submit-general-provider-request/confirmed",
+            "/application/submit-general-provider-request/failed")
+        .hasAuthority(UserRole.CREATE_GENERAL_REQUEST.getCode())
+        // A case query is raised from an open case.
+        .requestMatchers(
+            "/case-provider-requests/**",
+            "/application/submit-case-provider-request/confirmed",
+            "/application/submit-case-provider-request/failed")
+        .access(caseAction(UserRole.SUBMIT_CASE_QUERY))
+        // Registering a client is a step in creating an application.
+        .requestMatchers(HttpMethod.POST, "/application/client/details/summary")
+        .access(allFunctions(UserRole.CREATE_APPLICATION, UserRole.SUBMIT_REGISTER_CLIENT))
+        .requestMatchers(
+            "/application/new",
+            "/application/office",
+            "/application/category-of-law",
+            "/application/application-type",
+            "/application/delegated-functions",
+            "/application/copy-case/**",
+            "/application/client/**",
+            "/application/client-create/**",
+            "/application/agreement/**")
+        .hasAuthority(UserRole.CREATE_APPLICATION.getCode())
+        .requestMatchers("/application/search", "/application/search/**")
+        .hasAuthority(UserRole.VIEW_CASES_AND_APPLICATIONS.getCode())
+        .requestMatchers("/application/proceedings/add/**")
+        .hasAuthority(UserRole.ADD_PROCEEDING.getCode())
+        .requestMatchers("/application/proceedings/*/remove")
+        .hasAuthority(UserRole.DELETE_PROCEEDING.getCode())
+        .requestMatchers("/application/proceedings/*/summary", "/application/proceedings/edit/**")
+        .hasAuthority(UserRole.VIEW_PROCEEDING.getCode())
+        // Scope limitations are edited inside both the add and the edit proceeding flows, which
+        // share these URLs.
+        .requestMatchers("/application/proceedings/scope-limitations/**")
+        .access(anyFunction(UserRole.ADD_PROCEEDING, UserRole.VIEW_PROCEEDING))
+        .requestMatchers(HttpMethod.POST, "/application/sections/client/details/summary")
+        .hasAuthority(UserRole.SUBMIT_UPDATE_CLIENT.getCode())
+        .requestMatchers(HttpMethod.POST, "/application/sections")
+        .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
+        .requestMatchers(
+            "/application/validate", "/application/submit/summary", "/application/declaration")
+        .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
+        // An amendment is made to an open case, so every amendment route needs VC.
+        .requestMatchers("/amendments/proceedings/add/**")
+        .access(caseAction(UserRole.ADD_PROCEEDING))
+        .requestMatchers("/amendments/proceedings/*/remove")
+        .access(caseAction(UserRole.DELETE_PROCEEDING))
+        .requestMatchers("/amendments/proceedings/*/summary", "/amendments/proceedings/edit/**")
+        .access(caseAction(UserRole.VIEW_PROCEEDING))
+        .requestMatchers("/amendments/proceedings/scope-limitations/**")
+        .access(
+            AuthorizationManagers.allOf(
+                caseAction(), anyFunction(UserRole.ADD_PROCEEDING, UserRole.VIEW_PROCEEDING)))
+        // Submitting an amended client is the end of the amend client flow, which needs CD.
+        .requestMatchers(HttpMethod.POST, "/amendments/sections/client/details/summary")
+        .access(caseAction(UserRole.VIEW_CLIENT_DETAILS, UserRole.SUBMIT_UPDATE_CLIENT))
+        .requestMatchers(HttpMethod.POST, "/amendments/summary")
+        .access(caseAction(UserRole.SUBMIT_AMENDMENT))
+        .requestMatchers("/amendments/validate", "/amendments/submit/summary")
+        .access(caseAction(UserRole.SUBMIT_AMENDMENT))
+        .requestMatchers(
+            "/amendments/new",
+            "/amendments/application-type",
+            "/amendments/delegated-functions",
+            "/amendments/create",
+            "/amendments/edit-delegated-functions",
+            "/amendments/summary")
+        .access(caseAction(UserRole.AMEND_CASE))
+        .requestMatchers("/amendments/sections/client/details/**", "/amendments/client-update/**")
+        .access(caseAction(UserRole.VIEW_CLIENT_DETAILS))
+        // The cost limit and means reassessment quick edits are also made to an open case.
+        .requestMatchers(
+            "/amendments/**",
+            "/allocate-cost-limit",
+            "/allocate-cost-limit/**",
+            "/means-reassessment",
+            "/means-reassessment/**")
+        .access(caseAction())
+        // Every notification page is reached by opening the notification, which needs NOT.
+        .requestMatchers(HttpMethod.POST, "/notifications/*/attachments/*/remove")
+        .access(notificationAction(UserRole.UPLOAD_EVIDENCE))
+        .requestMatchers("/notifications/*/attachments/*/remove")
+        .denyAll()
+        .requestMatchers(
+            "/notifications/*/attachments/*/retrieve", "/notifications/*/attachments/*/download")
+        .access(notificationAction(UserRole.VIEW_NOTIFICATION_ATTACHMENT))
+        // Submitting documents is the end of the provide documents flow, which needs EVID.
+        .requestMatchers(HttpMethod.POST, "/notifications/*/provide-documents-or-evidence")
+        .access(notificationAction(UserRole.UPLOAD_EVIDENCE, UserRole.SUBMIT_DOCUMENT_UPLOAD))
+        .requestMatchers(
+            "/notifications/*/provide-documents-or-evidence",
+            "/notifications/*/attachments/**",
+            "/application/notification-attachments/confirmed",
+            "/application/notification-attachments/failed")
+        .access(notificationAction(UserRole.UPLOAD_EVIDENCE))
+        // Searching a case's notifications is an action on the open case.
+        .requestMatchers("/notifications/case-search")
+        .access(notificationAction(UserRole.VIEW_CASE_DETAILS))
+        .requestMatchers(HttpMethod.POST, "/notifications/search")
+        .access(notificationAction())
+        .requestMatchers(HttpMethod.POST, "/notifications/*")
+        .access(notificationAction(UserRole.SUBMIT_NOTIFICATION))
+        .requestMatchers("/notifications", "/notifications/**")
+        .access(notificationAction())
+        // Opening a case puts it in the session: a draft goes to its sections, a submitted case
+        // to the case overview. Users reach it from case search or a notification's case link.
+        .requestMatchers("/application/*/view")
+        .access(anyFunction(UserRole.VIEW_CASES_AND_APPLICATIONS, UserRole.VIEW_CASE_DETAILS))
+        // Every case page is reached by opening the case, which the legacy PUI checks, so each
+        // case action needs VC as well as its own function.
+        .requestMatchers("/case/details/proceeding/*")
+        .access(caseAction(UserRole.VIEW_PROCEEDING))
+        // Billing actions are reached from the case's billing page, which needs CB, and a
+        // payment on account or bill is submitted from inside the flow that creates it.
+        .requestMatchers(
+            "/case/billing/poa/submit",
+            "/case/billing/poa/declaration",
+            "/case/billing/poa/confirmation")
+        .access(
+            caseAction(
+                UserRole.VIEW_CASE_BILL,
+                UserRole.CREATE_PAYMENT_ON_ACCOUNT,
+                UserRole.SUBMIT_PAYMENT_ON_ACCOUNT))
+        // Creating and deleting a payment on account both need the POA function, as
+        // they do in the legacy PUI.
+        .requestMatchers("/case/billing/poa", "/case/billing/poa/**")
+        .access(caseAction(UserRole.VIEW_CASE_BILL, UserRole.CREATE_PAYMENT_ON_ACCOUNT))
+        // Submitting and deleting a bill are separate permissions from creating one in
+        // the legacy PUI, which gates them on the subbill and delete-bill functions.
+        // The bill rules are exact paths, not a prefix, so every route that submits
+        // a bill has to be listed - "/case/billing/bill" alone does not cover them.
+        .requestMatchers(
+            "/case/billing/bill/submit",
+            "/case/billing/bill/declaration",
+            "/case/billing/bill/confirmation")
+        .access(caseAction(UserRole.VIEW_CASE_BILL, UserRole.CREATE_BILL, UserRole.SUBMIT_BILL))
+        .requestMatchers("/case/billing/bill/remove")
+        .access(caseAction(UserRole.VIEW_CASE_BILL, UserRole.DELETE_BILL))
+        // Copying creates a bill, and the summary reports on the one being created, so
+        // both take the create permission.
+        .requestMatchers("/case/billing/bill/copy", "/case/billing/bill/summary")
+        .access(caseAction(UserRole.VIEW_CASE_BILL, UserRole.CREATE_BILL))
+        .requestMatchers("/case/billing/bill")
+        .access(caseAction(UserRole.VIEW_CASE_BILL, UserRole.CREATE_BILL))
+        .requestMatchers("/case/billing/undertaking")
+        .access(caseAction(UserRole.VIEW_CASE_BILL, UserRole.ENTER_UNDERTAKING))
+        .requestMatchers("/case/billing")
+        .access(caseAction(UserRole.VIEW_CASE_BILL))
+        .requestMatchers("/case/outcome-and-awards/submit")
+        .access(outcomeAction(UserRole.SUBMIT_CASE_OUTCOME))
+        // This discharge page is part of the submission journey; legacy additionally
+        // requires POD, case eligibility and completed proceeding outcomes.
+        .requestMatchers("/case/outcome-and-awards/discharge")
+        .access(caseAction(UserRole.SUBMIT_CASE_OUTCOME, UserRole.REQUEST_CASE_DISCHARGE))
+        .requestMatchers("/case/outcome-and-awards/proceeding/*/outcome/clear")
+        .access(outcomeAction(UserRole.CLEAR_OUTCOME))
+        .requestMatchers("/case/outcome-and-awards/proceeding/*/outcome/**")
+        .access(outcomeAction(UserRole.UPDATE_PROCEEDING_OUTCOME))
+        .requestMatchers("/case/outcome-and-awards", "/case/outcome-and-awards/**")
+        .access(outcomeAction())
+        .requestMatchers("/case/**")
+        .access(caseAction());
+  }
+
+  /**
+   * Explicitly allows routes intended for any signed-in user (Home, provider switch, shared
+   * court/counsel pickers and session-bound draft application pages) before the final {@code
+   * denyAll()} catch-all.
+   */
+  static void authoriseAuthenticatedRoutes(
+      AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
+          routeRules) {
+    routeRules.requestMatchers(SecurityConfiguration::isContextRootGetOrHead).authenticated();
+    allowGetAndHead(
+        routeRules,
+        "/",
+        "/home",
+        "/provider-switch",
+        "/submissions/alreadySubmitted",
+        "/counsel/results",
+        "/counsel/search",
+        "/counsel/select",
+        "/court/results",
+        "/court/search",
+        "/court/select",
+        "/application/counsel/confirm",
+        "/application/submit-case",
+        "/application/submit-case/confirmed",
+        "/application/submit-case/failed",
+        "/application/submit-case/undertaking",
+        "/application/submit-case/undertaking/confirmed",
+        "/application/submit-case/undertaking/failed",
+        "/application/client-update",
+        "/application/client-update/confirmed",
+        "/application/client-update/failed",
+        "/application/abandon",
+        "/application/assessments",
+        "/application/assessments/confirm",
+        "/application/assessments/confirm/caseSummary.do",
+        "/application/assessments/*/remove",
+        "/application/case-costs",
+        "/application/evidence/add",
+        "/application/evidence/*/remove",
+        "/application/evidence/*/view",
+        "/application/prior-authorities/add/details",
+        "/application/prior-authorities/add/type",
+        "/application/prior-authorities/edit/details",
+        "/application/prior-authorities/*/confirm",
+        "/application/prior-authorities/*/remove",
+        "/application/proceedings-and-costs",
+        "/application/proceedings/*/make-lead",
+        "/application/sections",
+        "/application/sections/application-type",
+        "/application/sections/client/details/address",
+        "/application/sections/client/details/address/search",
+        "/application/sections/client/details/basic",
+        "/application/sections/client/details/contact",
+        "/application/sections/client/details/deceased",
+        "/application/sections/client/details/equal-opportunities-monitoring",
+        "/application/sections/client/details/summary",
+        "/application/sections/correspondence-address",
+        "/application/sections/correspondence-address/search",
+        "/application/sections/evidence",
+        "/application/sections/linked-cases",
+        "/application/sections/linked-cases/search",
+        "/application/sections/linked-cases/search/results",
+        "/application/sections/linked-cases/*/add",
+        "/application/sections/linked-cases/*/confirm",
+        "/application/sections/linked-cases/*/remove",
+        "/application/sections/opponents",
+        "/application/sections/opponents/individual/create",
+        "/application/sections/opponents/organisation/create",
+        "/application/sections/opponents/organisation/search",
+        "/application/sections/opponents/organisation/search/results",
+        "/application/sections/opponents/organisation/*/select",
+        "/application/sections/opponents/*/edit",
+        "/application/sections/opponents/*/remove",
+        "/application/sections/provider-details",
+        "/application/sections/summary",
+        "/application/summary/print");
+    routeRules
+        .requestMatchers(
+            HttpMethod.POST,
+            "/provider-switch",
+            "/counsel/search",
+            "/court/search",
+            "/application/counsel/confirm",
+            "/application/submit-case/confirmed",
+            "/application/submit-case/failed",
+            "/application/submit-case/undertaking/confirmed",
+            "/application/submit-case/undertaking/failed",
+            "/application/client-update/confirmed",
+            "/application/client-update/failed",
+            "/application/abandon/confirmed",
+            "/application/assessments/*/remove",
+            "/application/case-costs",
+            "/application/evidence/add",
+            "/application/prior-authorities/add/details",
+            "/application/prior-authorities/add/type",
+            "/application/prior-authorities/edit/details",
+            "/application/prior-authorities/edit/type",
+            "/application/prior-authorities/*/remove",
+            "/application/sections/application-type",
+            "/application/sections/client/details/address",
+            "/application/sections/client/details/address/search",
+            "/application/sections/client/details/basic",
+            "/application/sections/client/details/contact",
+            "/application/sections/client/details/deceased",
+            "/application/sections/client/details/equal-opportunities-monitoring",
+            "/application/sections/correspondence-address",
+            "/application/sections/correspondence-address/search",
+            "/application/sections/linked-cases/add",
+            "/application/sections/linked-cases/search",
+            "/application/sections/linked-cases/*/confirm",
+            "/application/sections/linked-cases/*/remove",
+            "/application/sections/opponents/individual/create",
+            "/application/sections/opponents/organisation/create",
+            "/application/sections/opponents/organisation/search",
+            "/application/sections/opponents/organisation/shared/create",
+            "/application/sections/opponents/*/edit",
+            "/application/sections/opponents/*/remove",
+            "/application/sections/provider-details")
+        .authenticated();
+  }
+
+  private static boolean isContextRootGetOrHead(HttpServletRequest request) {
+    return (HttpMethod.GET.matches(request.getMethod())
+            || HttpMethod.HEAD.matches(request.getMethod()))
+        && request.getServletPath().isEmpty()
+        && request.getPathInfo() == null;
+  }
+
+  private static void allowGetAndHead(
+      AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
+          routeRules,
+      String... patterns) {
+    routeRules.requestMatchers(HttpMethod.GET, patterns).authenticated();
+    routeRules.requestMatchers(HttpMethod.HEAD, patterns).authenticated();
+  }
+
+  /** Requires every one of the given functions. */
+  private static AuthorizationManager<RequestAuthorizationContext> allFunctions(UserRole... roles) {
+    return AllAuthoritiesAuthorizationManager.hasAllAuthorities(
+        Arrays.stream(roles).map(UserRole::getCode).toList());
+  }
+
+  /** Requires at least one of the given functions. */
+  private static AuthorizationManager<RequestAuthorizationContext> anyFunction(UserRole... roles) {
+    return AuthorityAuthorizationManager.hasAnyAuthority(
+        Arrays.stream(roles).map(UserRole::getCode).toArray(String[]::new));
+  }
+
+  /** Requires VC, to be in a case, and every one of the given functions. */
+  private static AuthorizationManager<RequestAuthorizationContext> caseAction(UserRole... roles) {
+    return allFunctions(withFunction(UserRole.VIEW_CASE_DETAILS, roles));
+  }
+
+  /** Requires NOT, to be in a notification, and every one of the given functions. */
+  private static AuthorizationManager<RequestAuthorizationContext> notificationAction(
+      UserRole... roles) {
+    return allFunctions(withFunction(UserRole.VIEW_NOTIFICATIONS, roles));
+  }
+
+  /**
+   * Requires a case action that is part of recording an outcome, which the legacy PUI allows with
+   * either outcome function.
+   */
+  private static AuthorizationManager<RequestAuthorizationContext> outcomeAction(
+      UserRole... roles) {
+    return AuthorizationManagers.allOf(
+        caseAction(roles), anyFunction(UserRole.RECORD_OUTCOME, UserRole.REQUEST_CASE_DISCHARGE));
+  }
+
+  private static UserRole[] withFunction(UserRole first, UserRole... rest) {
+    return Stream.concat(Stream.of(first), Arrays.stream(rest)).toArray(UserRole[]::new);
   }
 
   /**

@@ -1,4 +1,4 @@
-<th:block th:fragment="header">
+<th:block th:fragment="header" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
     <header class="moj-header" role="banner">
         <div class="moj-header__container">
             <div class="moj-header__logo">
@@ -63,7 +63,7 @@
                                 Home
                             </a>
                         </li>
-                        <li th:if="${#lists.contains(user?.functions, 'YCA')}"
+                        <li sec:authorize="hasAuthority(@roles.viewCasesAndApplications)"
                             class="govuk-service-navigation__item"
                             th:classappend="${pageCategory == 'cases'} ? 'govuk-service-navigation__item--active'">
                             <a class="govuk-service-navigation__link"
@@ -73,7 +73,7 @@
                                     applications</strong>
                             </a>
                         </li>
-                        <li th:if="${#lists.contains(user?.functions, 'NOT')}"
+                        <li sec:authorize="hasAuthority(@roles.viewNotifications)"
                             class="govuk-service-navigation__item"
                             th:classappend="${pageCategory == 'actions'} ? 'govuk-service-navigation__item--active'">
                             <a class="govuk-service-navigation__link"

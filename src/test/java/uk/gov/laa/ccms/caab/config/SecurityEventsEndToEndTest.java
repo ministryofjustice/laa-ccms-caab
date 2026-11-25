@@ -88,14 +88,13 @@ class SecurityEventsEndToEndTest {
 
   @Test
   void aRouteTheUserLacksTheFunctionForIsRefusedAndLoggedAsADenial() throws Exception {
-    int status =
-        mockMvc
-            .perform(get("/case/overview").with(user("jane").authorities()))
-            .andReturn()
-            .getResponse()
-            .getStatus();
+    // A refused page load is returned to a page the user may see, as the legacy PUI does, so the
+    // refusal shows as a redirect rather than a 403.
+    MvcResult refused =
+        mockMvc.perform(get("/case/overview").with(user("jane").authorities())).andReturn();
 
-    assertThat(status).isEqualTo(403);
+    assertThat(refused.getResponse().getStatus()).isEqualTo(302);
+    assertThat(refused.getResponse().getRedirectedUrl()).isEqualTo("/home");
     assertThat(eventTypes()).contains("AUTHORIZATION_DENIED");
     assertThat(keyValue("AUTHORIZATION_DENIED", "event_detail")).isEqualTo("GET /case/overview");
     org.mockito.Mockito.verify(puiMetricService)
@@ -112,13 +111,13 @@ class SecurityEventsEndToEndTest {
     final var submitter =
         user("jane")
             .authorities(
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("VC"),
                 new org.springframework.security.core.authority.SimpleGrantedAuthority("SUBOUT"),
                 new org.springframework.security.core.authority.SimpleGrantedAuthority("POD"));
     mockMvc
         .perform(post(path).with(user("jane").authorities()).with(csrf))
         .andExpect(
-            org.springframework.test.web.servlet.result.MockMvcResultMatchers.status()
-                .isForbidden());
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isFound());
     mockMvc
         .perform(
             post(path)
@@ -140,14 +139,19 @@ class SecurityEventsEndToEndTest {
 
   @org.junit.jupiter.params.ParameterizedTest
   @org.junit.jupiter.params.provider.CsvSource({
-    "submit, SUBOUT, 404",
-    "submit, POD, 403",
-    "submit, VO, 403",
-    "submit, SUBOUT POD, 404",
-    "discharge, SUBOUT, 403",
-    "discharge, POD, 403",
-    "discharge, VO, 403",
-    "discharge, SUBOUT POD, 404"
+    "submit, VC PO SUBOUT, 404",
+    "submit, VC POD SUBOUT, 404",
+    "submit, SUBOUT, 302",
+    "submit, VC SUBOUT, 302",
+    "submit, PO SUBOUT, 302",
+    "submit, VC POD, 302",
+    "submit, VC VO, 302",
+    "discharge, VC POD SUBOUT, 404",
+    "discharge, VC PO SUBOUT, 302",
+    "discharge, POD SUBOUT, 302",
+    "discharge, VC SUBOUT, 302",
+    "discharge, VC POD, 302",
+    "discharge, VC VO, 302"
   })
   void outcomeJourneyEnforcesLegacyPermissionsForGetAndPost(
       String destination, String functions, int expectedStatus) throws Exception {
@@ -185,6 +189,7 @@ class SecurityEventsEndToEndTest {
         function == null
             ? new org.springframework.security.core.GrantedAuthority[0]
             : new org.springframework.security.core.GrantedAuthority[] {
+              new org.springframework.security.core.authority.SimpleGrantedAuthority("NOT"),
               new org.springframework.security.core.authority.SimpleGrantedAuthority(
                   uk.gov.laa.ccms.caab.config.UserRole.valueOf(
                           "ATT".equals(function) ? "VIEW_NOTIFICATION_ATTACHMENT" : function)
@@ -199,9 +204,9 @@ class SecurityEventsEndToEndTest {
             .getStatus();
 
     if (refused) {
-      assertThat(status).isEqualTo(403);
+      assertThat(status).isEqualTo(302);
     } else {
-      assertThat(status).isNotEqualTo(403);
+      assertThat(status).isEqualTo(404);
     }
   }
 
@@ -222,7 +227,43 @@ class SecurityEventsEndToEndTest {
             .getResponse()
             .getStatus();
 
-    assertThat(status).isEqualTo(403);
+    assertThat(status).isEqualTo(302);
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "GET,valid",
+    "HEAD,valid",
+    "POST,missing",
+    "POST,invalid"
+  })
+  void attachmentRemovalRefusesReadMethodsAndInvalidCsrf(String method, String token)
+      throws Exception {
+    var request =
+        org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request(
+                org.springframework.http.HttpMethod.valueOf(method),
+                "/notifications/234/attachments/567/remove")
+            .header("Sec-Fetch-Mode", "cors")
+            .with(
+                user("user")
+                    .authorities(
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                            "NOT"),
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                            "EVID")));
+    if ("valid".equals(token)) {
+      request.with(
+          org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+              .csrf());
+    } else if ("invalid".equals(token)) {
+      request.with(
+          org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+              .csrf()
+              .useInvalidToken());
+    }
+    assertThat(mockMvc.perform(request).andReturn().getResponse().getStatus()).isEqualTo(403);
+    assertThat(eventTypes())
+        .contains("POST".equals(method) ? "CSRF_REJECTED" : "AUTHORIZATION_DENIED");
   }
 
   @Test
@@ -287,6 +328,102 @@ class SecurityEventsEndToEndTest {
             .orElseThrow();
     assertThat(event.getMDCPropertyMap().get("user_id"))
         .isEqualTo(uk.gov.laa.ccms.caab.logging.UserIdentifier.pseudonymise("jane"));
+  }
+
+  @Test
+  void unlistedRoutesAreDeniedByDefaultAndErrorAndLogoutRemainFunctional() throws Exception {
+    var allFunctions =
+        java.util.Arrays.stream(UserRole.values())
+            .map(
+                role ->
+                    new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                        role.getCode()))
+            .toList();
+    final var csrf =
+        org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+            .csrf();
+
+    // Even with every user function, an unmapped path or unmapped method is denied and logged.
+    MvcResult unlistedGet =
+        mockMvc
+            .perform(get("/unlisted-future-endpoint").with(user("jane").authorities(allFunctions)))
+            .andReturn();
+    assertThat(unlistedGet.getResponse().getStatus()).isEqualTo(302);
+    assertThat(unlistedGet.getResponse().getRedirectedUrl()).isEqualTo("/home");
+    assertThat(eventTypes()).contains("AUTHORIZATION_DENIED");
+
+    MvcResult unlistedPost =
+        mockMvc
+            .perform(
+                post("/unlisted-future-endpoint")
+                    .header("Sec-Fetch-Mode", "cors")
+                    .with(user("jane").authorities(allFunctions))
+                    .with(csrf))
+            .andReturn();
+    assertThat(unlistedPost.getResponse().getStatus()).isEqualTo(403);
+
+    // Unauthenticated probes redirect to sign-in without distinguishing existing vs unlisted paths.
+    assertThat(
+            mockMvc.perform(get("/unlisted-future-endpoint")).andReturn().getResponse().getStatus())
+        .isEqualTo(302);
+
+    // Direct external GET /error is denied, while internal servlet ERROR dispatches are permitted.
+    assertThat(
+            mockMvc
+                .perform(
+                    get("/error")
+                        .header("Sec-Fetch-Mode", "cors")
+                        .with(user("jane").authorities(allFunctions)))
+                .andReturn()
+                .getResponse()
+                .getStatus())
+        .isEqualTo(403);
+    assertThat(
+            mockMvc
+                .perform(
+                    get("/error")
+                        .with(
+                            req -> {
+                              req.setDispatcherType(jakarta.servlet.DispatcherType.ERROR);
+                              return req;
+                            })
+                        .with(user("jane").authorities()))
+                .andReturn()
+                .getResponse()
+                .getStatus())
+        .isEqualTo(404);
+
+    // Sign-out confirmation (GET /logout), sign-out submission (POST /logout), and bare context
+    // root (GET /civil) remain reachable, while POST /civil is denied.
+    assertThat(
+            mockMvc
+                .perform(get("/civil").contextPath("/civil").with(user("jane").authorities()))
+                .andReturn()
+                .getResponse()
+                .getStatus())
+        .isEqualTo(404);
+    assertThat(
+            mockMvc
+                .perform(
+                    post("/civil")
+                        .contextPath("/civil")
+                        .header("Sec-Fetch-Mode", "cors")
+                        .with(user("jane").authorities(allFunctions))
+                        .with(csrf))
+                .andReturn()
+                .getResponse()
+                .getStatus())
+        .isEqualTo(403);
+    assertThat(
+            mockMvc
+                .perform(get("/logout").with(user("jane").authorities()))
+                .andReturn()
+                .getResponse()
+                .getStatus())
+        .isEqualTo(200);
+    MvcResult logoutPost =
+        mockMvc.perform(post("/logout").with(user("jane").authorities()).with(csrf)).andReturn();
+    assertThat(logoutPost.getResponse().getStatus()).isEqualTo(302);
   }
 
   private String keyValue(String eventType, String key) {

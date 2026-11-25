@@ -24,7 +24,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class AbsoluteSessionTimeoutFilter extends OncePerRequestFilter {
 
   /** Session attribute holding when the user authenticated. */
-  static final String AUTHENTICATED_AT = "authenticatedAt";
+  public static final String AUTHENTICATED_AT = "authenticatedAt";
 
   private final Duration maximumSessionAge;
   private final String expiredDestination;

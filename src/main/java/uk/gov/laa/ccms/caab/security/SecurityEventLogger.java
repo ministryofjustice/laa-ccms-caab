@@ -16,6 +16,7 @@ import org.springframework.security.authentication.event.AuthenticationSuccessEv
 import org.springframework.security.authorization.event.AuthorizationDeniedEvent;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
@@ -122,6 +123,16 @@ public class SecurityEventLogger {
         Outcome.DENIED,
         "Access denied",
         target);
+  }
+
+  /** Records a controller's identity-bound denial without including request parameters. */
+  public void authorisationDenied(HttpServletRequest request) {
+    log(
+        EventType.AUTHORIZATION_DENIED,
+        SecurityContextHolder.getContext().getAuthentication(),
+        Outcome.DENIED,
+        "Access denied",
+        request.getMethod() + " " + RequestRoute.of(request));
   }
 
   /**
@@ -310,7 +321,7 @@ public class SecurityEventLogger {
 
   /**
    * Records a failed sign-in that Spring Security does not publish an event for, such as a callback
-   * that cannot be matched to an authorization request. Only an error code or the exception class
+   * that cannot be matched to an authorisation request. Only an error code or the exception class
    * is logged, as the exception message can carry the user's details.
    *
    * @param exception the authentication failure
