@@ -37,9 +37,9 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 /**
  * Fails when a controller route can be reached without any user function and is not listed in
  * {@code security/unrestricted-routes.txt}, so that a new route for a restricted action cannot be
- * added without a rule in {@link SecurityConfiguration#authorizeUserFunctions}.
+ * added without a rule in {@link SecurityConfiguration#authoriseUserFunctions}.
  */
-@SpringJUnitWebConfig(UserFunctionAuthorizationTest.Config.class)
+@SpringJUnitWebConfig(UserFunctionAuthorisationTest.Config.class)
 @DisplayName("Routes reachable without a user function")
 class UnrestrictedRoutesTest {
 
@@ -91,7 +91,7 @@ class UnrestrictedRoutesTest {
     assertThat(unrestricted)
         .as(
             "Routes reachable without a user function. Add a rule to"
-                + " SecurityConfiguration.authorizeUserFunctions, or list the route in %s if it"
+                + " SecurityConfiguration.authoriseUserFunctions, or list the route in %s if it"
                 + " is meant to be open",
             ALLOWLIST)
         .containsExactlyInAnyOrderElementsOf(allowlist());

@@ -17,7 +17,7 @@ import org.springframework.security.web.csrf.CsrfException;
 
 /**
  * Handles a request for an action the user does not hold the function for, the way the legacy PUI
- * does: the user is returned to the page they came from, which then shows "You are not authorized
+ * does: the user is returned to the page they came from, which then shows "You are not authorised
  * to perform this function."
  *
  * <p>That page is the recorded page matching the referring one, if it was shown by a plain page

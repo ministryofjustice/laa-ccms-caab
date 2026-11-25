@@ -39,7 +39,7 @@ import uk.gov.laa.ccms.caab.service.UserService;
 /** Independent, exhaustive expectations exercised through the production security filter chain. */
 @SpringJUnitWebConfig(SecurityEventsEndToEndTest.Config.class)
 @TestPropertySource(properties = "portal.logoutUrl=https://idp.example.test/logout")
-class RouteAuthorizationTest {
+class RouteAuthorisationTest {
 
   private static final String MANIFEST = "/security/route-authorisation.txt";
   @Autowired private WebApplicationContext context;
@@ -71,7 +71,7 @@ class RouteAuthorizationTest {
   }
 
   private static Map<String, String> expectations() throws IOException {
-    try (var stream = RouteAuthorizationTest.class.getResourceAsStream(MANIFEST)) {
+    try (var stream = RouteAuthorisationTest.class.getResourceAsStream(MANIFEST)) {
       assertThat(stream).as(MANIFEST).isNotNull();
       Map<String, String> expectations = new LinkedHashMap<>();
       for (String line :

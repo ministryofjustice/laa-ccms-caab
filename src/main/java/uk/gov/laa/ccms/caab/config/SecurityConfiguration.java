@@ -96,11 +96,11 @@ public class SecurityConfiguration {
   SecurityFilterChain configure(HttpSecurity http) throws Exception {
 
     return http.authorizeHttpRequests(
-            authorize -> {
-              authorizePublicRoutes(authorize);
-              authorizeUserFunctions(authorize);
-              authorizeAuthenticatedRoutes(authorize);
-              authorize.anyRequest().denyAll();
+            routeRules -> {
+              authorisePublicRoutes(routeRules);
+              authoriseUserFunctions(routeRules);
+              authoriseAuthenticatedRoutes(routeRules);
+              routeRules.anyRequest().denyAll();
             })
         .csrf(
             csrf ->
@@ -156,10 +156,10 @@ public class SecurityConfiguration {
   }
 
   /** Permits static assets, probes, container error dispatches and deliberate public endpoints. */
-  static void authorizePublicRoutes(
+  static void authorisePublicRoutes(
       AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
-          authorize) {
-    authorize
+          routeRules) {
+    routeRules
         .dispatcherTypeMatchers(DispatcherType.ERROR)
         .permitAll()
         .requestMatchers(
@@ -181,12 +181,12 @@ public class SecurityConfiguration {
    * checks. The first matching rule applies, so specific paths come before the prefixes they sit
    * under.
    *
-   * @param authorize the request authorisation registry to add the rules to.
+   * @param routeRules the request authorisation registry to add the rules to.
    */
-  static void authorizeUserFunctions(
+  static void authoriseUserFunctions(
       AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
-          authorize) {
-    authorize
+          routeRules) {
+    routeRules
         .requestMatchers(
             "/general-provider-requests/**",
             "/application/submit-general-provider-request/confirmed",
@@ -358,12 +358,12 @@ public class SecurityConfiguration {
    * court/counsel pickers and session-bound draft application pages) before the final {@code
    * denyAll()} catch-all.
    */
-  static void authorizeAuthenticatedRoutes(
+  static void authoriseAuthenticatedRoutes(
       AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
-          authorize) {
-    authorize.requestMatchers(SecurityConfiguration::isContextRootGetOrHead).authenticated();
+          routeRules) {
+    routeRules.requestMatchers(SecurityConfiguration::isContextRootGetOrHead).authenticated();
     allowGetAndHead(
-        authorize,
+        routeRules,
         "/",
         "/home",
         "/provider-switch",
@@ -429,7 +429,7 @@ public class SecurityConfiguration {
         "/application/sections/provider-details",
         "/application/sections/summary",
         "/application/summary/print");
-    authorize
+    routeRules
         .requestMatchers(
             HttpMethod.POST,
             "/provider-switch",
@@ -483,10 +483,10 @@ public class SecurityConfiguration {
 
   private static void allowGetAndHead(
       AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
-          authorize,
+          routeRules,
       String... patterns) {
-    authorize.requestMatchers(HttpMethod.GET, patterns).authenticated();
-    authorize.requestMatchers(HttpMethod.HEAD, patterns).authenticated();
+    routeRules.requestMatchers(HttpMethod.GET, patterns).authenticated();
+    routeRules.requestMatchers(HttpMethod.HEAD, patterns).authenticated();
   }
 
   /** Requires every one of the given functions. */

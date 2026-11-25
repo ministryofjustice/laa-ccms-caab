@@ -40,7 +40,7 @@ public class SubmittedCaseClientInterceptor implements HandlerInterceptor {
       return true;
     }
     if (securityEventLogger != null) {
-      securityEventLogger.authorizationDenied(request);
+      securityEventLogger.authorisationDenied(request);
     }
     refusal.handle(
         request,

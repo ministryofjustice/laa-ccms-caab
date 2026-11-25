@@ -225,7 +225,7 @@ class PrivilegeTemplateRenderTest {
   void showsNotAuthorisedError() {
     assertThat(renderHome(Map.of("notAuthorised", true), "YCA"))
         .contains("id=\"not-authorised-error\"")
-        .contains("You are not authorized to perform this function.");
+        .contains("You are not authorised to perform this function.");
     assertThat(renderHome("YCA")).doesNotContain("not-authorised-error");
   }
 

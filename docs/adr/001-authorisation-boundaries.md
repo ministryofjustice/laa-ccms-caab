@@ -47,17 +47,17 @@ those URL function rules and template controls:
 
 **Implemented state:** `SecurityConfiguration` enforces runtime
 `anyRequest().denyAll()` after three explicit rule layers:
-1. `authorizePublicRoutes` — static assets, actuator health/prometheus probes,
+1. `authorisePublicRoutes` — static assets, actuator health/prometheus probes,
    internal servlet `DispatcherType.ERROR` dispatches, `/authentication-error`
    and `POST /csp/report`.
-2. `authorizeUserFunctions` — action-specific function rules.
-3. `authorizeAuthenticatedRoutes` — exact, method-scoped `GET`/`HEAD` and `POST`
+2. `authoriseUserFunctions` — action-specific function rules.
+3. `authoriseAuthenticatedRoutes` — exact, method-scoped `GET`/`HEAD` and `POST`
    paths for routes intended for any signed-in user (Home, provider switch,
    court/counsel pickers, submission progress/result pages and session-bound
    draft application pages), with no `**` catch-all wildcards.
 
 Any unlisted route or unmapped HTTP method is denied at runtime even for a user
-holding every `UserRole` function, and also fails `RouteAuthorizationTest` /
+holding every `UserRole` function, and also fails `RouteAuthorisationTest` /
 `UnrestrictedRoutesTest` at build time.
 
 **Draft application sections (`/application/sections/...`, `/application/abandon`):**

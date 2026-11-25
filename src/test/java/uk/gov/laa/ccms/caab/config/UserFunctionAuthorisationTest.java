@@ -42,9 +42,9 @@ import uk.gov.laa.ccms.caab.security.RefusedActionSession;
  * are registered, so a request the rules let through ends in a 404, and one they refuse is sent
  * back to the referring page.
  */
-@SpringJUnitWebConfig(UserFunctionAuthorizationTest.Config.class)
+@SpringJUnitWebConfig(UserFunctionAuthorisationTest.Config.class)
 @DisplayName("User function authorisation rules")
-class UserFunctionAuthorizationTest {
+class UserFunctionAuthorisationTest {
 
   private static final String PREVIOUS_PAGE = "/previous-page?tab=1";
 
@@ -58,11 +58,11 @@ class UserFunctionAuthorizationTest {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
       return http.authorizeHttpRequests(
-              authorize -> {
-                SecurityConfiguration.authorizePublicRoutes(authorize);
-                SecurityConfiguration.authorizeUserFunctions(authorize);
-                SecurityConfiguration.authorizeAuthenticatedRoutes(authorize);
-                authorize.anyRequest().denyAll();
+              routeRules -> {
+                SecurityConfiguration.authorisePublicRoutes(routeRules);
+                SecurityConfiguration.authoriseUserFunctions(routeRules);
+                SecurityConfiguration.authoriseAuthenticatedRoutes(routeRules);
+                routeRules.anyRequest().denyAll();
               })
           .csrf(csrf -> csrf.ignoringRequestMatchers("/csp/report"))
           .exceptionHandling(

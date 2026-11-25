@@ -126,7 +126,7 @@ public class SecurityEventLogger {
   }
 
   /** Records a controller's identity-bound denial without including request parameters. */
-  public void authorizationDenied(HttpServletRequest request) {
+  public void authorisationDenied(HttpServletRequest request) {
     log(
         EventType.AUTHORIZATION_DENIED,
         SecurityContextHolder.getContext().getAuthentication(),
@@ -321,7 +321,7 @@ public class SecurityEventLogger {
 
   /**
    * Records a failed sign-in that Spring Security does not publish an event for, such as a callback
-   * that cannot be matched to an authorization request. Only an error code or the exception class
+   * that cannot be matched to an authorisation request. Only an error code or the exception class
    * is logged, as the exception message can carry the user's details.
    *
    * @param exception the authentication failure

@@ -50,7 +50,7 @@ class SubmittedCaseClientInterceptorTest {
     session.setAttribute(ACTIVE_CASE, draft());
 
     assertThat(interceptor.preHandle(request, response, new Object())).isTrue();
-    verify(securityEventLogger, never()).authorizationDenied(request);
+    verify(securityEventLogger, never()).authorisationDenied(request);
   }
 
   @Test
@@ -60,7 +60,7 @@ class SubmittedCaseClientInterceptorTest {
     session.setAttribute(ACTIVE_CASE, draft());
 
     assertThat(interceptor.preHandle(request, response, new Object())).isTrue();
-    verify(securityEventLogger, never()).authorizationDenied(request);
+    verify(securityEventLogger, never()).authorisationDenied(request);
   }
 
   @Test
@@ -72,7 +72,7 @@ class SubmittedCaseClientInterceptorTest {
     assertThat(interceptor.preHandle(request, response, new Object())).isFalse();
     assertThat(response.getRedirectedUrl()).isEqualTo("/home");
     assertThat(RefusedActionSession.consumeNotAuthorised(session)).isTrue();
-    verify(securityEventLogger).authorizationDenied(request);
+    verify(securityEventLogger).authorisationDenied(request);
   }
 
   @Test
@@ -81,7 +81,7 @@ class SubmittedCaseClientInterceptorTest {
     session.setAttribute(ACTIVE_CASE, submitted());
 
     assertThat(interceptor.preHandle(request, response, new Object())).isFalse();
-    verify(securityEventLogger).authorizationDenied(request);
+    verify(securityEventLogger).authorisationDenied(request);
   }
 
   @Test
@@ -90,6 +90,6 @@ class SubmittedCaseClientInterceptorTest {
     session.setAttribute(CASE, new ApplicationDetail().caseReferenceNumber("SUBMITTED"));
 
     assertThat(interceptor.preHandle(request, response, new Object())).isFalse();
-    verify(securityEventLogger).authorizationDenied(request);
+    verify(securityEventLogger).authorisationDenied(request);
   }
 }

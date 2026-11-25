@@ -2,7 +2,7 @@
 # UnrestrictedRoutesTest fails if a route is reachable without a function and is not
 # listed here, or is listed here but now needs a function. Before adding a route,
 # check whether the legacy PUI checks a user function for the action; if it does,
-# add a rule to SecurityConfiguration.authorizeUserFunctions instead.
+# add a rule to SecurityConfiguration.authoriseUserFunctions instead.
 
 # Home, provider switch and shared pages
 GET (context-root)

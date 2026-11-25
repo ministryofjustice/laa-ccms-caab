@@ -829,7 +829,7 @@ public class AssessmentControllerTest {
     }
     mockMvc.perform(request).andExpect(status().isForbidden());
     verifyNoInteractions(assessmentService, lookupService);
-    verify(securityEventLogger).authorizationDenied(any());
+    verify(securityEventLogger).authorisationDenied(any());
   }
 
   @Test

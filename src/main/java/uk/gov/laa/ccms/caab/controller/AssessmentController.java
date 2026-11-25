@@ -636,7 +636,7 @@ public class AssessmentController {
   public void assessmentDenied(
       AccessDeniedException exception, HttpServletRequest request, HttpServletResponse response)
       throws IOException, ServletException {
-    securityEventLogger.authorizationDenied(request);
+    securityEventLogger.authorisationDenied(request);
     new NotAuthorisedAccessDeniedHandler().handle(request, response, exception);
   }
 }
