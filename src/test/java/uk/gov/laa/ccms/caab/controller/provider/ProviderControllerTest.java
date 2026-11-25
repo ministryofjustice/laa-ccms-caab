@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.provider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -40,6 +41,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.GlobalBinderAdvice;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.provider.ProviderFirmFormData;
 import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
 import uk.gov.laa.ccms.caab.bean.validators.provider.ProviderFirmValidator;
@@ -153,6 +155,8 @@ public class ProviderControllerTest {
             .perform(
                 post("/provider-switch")
                     .sessionAttr("user", userDetails)
+                    .sessionAttr("activeCase", ActiveCase.builder().applicationId(5).build())
+                    .sessionAttr("applicationId", "5")
                     .flashAttr("providerFirmFormData", providerFirmFormData))
             .andDo(print())
             .andExpect(status().is3xxRedirection())
@@ -165,6 +169,9 @@ public class ProviderControllerTest {
     assertEquals(providerFirm2, ((UserDetail) session.getAttribute("user")).getProvider());
     assertEquals(List.of("CA", "VC"), ((UserDetail) session.getAttribute("user")).getFunctions());
     verify(notificationSearchOptionsCache).clear();
+    // The previous provider's application is not carried over to the new one.
+    assertNull(session.getAttribute("activeCase"));
+    assertNull(session.getAttribute("applicationId"));
   }
 
   @Test

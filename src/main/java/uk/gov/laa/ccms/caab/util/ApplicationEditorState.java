@@ -4,9 +4,12 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.LINKED_CASES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_OPPONENTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PRIOR_AUTHORITIES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PROCEEDINGS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_SCOPE_LIMITATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_PROCEEDINGS_ALLOWED;
@@ -19,6 +22,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FO
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA_OLD;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_SCOPE_LIMITATIONS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SCOPE_LIMITATION_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SECTIONS_DATA;
 
 import jakarta.servlet.http.HttpSession;
 import java.util.List;
@@ -58,6 +62,18 @@ public final class ApplicationEditorState {
    * @param session the user's session
    * @param applicationId the application now being opened
    */
+  /**
+   * Clears the open application or case and its editors' state, so nothing opened before can be
+   * changed afterwards, as after a provider switch.
+   *
+   * @param session the user's session
+   */
+  public static void clearOpenApplication(HttpSession session) {
+    EDITOR_ATTRIBUTES.forEach(session::removeAttribute);
+    List.of(ACTIVE_CASE, APPLICATION_ID, CASE, APPLICATION_SUMMARY, SECTIONS_DATA)
+        .forEach(session::removeAttribute);
+  }
+
   public static void clearWhenApplicationChanges(HttpSession session, Integer applicationId) {
     Integer previous =
         session.getAttribute(ACTIVE_CASE) instanceof ActiveCase activeCase

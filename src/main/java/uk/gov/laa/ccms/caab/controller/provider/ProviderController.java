@@ -23,6 +23,7 @@ import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.security.UserFunctionAuthorities;
 import uk.gov.laa.ccms.caab.service.NotificationSearchOptionsCache;
 import uk.gov.laa.ccms.caab.service.UserService;
+import uk.gov.laa.ccms.caab.util.ApplicationEditorState;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -112,6 +113,7 @@ public class ProviderController {
     securityEventLogger.privilegesReloaded(user.getFunctions(), reloadedUser.getFunctions());
     user.setFunctions(reloadedUser.getFunctions());
     notificationSearchOptionsCache.clear();
+    ApplicationEditorState.clearOpenApplication(session);
 
     session.setAttribute("user", user);
 

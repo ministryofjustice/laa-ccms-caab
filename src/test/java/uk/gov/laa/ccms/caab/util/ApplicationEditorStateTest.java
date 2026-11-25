@@ -3,7 +3,9 @@ package uk.gov.laa.ccms.caab.util;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PRIOR_AUTHORITIES;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRIOR_AUTHORITY_FLOW_FORM_DATA;
 
@@ -52,5 +54,19 @@ class ApplicationEditorStateTest {
 
     assertNotNull(session.getAttribute(APPLICATION_PRIOR_AUTHORITIES));
     assertNotNull(session.getAttribute(CURRENT_PROCEEDING));
+  }
+
+  @Test
+  void clearOpenApplicationDropsTheApplicationAndCase() {
+    MockHttpSession session = sessionEditing(1);
+    session.setAttribute(APPLICATION_ID, "1");
+    session.setAttribute(CASE, new Object());
+
+    ApplicationEditorState.clearOpenApplication(session);
+
+    assertNull(session.getAttribute(ACTIVE_CASE));
+    assertNull(session.getAttribute(APPLICATION_ID));
+    assertNull(session.getAttribute(CASE));
+    assertNull(session.getAttribute(CURRENT_PROCEEDING));
   }
 }
