@@ -9,11 +9,9 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CORRESPONDENCE_ADD
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATE_CLIENT_ADDRESS_FLOW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_CLIENT_ADDRESS_FLOW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SECTIONS_DATA;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
-import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +32,7 @@ import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.security.HeldFunctions;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.util.ApplicationEditorState;
+import uk.gov.laa.ccms.caab.util.SentApplications;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -124,16 +123,16 @@ public class ApplicationSectionsController {
    * correct.
    */
   private boolean isSentAndNotFailed(final HttpSession session, final Integer applicationId) {
-    if (!(session.getAttribute(ACTIVE_CASE) instanceof ActiveCase sent)
-        || sent.isDraftApplication()
-        || sent.isAmendment()
-        || !Objects.equals(sent.getApplicationId(), applicationId)
-        || !(session.getAttribute(SUBMISSION_TRANSACTION_ID) instanceof String transactionId)
-        || transactionId.isBlank()) {
+    final Optional<String> transactionId = SentApplications.transactionFor(session, applicationId);
+    if (transactionId.isEmpty()) {
       return false;
     }
-    final TransactionStatus status = applicationService.getCaseStatus(transactionId).block();
-    return status == null || !"ERROR".equalsIgnoreCase(status.getSubmissionStatus());
+    final TransactionStatus status = applicationService.getCaseStatus(transactionId.get()).block();
+    if (status != null && "ERROR".equalsIgnoreCase(status.getSubmissionStatus())) {
+      SentApplications.forget(session, applicationId);
+      return false;
+    }
+    return true;
   }
 
   /**

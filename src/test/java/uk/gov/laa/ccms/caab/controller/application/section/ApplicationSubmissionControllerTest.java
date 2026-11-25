@@ -42,6 +42,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -52,6 +53,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -111,6 +113,7 @@ import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.util.SentApplications;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
@@ -392,14 +395,17 @@ class ApplicationSubmissionControllerTest {
     when(mockCaseTransactionResponse.getTransactionId()).thenReturn("transactionId123");
 
     // Perform the test
+    final MockHttpSession session = new MockHttpSession();
     mockMvc
         .perform(
             post("/application/declaration")
+                .session(session)
                 .flashAttr("summarySubmissionFormData", formData)
                 .sessionAttr(USER_DETAILS, mockUser)
                 .sessionAttr(ACTIVE_CASE, mockActiveCase))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/%s".formatted(SUBMISSION_SUBMIT_CASE)));
+    assertEquals(Optional.of("transactionId123"), SentApplications.transactionFor(session, 1));
 
     // Verify interactions
     verify(declarationSubmissionValidator, times(1)).validate(any(), any());

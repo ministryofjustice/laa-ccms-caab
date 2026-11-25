@@ -59,6 +59,7 @@ import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.util.SentApplications;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -281,17 +282,27 @@ class ApplicationSectionsControllerTest {
         .thenReturn(Mono.just(new TransactionStatus().submissionStatus(submissionStatus)));
 
     this.mockMvc
-        .perform(
-            get("/application/sections")
-                .sessionAttr("applicationId", "123")
-                .sessionAttr("user", new UserDetail())
-                .sessionAttr(
-                    ACTIVE_CASE,
-                    ActiveCase.builder().applicationId(1).draftApplication(false).build())
-                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction1"))
+        .perform(get("/application/sections").session(sessionHavingSent(1, "transaction1")))
         .andExpect(status().isOk())
         .andExpect(
             model().attribute("activeCase", hasProperty("draftApplication", is(draftApplication))));
+  }
+
+  @Test
+  @DisplayName("A sent application stays locked after leaving its case and a later submission")
+  void aSentApplicationStaysLockedAfterTheCaseScopedSessionIsReset() throws Exception {
+    stubApplicationWithSections();
+    when(applicationService.getCaseStatus("transaction1"))
+        .thenReturn(Mono.just(new TransactionStatus().submissionStatus("PENDING")));
+    final MockHttpSession session = sessionHavingSent(1, "transaction1");
+    // Opening another case drops the active case; another submission replaces the transaction.
+    session.removeAttribute(ACTIVE_CASE);
+    session.setAttribute(SUBMISSION_TRANSACTION_ID, "clientUpdate");
+
+    this.mockMvc
+        .perform(get("/application/sections").session(session))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("activeCase", hasProperty("draftApplication", is(false))));
   }
 
   @Test
@@ -299,32 +310,32 @@ class ApplicationSectionsControllerTest {
   void aSubmissionRecordedForAnotherApplicationOrNoneDoesNotLockThisOne() throws Exception {
     stubApplicationWithSections();
 
-    // The active case is a different application, which a transaction was recorded for.
     this.mockMvc
-        .perform(
-            get("/application/sections")
-                .sessionAttr("applicationId", "123")
-                .sessionAttr("user", new UserDetail())
-                .sessionAttr(
-                    ACTIVE_CASE,
-                    ActiveCase.builder().applicationId(99).draftApplication(false).build())
-                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction1"))
+        .perform(get("/application/sections").session(sessionHavingSent(99, "transaction1")))
         .andExpect(status().isOk())
         .andExpect(model().attribute("activeCase", hasProperty("draftApplication", is(true))));
 
-    // The same application, with no transaction recorded.
+    final MockHttpSession nothingSent = new MockHttpSession();
+    nothingSent.setAttribute("applicationId", "123");
+    nothingSent.setAttribute("user", new UserDetail());
+    nothingSent.setAttribute(SUBMISSION_TRANSACTION_ID, "transaction1");
     this.mockMvc
-        .perform(
-            get("/application/sections")
-                .sessionAttr("applicationId", "123")
-                .sessionAttr("user", new UserDetail())
-                .sessionAttr(
-                    ACTIVE_CASE,
-                    ActiveCase.builder().applicationId(1).draftApplication(false).build()))
+        .perform(get("/application/sections").session(nothingSent))
         .andExpect(status().isOk())
         .andExpect(model().attribute("activeCase", hasProperty("draftApplication", is(true))));
 
     verify(applicationService, never()).getCaseStatus(anyString());
+  }
+
+  private static MockHttpSession sessionHavingSent(
+      final Integer applicationId, final String transactionId) {
+    final MockHttpSession session = new MockHttpSession();
+    session.setAttribute("applicationId", "123");
+    session.setAttribute("user", new UserDetail());
+    session.setAttribute(ACTIVE_CASE, ActiveCase.builder().applicationId(applicationId).build());
+    session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
+    SentApplications.record(session, applicationId, transactionId);
+    return session;
   }
 
   private void stubApplicationWithSections() {
