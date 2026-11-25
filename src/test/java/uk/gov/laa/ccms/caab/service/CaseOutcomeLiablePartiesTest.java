@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -242,6 +243,91 @@ class CaseOutcomeLiablePartiesTest {
                     new IndividualOpponentOtherDetailsFormData()))
         .isInstanceOf(CaabApplicationException.class);
     verifyNoInteractions(caabApiClient, opponentMapper);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"cost-award", "financial-award", "land", "asset"})
+  void createsOrganisationThroughTheAtomicAwardEndpoint(String path) {
+    final var outcome = outcome();
+    stubOutcome(outcome);
+    final var organisation = new uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData();
+    organisation.setOrganisationName("Test Valley Borough Council");
+    organisation.setOrganisationType("LA");
+    organisation.setShared(true);
+    organisation.setPartyId("ORG-1");
+    organisation.setRelationshipToCase("OPP");
+    organisation.setRelationshipToClient("OTHER");
+    organisation.setCity("Andover");
+    final var captor = org.mockito.ArgumentCaptor.forClass(OpponentDetail.class);
+    when(caabApiClient.createAwardLiableParty(
+            org.mockito.ArgumentMatchers.eq(42),
+            org.mockito.ArgumentMatchers.eq(award(outcome, path).getAwardType()),
+            org.mockito.ArgumentMatchers.eq(7),
+            org.mockito.ArgumentMatchers.eq("user1"),
+            captor.capture()))
+        .thenReturn(Mono.empty());
+
+    service.createOrganisationLiableParty("300000001", 123, path, 7, "user1", organisation);
+
+    final var payload = captor.getValue();
+    assertThat(payload.getType()).isEqualTo("Organisation");
+    assertThat(payload.getOrganisationName()).isEqualTo("Test Valley Borough Council");
+    assertThat(payload.getOrganisationType()).isEqualTo("LA");
+    assertThat(payload.getSharedInd()).isTrue();
+    assertThat(payload.getEbsId()).isEqualTo("ORG-1");
+    assertThat(payload.getRelationshipToCase()).isEqualTo("OPP");
+    assertThat(payload.getRelationshipToClient()).isEqualTo("OTHER");
+    assertThat(payload.getAddress().getCity()).isEqualTo("Andover");
+    verifyNoInteractions(lookupService, liablePartiesDisplayMapper);
+  }
+
+  @Test
+  void creatingAnOrganisationOnAnUnknownAwardDoesNotCallAnyWriteApi() {
+    stubOutcome(outcome());
+    assertThatThrownBy(
+            () ->
+                service.createOrganisationLiableParty(
+                    "300000001",
+                    123,
+                    "land",
+                    999,
+                    "user1",
+                    new uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData()))
+        .isInstanceOf(CaabApplicationException.class);
+    verifyNoInteractions(caabApiClient, opponentMapper);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "ORGANISATION,true,ORG-1,,true",
+    "Organisation,true,,ORG-1,true",
+    "Organisation,false,ORG-1,,false",
+    "Individual,true,ORG-1,,false",
+    "Organisation,true,ORG-2,,false"
+  })
+  void detectsSharedOrganisationsAlreadyLinkedToTheAward(
+      String type, boolean shared, String ebsId, String partyId, boolean expected) {
+    stubOutcome(linkedOutcome());
+    when(caabApiClient.getAwardLiableParties(42, "LAND", 7))
+        .thenReturn(
+            Mono.just(
+                List.of(
+                    new OpponentDetail()
+                        .id(11)
+                        .type(type)
+                        .sharedInd(shared)
+                        .ebsId(ebsId)
+                        .partyId(partyId))));
+
+    assertThat(service.hasSharedOrganisationLiableParty("300000001", 123, "land", 7, "ORG-1"))
+        .isEqualTo(expected);
+  }
+
+  @Test
+  void blankPartyIdIsNeverTreatedAsAlreadyLinked() {
+    assertThat(service.hasSharedOrganisationLiableParty("300000001", 123, "land", 7, " "))
+        .isFalse();
+    verifyNoInteractions(caabApiClient);
   }
 
   @ParameterizedTest

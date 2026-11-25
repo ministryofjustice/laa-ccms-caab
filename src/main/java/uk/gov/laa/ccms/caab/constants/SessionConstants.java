@@ -142,6 +142,9 @@ public class SessionConstants {
   /** Isolated draft for adding an individual to an award. */
   public static final String INDIVIDUAL_LIABLE_PARTY_FLOW = "individualLiablePartyFlow";
 
+  /** Isolated draft for searching for, or creating, an organisation to add to an award. */
+  public static final String ORGANISATION_LIABLE_PARTY_FLOW = "organisationLiablePartyFlow";
+
   /** Session attribute used to keep track of the costs associated with the application. */
   public static final String APPLICATION_COSTS = "costs";
 

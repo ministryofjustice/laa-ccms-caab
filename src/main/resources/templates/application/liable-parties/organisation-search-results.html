@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="|#{service.name} - Opponents and Other Parties - Search Results|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a class="govuk-back-link" id="returnToSearchLink"
+       th:href="@{${organisationFormUrl + '/search'}(back=true,journeyToken=${journeyToken})}"
+       th:text="#{site.returnToOrganisationSearch}"></a>
+  </div>
+  <div id="main-content" th:fragment="content">
+    <h1 class="govuk-heading-l">Opponents and other parties - search results</h1>
+    <p class="govuk-body">
+      Your search has returned <span id="resultCount" th:text="${organisationSearchResults.totalElements ?: 0}"></span> results.
+    </p>
+    <p class="govuk-body">
+      To use an organisation displayed in the results table, click "Use this record" for the relevant organisation.
+    </p>
+    <table class="govuk-table" id="organisation-results-table">
+      <thead class="govuk-table__head">
+      <tr class="govuk-table__row">
+        <th scope="col" class="govuk-table__header">Organisation name</th>
+        <th scope="col" class="govuk-table__header">Organisation type</th>
+        <th scope="col" class="govuk-table__header">City</th>
+        <th scope="col" class="govuk-table__header">Postcode</th>
+        <th scope="col" class="govuk-table__header">Action</th>
+      </tr>
+      </thead>
+      <tbody class="govuk-table__body">
+      <tr class="govuk-table__row" th:each="org : ${organisationSearchResults.content}">
+        <td class="govuk-table__cell" th:text="${org.name}"></td>
+        <td class="govuk-table__cell" th:text="${org.typeDisplayValue}"></td>
+        <td class="govuk-table__cell" th:text="${org.city}"></td>
+        <td class="govuk-table__cell" th:text="${org.postcode}"></td>
+        <td class="govuk-table__cell">
+          <a class="govuk-link"
+             th:href="@{${organisationFormUrl + '/{partyId}/select'}(partyId=${org.partyId},journeyToken=${journeyToken})}"
+             th:text="#{site.useThisRecord}"></a>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+    <nav th:replace="~{partials/pagination :: pagination(page=${organisationSearchResults})}"></nav>
+    <a class="govuk-button govuk-button--secondary" id="createOrganisationButton"
+       data-module="govuk-button" role="button"
+       th:href="@{${organisationFormUrl + '/create'}(journeyToken=${journeyToken})}"
+       th:text="#{application.opponents.createNewOrganisation}"></a>
+  </div>
+</div>
+</body>
+</html>

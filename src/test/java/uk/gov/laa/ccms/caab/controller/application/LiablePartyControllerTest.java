@@ -81,7 +81,10 @@ class LiablePartyControllerTest {
                     new IndividualOpponentFormService(lookupService),
                     new IndividualOpponentValidator(),
                     new IndividualOpponentOtherDetailsValidator(),
-                    lookupService))
+                    lookupService,
+                    null,
+                    null,
+                    null))
             .setControllerAdvice(new GlobalBinderAdvice(new BaselineTextValidator()))
             .build();
     session = new MockHttpSession();
@@ -706,16 +709,6 @@ class LiablePartyControllerTest {
             get(BASE + "/contact-details").session(session).param("journeyToken", journeyToken()))
         .andExpect(status().isNotFound());
     assertThat(flow()).isSameAs(existing);
-    verifyNotSaved();
-  }
-
-  @Test
-  void organisationJourneyRemainsUnimplemented() throws Exception {
-    mvc.perform(
-            get(BASE.replace("/individual", "/organisation"))
-                .session(session)
-                .param("journeyToken", journeyToken()))
-        .andExpect(status().isNotFound());
     verifyNotSaved();
   }
 
