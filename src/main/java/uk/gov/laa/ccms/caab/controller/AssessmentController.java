@@ -424,13 +424,14 @@ public class AssessmentController {
    * Whether this confirmation is for the interview launch currently open for the case, identified
    * by the launch id (ezgovId) its context token carries. A confirmation reloaded after the
    * interview was reopened carries an older launch id, so it cannot release a checkpoint holding
-   * answers given since.
+   * answers given since. The launch id stays recorded until a newer launch replaces it, so each
+   * INCOMPLETE submit of the same interview releases its checkpoint.
    *
    * @param session the session the launch id was recorded in
    * @param assessmentRulebase the rulebase that was submitted
    * @param caseReferenceNumber the case the assessment belongs to
    * @param launchId the launch id from the confirmation's context token
-   * @return true while the launch is the current one and has not been consumed
+   * @return true while the launch is the current one
    */
   private boolean isCurrentAssessmentLaunch(
       final HttpSession session,
@@ -440,22 +441,6 @@ public class AssessmentController {
     return launchId != null
         && launchId.equals(
             session.getAttribute(assessmentLaunchKey(assessmentRulebase, caseReferenceNumber)));
-  }
-
-  /**
-   * Consumes the launch once its checkpoint has been released, so a repeat of the confirmation
-   * finds nothing to do. A release that failed leaves it in place and a reload retries. A newer
-   * launch recorded in the meantime is left alone.
-   */
-  private void consumeAssessmentLaunch(
-      final HttpSession session,
-      final AssessmentRulebase assessmentRulebase,
-      final String caseReferenceNumber,
-      final String launchId) {
-    final String key = assessmentLaunchKey(assessmentRulebase, caseReferenceNumber);
-    if (launchId.equals(session.getAttribute(key))) {
-      session.removeAttribute(key);
-    }
   }
 
   private ApplicationDetail resolveAssessmentApplication(final HttpSession session) {
@@ -625,8 +610,6 @@ public class AssessmentController {
           assessmentRulebase,
           assessment,
           user != null ? user.getLoginId() : contextToken.getUserId());
-      consumeAssessmentLaunch(
-          session, assessmentRulebase, caseReferenceNumber, contextToken.getEzgovId());
     }
 
     final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups =

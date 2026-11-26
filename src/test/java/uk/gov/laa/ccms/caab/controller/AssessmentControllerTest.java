@@ -831,9 +831,9 @@ public class AssessmentControllerTest {
         .getAssessmentSummaryToDisplay(captor.capture(), any(), any());
     assertThat(captor.getValue().getId()).isEqualTo(2L);
 
-    // The launch's own confirmation releases the checkpoint once, against the most recent
-    // assessment and as the session user; the reload finds the launch id consumed.
-    verify(assessmentService, times(1))
+    // Each confirmation of the current launch releases, against the most recent assessment and as
+    // the session user, as a second INCOMPLETE submit of the same interview also needs.
+    verify(assessmentService, times(2))
         .clearCheckpointAfterIncompleteSubmit(
             eq(AssessmentRulebase.MEANS), eq(mostRecent), eq(userDetails.getLoginId()));
   }
@@ -924,7 +924,7 @@ public class AssessmentControllerTest {
     this.mockMvc.perform(request).andExpect(status().isOk());
 
     verify(assessmentService, times(2)).clearCheckpointAfterIncompleteSubmit(any(), any(), any());
-    assertThat(session.getAttribute(launchKey)).isNull();
+    assertEquals("launch-2", session.getAttribute(launchKey));
   }
 
   private static MockHttpSession confirmSession(final String currentLaunchId) {

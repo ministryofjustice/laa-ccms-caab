@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.client;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
@@ -12,6 +13,8 @@ import java.util.function.Function;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -149,8 +152,13 @@ class AssessmentApiClientTest {
     assertEquals(List.of("\"abc123\""), sent.getIfMatch());
   }
 
-  @Test
-  void deleteAssessmentCheckpoint_reportsAChangedCheckpointAsNotDeleted() {
+  @ParameterizedTest(name = "{0}")
+  @EnumSource(
+      value = HttpStatus.class,
+      names = {"PRECONDITION_FAILED", "NOT_FOUND"})
+  @DisplayName("deleteAssessmentCheckpoint reports a changed or released checkpoint as not deleted")
+  void deleteAssessmentCheckpoint_reportsAChangedOrReleasedCheckpointAsNotDeleted(
+      final HttpStatus status) {
     final Long assessmentId = 123L;
     final String userLoginId = "user123";
 
@@ -165,16 +173,13 @@ class AssessmentApiClientTest {
         .thenReturn(
             Mono.error(
                 WebClientResponseException.create(
-                    HttpStatus.PRECONDITION_FAILED.value(),
-                    "Precondition Failed",
-                    null,
-                    null,
-                    null)));
+                    status.value(), status.getReasonPhrase(), null, null, null)));
 
     final Mono<Boolean> result =
         assessmentApiClient.deleteAssessmentCheckpoint(assessmentId, "abc123", userLoginId);
 
     StepVerifier.create(result).expectNext(false).verifyComplete();
+    verifyNoInteractions(apiClientErrorHandler);
   }
 
   @Test

@@ -1155,7 +1155,7 @@ public class AssessmentService {
           prepopAssessment.getCaseReferenceNumber());
     } else {
       log.info(
-          "Kept checkpoint for {} [{}]: it changed after it was read, so belongs to a newer launch",
+          "Kept checkpoint for {} [{}]: it changed or was released after it was read",
           prepopAssessment.getName(),
           prepopAssessment.getCaseReferenceNumber());
     }

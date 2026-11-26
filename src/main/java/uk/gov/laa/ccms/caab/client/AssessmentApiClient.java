@@ -162,14 +162,14 @@ public class AssessmentApiClient {
   /**
    * Deletes the checkpoint of an assessment, leaving the rest of the assessment untouched. With an
    * expected checksum the delete is conditional: assessment-api removes the checkpoint only if it
-   * still has that checksum, and answers 412 Precondition Failed otherwise, which is reported as
-   * {@code false} rather than an error.
+   * still has that checksum, and answers 412 Precondition Failed otherwise. That, and a 404 for a
+   * checkpoint already released, are reported as {@code false} rather than an error.
    *
    * @param assessmentId the ID of the assessment whose checkpoint is deleted
    * @param expectedChecksum SHA-256 hex of the checkpoint data last read, or null to delete
    *     unconditionally
    * @param userLoginId the login ID of the user
-   * @return a Mono of true when the checkpoint was deleted, false when it had changed
+   * @return a Mono of true when the checkpoint was deleted, false when it had changed or was gone
    */
   public Mono<Boolean> deleteAssessmentCheckpoint(
       final Long assessmentId, final String expectedChecksum, final String userLoginId) {
@@ -190,7 +190,8 @@ public class AssessmentApiClient {
         .onErrorResume(
             e ->
                 e instanceof WebClientResponseException response
-                    && response.getStatusCode().value() == HttpStatus.PRECONDITION_FAILED.value(),
+                    && (response.getStatusCode().value() == HttpStatus.PRECONDITION_FAILED.value()
+                        || response.getStatusCode().value() == HttpStatus.NOT_FOUND.value()),
             e -> Mono.just(false))
         .onErrorResume(
             e ->
