@@ -3,11 +3,13 @@ package uk.gov.laa.ccms.caab.client;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
@@ -155,6 +157,46 @@ public class AssessmentApiClient {
             e ->
                 assessmentApiClientErrorHandler.handleApiUpdateError(
                     e, RESOURCE_TYPE_ASSESSMENT, "id", String.valueOf(assessmentId)));
+  }
+
+  /**
+   * Deletes the checkpoint of an assessment, leaving the rest of the assessment untouched. With an
+   * expected checksum the delete is conditional: assessment-api removes the checkpoint only if it
+   * still has that checksum, and answers 412 Precondition Failed otherwise. That, and a 404 for a
+   * checkpoint already released, are reported as {@code false} rather than an error.
+   *
+   * @param assessmentId the ID of the assessment whose checkpoint is deleted
+   * @param expectedChecksum SHA-256 hex of the checkpoint data last read, or null to delete
+   *     unconditionally
+   * @param userLoginId the login ID of the user
+   * @return a Mono of true when the checkpoint was deleted, false when it had changed or was gone
+   */
+  public Mono<Boolean> deleteAssessmentCheckpoint(
+      final Long assessmentId, final String expectedChecksum, final String userLoginId) {
+
+    return assessmentApiWebClient
+        .delete()
+        .uri("/assessments/{assessment-id}/checkpoint", assessmentId)
+        .header("Caab-User-Login-Id", userLoginId)
+        .headers(
+            headers -> {
+              if (expectedChecksum != null) {
+                headers.setIfMatch("\"" + expectedChecksum + "\"");
+              }
+            })
+        .retrieve()
+        .bodyToMono(Void.class)
+        .thenReturn(true)
+        .onErrorResume(
+            e ->
+                e instanceof WebClientResponseException response
+                    && (response.getStatusCode().value() == HttpStatus.PRECONDITION_FAILED.value()
+                        || response.getStatusCode().value() == HttpStatus.NOT_FOUND.value()),
+            e -> Mono.just(false))
+        .onErrorResume(
+            e ->
+                assessmentApiClientErrorHandler.handleApiDeleteError(
+                    e, RESOURCE_TYPE_ASSESSMENT_CHECKPOINT, "id", String.valueOf(assessmentId)));
   }
 
   /**
