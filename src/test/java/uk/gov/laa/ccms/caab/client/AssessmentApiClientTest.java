@@ -1,21 +1,29 @@
 package uk.gov.laa.ccms.caab.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
@@ -117,6 +125,61 @@ class AssessmentApiClientTest {
     StepVerifier.create(result).verifyComplete();
 
     verify(responseMock).bodyToMono(Void.class);
+  }
+
+  @Test
+  void deleteAssessmentCheckpoint_sendsTheChecksumAsIfMatchAndReportsTheDeletion() {
+    final Long assessmentId = 123L;
+    final String userLoginId = "user123";
+    final ArgumentCaptor<Consumer<HttpHeaders>> headers = ArgumentCaptor.forClass(Consumer.class);
+
+    when(assessmentApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri("/assessments/{assessment-id}/checkpoint", assessmentId))
+        .thenReturn(requestHeadersMock);
+    when(requestHeadersMock.header("Caab-User-Login-Id", userLoginId))
+        .thenReturn(requestHeadersMock);
+    when(requestHeadersMock.headers(headers.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Boolean> result =
+        assessmentApiClient.deleteAssessmentCheckpoint(assessmentId, "abc123", userLoginId);
+
+    StepVerifier.create(result).expectNext(true).verifyComplete();
+
+    final HttpHeaders sent = new HttpHeaders();
+    headers.getValue().accept(sent);
+    assertEquals(List.of("\"abc123\""), sent.getIfMatch());
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @EnumSource(
+      value = HttpStatus.class,
+      names = {"PRECONDITION_FAILED", "NOT_FOUND"})
+  @DisplayName("deleteAssessmentCheckpoint reports a changed or released checkpoint as not deleted")
+  void deleteAssessmentCheckpoint_reportsAChangedOrReleasedCheckpointAsNotDeleted(
+      final HttpStatus status) {
+    final Long assessmentId = 123L;
+    final String userLoginId = "user123";
+
+    when(assessmentApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri("/assessments/{assessment-id}/checkpoint", assessmentId))
+        .thenReturn(requestHeadersMock);
+    when(requestHeadersMock.header("Caab-User-Login-Id", userLoginId))
+        .thenReturn(requestHeadersMock);
+    when(requestHeadersMock.headers(any())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class))
+        .thenReturn(
+            Mono.error(
+                WebClientResponseException.create(
+                    status.value(), status.getReasonPhrase(), null, null, null)));
+
+    final Mono<Boolean> result =
+        assessmentApiClient.deleteAssessmentCheckpoint(assessmentId, "abc123", userLoginId);
+
+    StepVerifier.create(result).expectNext(false).verifyComplete();
+    verifyNoInteractions(apiClientErrorHandler);
   }
 
   @Test

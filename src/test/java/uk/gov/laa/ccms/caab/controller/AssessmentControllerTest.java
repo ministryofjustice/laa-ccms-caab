@@ -12,7 +12,9 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -53,6 +55,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.format.support.FormattingConversionService;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -222,6 +225,59 @@ public class AssessmentControllerTest {
   }
 
   @Test
+  public void assessmentGet_recordsTheLaunchIdItGivesTheConnector() throws Exception {
+    when(applicationService.getApplication(anyString()))
+        .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
+    when(contextSecurityUtil.createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()))
+        .thenReturn("contextToken");
+    when(clientService.getClient(anyString())).thenReturn(Mono.just(new ClientDetail()));
+    when(messageSource.getMessage(anyString(), any(), any(Locale.class)))
+        .thenReturn("returnLinkText");
+
+    final AssessmentDetail assessmentDetail = buildAssessmentDetail(new Date());
+    assessmentDetail.setId(1L);
+    when(assessmentService.getAssessments(any(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessmentDetail)));
+
+    final MockHttpSession session = new MockHttpSession();
+    session.setAttribute(USER_DETAILS, userDetails);
+    session.setAttribute(APPLICATION_ID, "applicationId");
+    session.setAttribute(ACTIVE_CASE, activeCase);
+
+    mockMvc
+        .perform(
+            get("/application/assessments")
+                .param("assessment", "means")
+                .param("invoked-from", "summary")
+                .session(session))
+        .andExpect(status().isOk());
+
+    final ArgumentCaptor<String> launchId = ArgumentCaptor.forClass(String.class);
+    verify(contextSecurityUtil)
+        .createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            launchId.capture(),
+            anyString());
+    assertEquals(
+        launchId.getValue(),
+        session.getAttribute(
+            AssessmentController.assessmentLaunchKey(AssessmentRulebase.MEANS, "1")));
+  }
+
+  @Test
   public void assessmentGet_resumesTheMostRecentPrepopSession() throws Exception {
     when(applicationService.getApplication(anyString()))
         .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
@@ -311,6 +367,60 @@ public class AssessmentControllerTest {
         .startAssessment(captor.capture(), any(), any(), any(), eq(true), isNull());
     assertEquals("SUB", captor.getValue().getApplicationType().getId());
     verify(applicationService, never()).getApplication(anyString());
+  }
+
+  @ParameterizedTest(name = "draft submitted={0}, session case={1} -> {2}")
+  @CsvSource({
+    // caab-api does not persist submitted, so a matching session case supplies it
+    ",1,true",
+    // a value the draft already carries is kept
+    "false,1,false",
+    // a session case for another case reference must not supply it
+    ",2,"
+  })
+  void assessmentGet_amendment_takesSubmittedFlagFromMatchingSessionCase(
+      final Boolean draftSubmitted, final String sessionCaseReference, final Boolean expected)
+      throws Exception {
+    final ApplicationDetail draft = buildApplicationDetail(1, true, new Date());
+    draft.setSubmitted(draftSubmitted);
+    when(applicationService.getApplication(anyString())).thenReturn(Mono.just(draft));
+
+    final ApplicationDetail sessionCase =
+        new ApplicationDetail().caseReferenceNumber(sessionCaseReference).submitted(true);
+
+    when(contextSecurityUtil.createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()))
+        .thenReturn("contextToken");
+    when(clientService.getClient(anyString())).thenReturn(Mono.just(new ClientDetail()));
+
+    final AssessmentDetail assessmentDetail = buildAssessmentDetail(new Date());
+    assessmentDetail.setId(1L);
+    when(assessmentService.getAssessments(any(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessmentDetail)));
+
+    mockMvc
+        .perform(
+            get("/amendments/assessments")
+                .param("assessment", "merits")
+                .param("invoked-from", "summary")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(APPLICATION_ID, "applicationId")
+                .sessionAttr(CASE, sessionCase)
+                .sessionAttr(ACTIVE_CASE, activeCase))
+        .andExpect(status().isOk());
+
+    final ArgumentCaptor<ApplicationDetail> captor =
+        ArgumentCaptor.forClass(ApplicationDetail.class);
+    verify(assessmentService)
+        .startAssessment(captor.capture(), any(), any(), any(), eq(false), isNull());
+    assertEquals(expected, captor.getValue().getSubmitted());
   }
 
   @Test
@@ -804,6 +914,7 @@ public class AssessmentControllerTest {
     contextToken.setRulebaseId(1L);
     contextToken.setProviderId("providerId");
     contextToken.setCaseId("caseReferenceNumber");
+    contextToken.setEzgovId("launch-2");
 
     when(lookupService.getAssessmentSummaryAttributes("PARENT"))
         .thenReturn(Mono.just(new AssessmentSummaryEntityLookupDetail()));
@@ -824,18 +935,128 @@ public class AssessmentControllerTest {
     when(assessmentService.getAssessmentSummaryToDisplay(any(), any(), any()))
         .thenReturn(new ArrayList<>());
 
+    final MockHttpSession session = confirmSession("launch-2");
+
+    // The confirmation is loaded twice, as by a browser refresh.
+    for (int i = 0; i < 2; i++) {
+      this.mockMvc
+          .perform(
+              get("/application/assessments/confirm/caseSummary.do")
+                  .param("val", token)
+                  .session(session))
+          .andExpect(status().isOk());
+    }
+
+    final ArgumentCaptor<AssessmentDetail> captor = ArgumentCaptor.forClass(AssessmentDetail.class);
+    verify(assessmentService, times(2))
+        .getAssessmentSummaryToDisplay(captor.capture(), any(), any());
+    assertThat(captor.getValue().getId()).isEqualTo(2L);
+
+    // Each confirmation of the current launch releases, against the most recent assessment and as
+    // the session user, as a second INCOMPLETE submit of the same interview also needs.
+    verify(assessmentService, times(2))
+        .clearCheckpointAfterIncompleteSubmit(
+            eq(AssessmentRulebase.MEANS), eq(mostRecent), eq(userDetails.getLoginId()));
+  }
+
+  @Test
+  public void assessmentConfirm_confirmationOfAnEarlierLaunchReleasesNothing() throws Exception {
+    // An old confirmation reloaded after the interview was reopened: the session now records the
+    // newer launch, whose checkpoint holds the answers given since.
+    final ContextToken contextToken = new ContextToken();
+    contextToken.setRulebaseId(2L);
+    contextToken.setProviderId("providerId");
+    contextToken.setCaseId("caseReferenceNumber");
+    contextToken.setEzgovId("launch-1");
+
+    when(lookupService.getAssessmentSummaryAttributes("PARENT"))
+        .thenReturn(Mono.just(new AssessmentSummaryEntityLookupDetail()));
+    when(lookupService.getAssessmentSummaryAttributes("CHILD"))
+        .thenReturn(Mono.just(new AssessmentSummaryEntityLookupDetail()));
+    when(contextSecurityUtil.createContextToken(anyString())).thenReturn(contextToken);
+
+    final AssessmentDetail assessment = buildAssessmentDetail(new Date());
+    assessment.setId(1L);
+    when(assessmentService.getAssessments(anyList(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessment)));
+    when(assessmentService.getAssessmentSummaryToDisplay(any(), any(), any()))
+        .thenReturn(new ArrayList<>());
+
+    final MockHttpSession session = new MockHttpSession();
+    session.setAttribute(USER_DETAILS, userDetails);
+    session.setAttribute(ACTIVE_CASE, activeCase);
+    session.setAttribute(
+        AssessmentController.assessmentLaunchKey(AssessmentRulebase.MERITS, "caseReferenceNumber"),
+        "launch-2");
+
     this.mockMvc
         .perform(
             get("/application/assessments/confirm/caseSummary.do")
-                .param("val", token)
-                .sessionAttr(USER_DETAILS, userDetails)
-                .sessionAttr(APPLICATION_ID, "applicationId")
-                .sessionAttr(ACTIVE_CASE, activeCase))
+                .param("val", "token")
+                .session(session))
         .andExpect(status().isOk());
 
-    final ArgumentCaptor<AssessmentDetail> captor = ArgumentCaptor.forClass(AssessmentDetail.class);
-    verify(assessmentService).getAssessmentSummaryToDisplay(captor.capture(), any(), any());
-    assertThat(captor.getValue().getId()).isEqualTo(2L);
+    verify(assessmentService, never()).clearCheckpointAfterIncompleteSubmit(any(), any(), any());
+    assertEquals(
+        "launch-2",
+        session.getAttribute(
+            AssessmentController.assessmentLaunchKey(
+                AssessmentRulebase.MERITS, "caseReferenceNumber")));
+  }
+
+  @Test
+  public void assessmentConfirm_aReleaseThatFailsCanBeRetriedByReloading() throws Exception {
+    final ContextToken contextToken = new ContextToken();
+    contextToken.setRulebaseId(1L);
+    contextToken.setProviderId("providerId");
+    contextToken.setCaseId("caseReferenceNumber");
+    contextToken.setEzgovId("launch-2");
+
+    when(lookupService.getAssessmentSummaryAttributes("PARENT"))
+        .thenReturn(Mono.just(new AssessmentSummaryEntityLookupDetail()));
+    when(lookupService.getAssessmentSummaryAttributes("CHILD"))
+        .thenReturn(Mono.just(new AssessmentSummaryEntityLookupDetail()));
+    when(contextSecurityUtil.createContextToken(anyString())).thenReturn(contextToken);
+
+    final AssessmentDetail assessment = buildAssessmentDetail(new Date());
+    assessment.setId(1L);
+    when(assessmentService.getAssessments(anyList(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessment)));
+    when(assessmentService.getAssessmentSummaryToDisplay(any(), any(), any()))
+        .thenReturn(new ArrayList<>());
+    doThrow(new CaabApplicationException("assessment-api unavailable"))
+        .doNothing()
+        .when(assessmentService)
+        .clearCheckpointAfterIncompleteSubmit(any(), any(), any());
+
+    final MockHttpSession session = confirmSession("launch-2");
+    final String launchKey =
+        AssessmentController.assessmentLaunchKey(AssessmentRulebase.MEANS, "caseReferenceNumber");
+    final MockHttpServletRequestBuilder request =
+        get("/application/assessments/confirm/caseSummary.do")
+            .param("val", "token")
+            .session(session);
+
+    assertThrows(Exception.class, () -> this.mockMvc.perform(request));
+
+    // The checkpoint was not released, so the launch is still the current one.
+    assertEquals("launch-2", session.getAttribute(launchKey));
+
+    this.mockMvc.perform(request).andExpect(status().isOk());
+
+    verify(assessmentService, times(2)).clearCheckpointAfterIncompleteSubmit(any(), any(), any());
+    assertEquals("launch-2", session.getAttribute(launchKey));
+  }
+
+  private static MockHttpSession confirmSession(final String currentLaunchId) {
+    final MockHttpSession session = new MockHttpSession();
+    session.setAttribute(USER_DETAILS, userDetails);
+    session.setAttribute(APPLICATION_ID, "applicationId");
+    session.setAttribute(ACTIVE_CASE, activeCase);
+    session.setAttribute(
+        AssessmentController.assessmentLaunchKey(AssessmentRulebase.MEANS, "caseReferenceNumber"),
+        currentLaunchId);
+    return session;
   }
 
   @ParameterizedTest

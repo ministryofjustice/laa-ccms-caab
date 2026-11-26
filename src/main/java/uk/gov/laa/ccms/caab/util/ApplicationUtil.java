@@ -9,6 +9,7 @@ import org.springframework.lang.Nullable;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -76,13 +77,44 @@ public final class ApplicationUtil {
   }
 
   /**
-   * Determines if the application is a new application or an amendment.
+   * Works out the cost limit changed flag for assessment input, matching old PUI's ProcessCosts. On
+   * an application it is true when the requested cost limitation exceeds the default; on an
+   * amendment it is the flag recorded on the amendment's cost limit.
+   *
+   * @param application the application details
+   * @return true if the cost limit has been raised, otherwise false
+   */
+  public static boolean getCostLimitChangedAssessmentInput(final ApplicationDetail application) {
+    if (Boolean.TRUE.equals(application.getAmendment())) {
+      return Optional.ofNullable(application.getCostLimit())
+          .map(CostLimitDetail::getChanged)
+          .orElse(false);
+    }
+
+    return Optional.ofNullable(application.getCosts())
+        .filter(
+            costs ->
+                costs.getDefaultCostLimitation() != null
+                    && costs.getRequestedCostLimitation() != null)
+        .map(
+            costs ->
+                costs.getRequestedCostLimitation().compareTo(costs.getDefaultCostLimitation()) > 0)
+        .orElse(false);
+  }
+
+  /**
+   * Determines if the application is a new application or an amendment. An amendment to a submitted
+   * application that is not yet a case (all its proceedings still draft) counts as an application,
+   * matching old PUI's Case.getNewApplicationOrAmendment.
    *
    * @param application the application details
    * @return a string determining if the application is an application or an amendment
    */
   public static String getNewApplicationOrAmendment(final ApplicationDetail application) {
-    return Boolean.TRUE.equals(application.getAmendment()) ? "AMENDMENT" : "APPLICATION";
+    return Boolean.TRUE.equals(application.getAmendment())
+            && !Boolean.TRUE.equals(application.getSubmitted())
+        ? "AMENDMENT"
+        : "APPLICATION";
   }
 
   /**
