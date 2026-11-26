@@ -1098,10 +1098,12 @@ public class AssessmentService {
    * the next start loads the saved answers with refreshed inputs. A COMPLETE submit keeps its
    * checkpoint so the interview can still be viewed.
    *
-   * <p>Call it only for the submit of the interview launch the confirmation belongs to, and at most
-   * once: every start builds a new working assessment that is INCOMPLETE until submitted, so an old
+   * <p>Call it only for a confirmation of the interview launch currently recorded for the case:
+   * every start builds a new working assessment that is INCOMPLETE until submitted, so an old
    * confirmation reloaded after the interview was reopened would otherwise release a checkpoint
-   * holding answers given since. AssessmentController enforces this with a one-time launch id.
+   * holding answers given since. AssessmentController checks this with the launch id, which stays
+   * recorded until a newer launch replaces it, so the release repeats for each confirmation of the
+   * current launch, including a resubmit of the same interview or a reload of its confirmation.
    *
    * <p>The launch id is held in the HTTP session, while the prepop is shared, so the delete is also
    * made conditional on the checkpoint being the one read here: assessment-api deletes it only if
