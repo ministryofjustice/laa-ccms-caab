@@ -37,8 +37,30 @@ filename_is_secret() {
   return 1
 }
 
-generic_assignment_re='(password|passwd|pwd|secret|client[_-]?secret|api[_-]?key|apikey|access[_-]?token|auth[_-]?token|private[_-]?key)[[:space:]]*[:=][[:space:]"]*[^[:space:],;#]{12,}'
-placeholder_re='(example|dummy|fake|test|changeme|change[-_ ]me|placeholder|replace[-_ ]me|not[-_ ]a[-_ ]secret|notasecret|xxxx|x{4,}|<[^>]+>|\$\{[^}]+\}|env[_-]?var|environment|getenv|system\.getenv|process\.env|[A-Z][A-Z0-9_]*(TOKEN|SECRET|KEY|PASSWORD)|your[-_ ]?(password|secret|token|key))'
+credential_assignment_re=$'"?((password|passwd|pwd|secret|client[_-]?secret|api[_-]?key|apikey|access[_-]?token|auth[_-]?token|private[_-]?key))"?[[:space:]]*[:=][[:space:]]*[\"\047]?([^[:space:],;#\"\047]{12,})'
+
+is_placeholder_value() {
+  local value=$1
+  local value_lower
+  value_lower=$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')
+
+  if [[ "$value_lower" =~ ^(example|dummy|fake|test|changeme|change[-_ ]me|placeholder|replace[-_ ]me|not[-_ ]a[-_ ]secret|notasecret|x{4,}|<[^>]+>|\$\{[^}]+\}|env[_-]?var|your[-_ ]?(password|secret|token|key)) ]]; then
+    return 0
+  fi
+
+  if [[ "$value" =~ ^[A-Z][A-Z0-9_]*(TOKEN|SECRET|KEY|PASSWORD)$ ]]; then
+    return 0
+  fi
+
+  return 1
+}
+
+nocasematch_was_set=0
+if shopt -q nocasematch; then
+  nocasematch_was_set=1
+else
+  shopt -s nocasematch
+fi
 
 while IFS= read -r -d '' file; do
   if filename_is_secret "$file"; then
@@ -78,15 +100,27 @@ while IFS= read -r -d '' file; do
   elif grep -aEiq 'eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}' "$staged_file"; then
     echo "pre-commit: blocked JWT content in $file"
     blocked=1
-  elif grep -aEiq "$generic_assignment_re" "$staged_file"; then
-    hits_file="$tmp_dir/generic-hits"
-    grep -aEi "$generic_assignment_re" "$staged_file" > "$hits_file" || true
-    if grep -aEiv "$placeholder_re" "$hits_file" | grep -q .; then
+  else
+    credential_found=0
+    while IFS= read -r line || [ -n "$line" ]; do
+      if [[ "$line" =~ $credential_assignment_re ]]; then
+        credential_value=${BASH_REMATCH[3]}
+        if ! is_placeholder_value "$credential_value"; then
+          credential_found=1
+          break
+        fi
+      fi
+    done < "$staged_file"
+    if [ "$credential_found" -ne 0 ]; then
       echo "pre-commit: blocked credential-like content in $file"
       blocked=1
     fi
   fi
-done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+done < <(git diff --cached --name-only --diff-filter=ACMRT -z)
+
+if [ "$nocasematch_was_set" -eq 0 ]; then
+  shopt -u nocasematch
+fi
 
 if [ "$blocked" -ne 0 ]; then
   echo "pre-commit: remove the staged secret, then commit again."

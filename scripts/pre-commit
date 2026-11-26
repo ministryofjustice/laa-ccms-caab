@@ -73,3 +73,11 @@ if [ -n "$changed_package_files" ]; then
     src/main/resources/static/assets/moj \
     src/main/resources/static/ccms/*.css
 fi
+
+# Hook steps above may modify or stage additional files. Scan the final index
+# before allowing the commit to proceed.
+if [ -f "$repo_root/scripts/check-secrets.sh" ]; then
+  if ! bash "$repo_root/scripts/check-secrets.sh"; then
+    exit 1
+  fi
+fi

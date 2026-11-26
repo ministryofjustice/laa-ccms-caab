@@ -45,17 +45,43 @@ assert_allowed() {
   fi
 }
 
-aws_key="AKIA""IOSFODNN7EXAMPLE"
-private_key="-----BEGIN "$'RSA '"PRIVATE KEY-----"$'\n'"test-data"$'\n'"-----END RSA PRIVATE KEY-----"
-generic_secret="api""-key: ""abcdefghijklmnop1234"
+awsKeyFixture="AKIA""IOSFODNN7EXAMPLE"
+privateKeyFixture="-----BEGIN "$'RSA '"PRIVATE KEY-----"$'\n'"test-data"$'\n'"-----END RSA PRIVATE KEY-----"
+genericFixture="api""-key: ""abcdefghijklmnop1234"
+jsonFixture='{"pass''word": "aB7cD9eF2gH4jK6m"}'
+fieldFixture="api""_key: aB7cD9eF2gH4jK6m"
+commentFixture="pass""word: aB7cD9eF2gH4jK6m # test connection"
+environmentFixture="pass""word: \${OPA_SECURITY_PASSWORD}"
+testFixture="pass""word: test-client-secret-1234"
 
 assert_blocked "application-secret" "application-secret.yml" "spring: test"
-assert_blocked "credential-in-other-name" "config.txt" "$aws_key"
-assert_blocked "private-key" "config.txt" "$private_key"
-assert_blocked "generic-secret" "config.txt" "$generic_secret"
+assert_blocked "credential-in-other-name" "config.txt" "$awsKeyFixture"
+assert_blocked "private-key" "config.txt" "$privateKeyFixture"
+assert_blocked "generic-secret" "config.txt" "$genericFixture"
+assert_blocked "quoted-json-secret" "config.json" "$jsonFixture"
+assert_blocked "secret-field-name" "config.txt" "$fieldFixture"
+assert_blocked "commented-secret" "config.txt" "$commentFixture"
 assert_allowed "normal-change" "src/main/java/Example.java" "class Example {}"
 assert_allowed "placeholder-file" ".env.example" 'client-secret: ${AZURE_CLIENT_SECRET}'
 assert_allowed "test-value" "src/test/resources/application.yml" "password: passw0rd"
+assert_allowed "environment-placeholder" "config.yml" "$environmentFixture"
+assert_allowed "test-placeholder" "config.yml" "$testFixture"
+
+type_change_repo="$tmp_root/type-change"
+mkdir -p "$type_change_repo"
+git -C "$type_change_repo" init -q
+git -C "$type_change_repo" config user.email "test@example.com"
+git -C "$type_change_repo" config user.name "Secret Test"
+ln -s /tmp/not-the-actual-target "$type_change_repo/config.txt"
+git -C "$type_change_repo" add config.txt
+git -C "$type_change_repo" commit -qm "baseline"
+rm "$type_change_repo/config.txt"
+printf '%s' "$privateKeyFixture" > "$type_change_repo/config.txt"
+git -C "$type_change_repo" add config.txt
+if (cd "$type_change_repo" && bash "$checker") >/dev/null 2>&1; then
+  echo "FAIL: type-change file was allowed"
+  failures=$((failures + 1))
+fi
 
 if [ "$failures" -ne 0 ]; then
   echo "$failures secret checker test(s) failed"
