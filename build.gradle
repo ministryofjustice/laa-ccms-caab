@@ -212,7 +212,7 @@ tasks.withType(Checkstyle).configureEach {
 }
 
 /**
- * Automatically installs the git pre-commit hook to run spotlessApply.
+ * Automatically installs the git pre-commit hook to run secret checks and spotlessApply.
  */
 tasks.register('installGitHooks', Copy) {
     from "scripts/pre-commit"

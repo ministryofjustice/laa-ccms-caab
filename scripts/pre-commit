@@ -1,6 +1,14 @@
 #!/bin/sh
 # scripts/pre-commit
 
+# Block staged secret files and credentials before running any other checks.
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 1
+if [ -f "$repo_root/scripts/check-secrets.sh" ]; then
+  if ! bash "$repo_root/scripts/check-secrets.sh"; then
+    exit 1
+  fi
+fi
+
 # laa-spring-boot-gradle-plugin refuses to resolve on anything older, and the wrapper then
 # fails with a plugin resolution error rather than anything mentioning Java. Resolve a usable
 # JDK first, and fail loudly rather than letting unformatted code through.
