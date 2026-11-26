@@ -3,43 +3,56 @@
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-  <title th:text="#{service.name} + ' - ' + #{application.create}"></title>
+  <title th:text="#{service.name} + ' - ' + #{application.generalDetails.correspondenceAddress.searchResults.title}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
     <a th:href="@{/{caseContext}/sections/correspondence-address(caseContext=${caseContext.getPathValue()})}"
-       class="govuk-back-link"th:text="#{site.cancelAndReturnToAddress}"></a>
+       class="govuk-back-link" th:text="#{site.cancelAndReturnToAddress}"></a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{'/' + ${formAction}}" th:object="${addressSearch}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <span class="govuk-caption-l"
-          th:text="#{application.generalDetails.correspondenceAddress.searchResults.caption}"/>
-      <th:block th:switch="${addressFlow.step.name()}">
-        <th:block th:case="'RESULTS'">
-          <div th:replace="~{application/partials/address-fragments :: results(
-        ${originalPostcode},
-        ${originalBuildingSearch},
-        ${searchAgainUrl},
-        ${manualEntryUrl},
-        'correspondence-address')}"></div>
-        </th:block>
+            th:text="#{application.generalDetails.correspondenceAddress.searchResults.caption}"></span>
+      <h1 class="govuk-heading-l"
+          th:text="#{application.generalDetails.correspondenceAddress.searchResults.title}"></h1>
+      <p class="govuk-body"
+         th:text="#{application.generalDetails.correspondenceAddress.searchResults.line1(${addressSearchResults.content == null ? 0 : #lists.size(addressSearchResults.content)})}"></p>
+      <h2 class="govuk-heading-m"
+          th:text="#{application.generalDetails.correspondenceAddress.searchResults.whatIsTheCorrectAddress}"></h2>
+      <p class="govuk-body" id="address-results-hint"
+         th:text="#{application.generalDetails.correspondenceAddress.searchResults.line2}"></p>
 
-        <th:block th:case="'NO_RESULTS'">
-          <div th:replace="~{application/partials/address-fragments :: noResults(
-        ${originalPostcode},
-        ${originalBuildingSearch},
-        ${searchAgainUrl},
-        ${manualEntryUrl})}"></div>
-        </th:block>
-
-        <th:block th:case="'LOOKUP_UNAVAILABLE'">
-          <div th:replace="~{application/partials/address-fragments :: unavailable(
-        ${searchAgainUrl},
-        ${manualEntryUrl})}"></div>
-        </th:block>
-      </th:block>
+      <div class="govuk-form-group"
+           th:classappend="${#fields.hasErrors('uprn')} ? 'govuk-form-group--error' : ''">
+        <span th:if="${#fields.hasErrors('uprn')}"
+              th:errors="*{uprn}"
+              id="uprn-error"
+              class="govuk-error-message"></span>
+        <fieldset class="govuk-fieldset" id="uprn" tabindex="-1"
+                  th:attr="aria-describedby=${#fields.hasErrors('uprn')
+                      ? 'address-results-hint uprn-error' : 'address-results-hint'}">
+          <div class="govuk-radios" data-module="govuk-radios">
+            <div class="govuk-radios__item"
+                 th:each="result, iter : ${addressSearchResults.content}">
+              <input class="govuk-radios__input"
+                     type="radio"
+                     name="uprn"
+                     th:id="${'correspondence-address-result-' + iter.index}"
+                     th:value="${result.uprn}"
+                     th:checked="${addressSearch.uprn == result.uprn}">
+              <label class="govuk-label govuk-radios__label"
+                     th:for="${'correspondence-address-result-' + iter.index}"
+                     th:text="${result.fullAddress}"></label>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+      <div class="govuk-button-group">
+        <govuk:button type="submit" th:text="#{site.confirm}"/>
+      </div>
     </form>
   </div>
 </div>

@@ -282,97 +282,64 @@ class AddressFragmentsRenderTest {
   }
 
   @Test
-  void correspondenceAddressHostTemplatesRenderCaseStatesAndKeepNonCaseFields() throws Exception {
+  void correspondenceAddressTemplateUsesLegacyFieldsWithoutTheNewComponent() throws Exception {
     for (final String context : List.of("application", "amendments")) {
-      final MvcResult searchPage =
+      final MvcResult caseAddressPage =
           mockMvc
-              .perform(get("/test/correspondence-page/%s/search".formatted(context)))
+              .perform(get("/test/correspondence-page/%s/case".formatted(context)))
               .andExpect(status().isOk())
+              .andExpect(content().string(containsString("name=\"preferredAddress\"")))
+              .andExpect(content().string(containsString("name=\"country\"")))
+              .andExpect(content().string(containsString("name=\"houseNameNumber\"")))
               .andExpect(content().string(containsString("name=\"postcode\"")))
               .andExpect(content().string(containsString("name=\"careOf\"")))
-              .andExpect(content().string(not(containsString("name=\"addressLine1\""))))
+              .andExpect(content().string(containsString("name=\"addressLine1\"")))
+              .andExpect(content().string(containsString("id=\"find-address-button\"")))
+              .andExpect(content().string(not(containsString("Enter address manually"))))
+              .andExpect(content().string(not(containsString("Confirm this address"))))
+              .andExpect(content().string(not(containsString("search-again"))))
               .andReturn();
-      assertEquals(1, formCount(searchPage));
+      assertEquals(1, formCount(caseAddressPage));
 
-      final MvcResult manualPage =
+      final MvcResult otherAddressPage =
           mockMvc
-              .perform(get("/test/correspondence-page/%s/manual".formatted(context)))
+              .perform(get("/test/correspondence-page/%s/non-case".formatted(context)))
               .andExpect(status().isOk())
+              .andExpect(content().string(containsString("name=\"country\"")))
+              .andExpect(content().string(containsString("name=\"postcode\"")))
               .andExpect(content().string(containsString("name=\"addressLine1\"")))
               .andExpect(content().string(containsString("name=\"careOf\"")))
               .andExpect(content().string(not(containsString("id=\"find-address-button\""))))
+              .andExpect(content().string(not(containsString("Enter address manually"))))
               .andReturn();
-      assertEquals(1, formCount(manualPage));
-
-      final MvcResult confirmedPage =
-          mockMvc
-              .perform(get("/test/correspondence-page/%s/confirmed".formatted(context)))
-              .andExpect(status().isOk())
-              .andExpect(content().string(containsString("10 Example Street")))
-              .andExpect(content().string(containsString("Office")))
-              .andExpect(content().string(not(containsString("name=\"postcode\""))))
-              .andExpect(content().string(not(containsString("name=\"addressLine1\""))))
-              .andReturn();
-      assertEquals(1, formCount(confirmedPage));
-      assertAddressActions(
-          confirmedPage,
-          "/%s/sections/correspondence-address/search-again".formatted(context),
-          "/%s/sections/correspondence-address/manual".formatted(context));
-
-      final MvcResult existingPage =
-          mockMvc
-              .perform(get("/test/correspondence-page/%s/existing".formatted(context)))
-              .andExpect(status().isOk())
-              .andExpect(content().string(containsString("12 Example Street")))
-              .andExpect(content().string(containsString("United Kingdom")))
-              .andExpect(content().string(not(containsString(">GBR<"))))
-              .andExpect(content().string(not(containsString("name=\"addressLine1\""))))
-              .andReturn();
-      assertEquals(1, formCount(existingPage));
-      assertAddressActions(
-          existingPage,
-          "/%s/sections/correspondence-address/search-again".formatted(context),
-          "/%s/sections/correspondence-address/manual".formatted(context));
+      assertEquals(1, formCount(otherAddressPage));
     }
 
-    final MvcResult nonCasePage =
-        mockMvc
-            .perform(get("/test/correspondence-page/application/non-case"))
-            .andExpect(status().isOk())
-            .andExpect(content().string(containsString("name=\"preferredAddress\"")))
-            .andExpect(content().string(containsString("name=\"country\"")))
-            .andExpect(content().string(containsString("name=\"addressLine1\"")))
-            .andExpect(content().string(not(containsString("id=\"find-address-button\""))))
-            .andReturn();
-    assertEquals(1, formCount(nonCasePage));
+    mockMvc
+        .perform(get("/test/correspondence-page/application/unavailable"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("Please enter the address manually.")))
+        .andExpect(content().string(containsString("name=\"addressLine1\"")));
 
     final MvcResult resultsPage =
         mockMvc
             .perform(get("/test/correspondence-results/application/results"))
             .andExpect(status().isOk())
             .andExpect(content().string(containsString("10 Example Street")))
-            .andExpect(content().string(containsString("Use this address")))
+            .andExpect(
+                content()
+                    .string(containsString("Your address check has found 1 possible results.")))
+            .andExpect(content().string(containsString("name=\"uprn\"")))
+            .andExpect(content().string(not(containsString("Use this address"))))
             .andReturn();
     assertEquals(1, formCount(resultsPage));
 
     mockMvc
         .perform(get("/test/correspondence-results/application/no-results"))
         .andExpect(status().isOk())
-        .andExpect(content().string(containsString("No address found")))
-        .andExpect(content().string(containsString("Enter address manually")));
-
-    mockMvc
-        .perform(get("/test/correspondence-results/application/unavailable"))
-        .andExpect(status().isOk())
-        .andExpect(content().string(containsString("Address search is unavailable")))
-        .andExpect(content().string(containsString("Try again")));
-
-    mockMvc
-        .perform(get("/test/correspondence-confirmation/amendments"))
-        .andExpect(status().isOk())
-        .andExpect(content().string(containsString("10 Example Street")))
-        .andExpect(content().string(containsString("Use a different address")))
-        .andExpect(content().string(not(containsString("Client address"))));
+        .andExpect(
+            content().string(containsString("Your address check has found 0 possible results.")))
+        .andExpect(content().string(not(containsString("No address found"))));
   }
 
   @ParameterizedTest
@@ -427,27 +394,26 @@ class AddressFragmentsRenderTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"", "/civil", "/custom-context"})
-  void correspondenceAddressNavigationIncludesTheContextPath(final String contextPath)
+  void correspondenceAddressViewsDoNotExposeComponentNavigation(final String contextPath)
       throws Exception {
     for (final String context : List.of("application", "amendments")) {
       final String addressUrl = contextPath + "/" + context + "/sections/correspondence-address";
       mockMvc
           .perform(
-              get(contextPath + "/test/correspondence-page/" + context + "/manual")
+              get(contextPath + "/test/correspondence-page/" + context + "/case")
                   .contextPath(contextPath))
           .andExpect(status().isOk())
-          .andExpect(content().string(containsString("Search for an address")))
-          .andExpect(content().string(containsString("href=\"" + addressUrl + "/search-again\"")));
-      for (final String state : List.of("confirmed", "existing")) {
-        final MvcResult result =
-            mockMvc
-                .perform(
-                    get(contextPath + "/test/correspondence-page/" + context + "/" + state)
-                        .contextPath(contextPath))
-                .andExpect(status().isOk())
-                .andReturn();
-        assertAddressActions(result, addressUrl + "/search-again", addressUrl + "/manual");
-      }
+          .andExpect(content().string(not(containsString(addressUrl + "/manual"))))
+          .andExpect(content().string(not(containsString(addressUrl + "/search-again"))));
+
+      mockMvc
+          .perform(
+              get(contextPath + "/test/correspondence-results/" + context + "/results")
+                  .contextPath(contextPath))
+          .andExpect(status().isOk())
+          .andExpect(content().string(containsString("action=\"" + addressUrl + "/search\"")))
+          .andExpect(content().string(not(containsString(addressUrl + "/manual"))))
+          .andExpect(content().string(not(containsString(addressUrl + "/search-again"))));
     }
   }
 
@@ -643,42 +609,15 @@ class AddressFragmentsRenderTest {
         final Model model) {
       final CaseContext context = CaseContext.fromPathValue(caseContext);
       final AddressFormData addressDetails = new AddressFormData();
-      addressDetails.setPreferredAddress("CASE");
+      addressDetails.setPreferredAddress("non-case".equals(state) ? "POST" : "CASE");
       addressDetails.setCareOf("Office");
-      final AddressLookupFlowData<AddressFormData> addressFlow =
-          new AddressLookupFlowData<>("%s:123".formatted(caseContext));
-      final AddressResultRowDisplay selectedAddress = new AddressResultRowDisplay();
-      selectedAddress.setUprn("1001");
-      selectedAddress.setFullAddress("10 Example Street");
-
-      switch (state) {
-        case "manual" -> addressFlow.enterManualEntry(addressDetails);
-        case "confirmed" -> {
-          addressFlow.setAddressDetails(addressDetails);
-          addressFlow.setSelectedAddress(selectedAddress);
-          addressFlow.confirmSelectedAddress();
-        }
-        case "existing" -> {
-          addressDetails.setAddressLine1("12 Example Street");
-          addressDetails.setCountry("GBR");
-          addressFlow.setAddressDetails(addressDetails);
-          addressFlow.showExistingAddress();
-        }
-        case "non-case" -> addressDetails.setPreferredAddress("POST");
-        default -> addressFlow.setAddressDetails(addressDetails);
-      }
+      addressDetails.setCountry("GBR");
+      addressDetails.setAddressLine1("10 Example Street");
+      addressDetails.setCityTown("Swansea");
 
       model.addAttribute("caseContext", context);
       model.addAttribute("addressDetails", addressDetails);
-      model.addAttribute("addressFlow", addressFlow);
-      model.addAttribute("selectedAddress", selectedAddress);
-      model.addAttribute("caseAddress", !"non-case".equals(state));
-      model.addAttribute("countryName", "United Kingdom");
-      model.addAttribute(
-          "changeAddressUrl",
-          "/%s/sections/correspondence-address/search-again".formatted(caseContext));
-      model.addAttribute(
-          "manualEntryUrl", "/%s/sections/correspondence-address/manual".formatted(caseContext));
+      model.addAttribute("addressLookupUnavailable", "unavailable".equals(state));
       model.addAttribute(
           "countries",
           List.of(new CommonLookupValueDetail().code("GBR").description("United Kingdom")));
@@ -702,14 +641,8 @@ class AddressFragmentsRenderTest {
       final AddressResultRowDisplay result = new AddressResultRowDisplay();
       result.setUprn("1001");
       result.setFullAddress("10 Example Street");
-      final AddressLookupFlowData<AddressFormData> addressFlow =
-          new AddressLookupFlowData<>("%s:123".formatted(caseContext));
-      if ("unavailable".equals(state)) {
-        addressFlow.markLookupUnavailable();
-      } else {
-        addressFlow.setSearchResults(
-            new ResultsDisplay<>("no-results".equals(state) ? List.of() : List.of(result)));
-      }
+      final ResultsDisplay<AddressResultRowDisplay> results =
+          new ResultsDisplay<>("no-results".equals(state) ? List.of() : List.of(result));
       final AddressSearchFormData addressSearch = new AddressSearchFormData();
       final BindingResult bindingResult =
           new BeanPropertyBindingResult(addressSearch, "addressSearch");
@@ -718,42 +651,13 @@ class AddressFragmentsRenderTest {
       }
 
       model.addAttribute("caseContext", CaseContext.fromPathValue(caseContext));
-      model.addAttribute("addressFlow", addressFlow);
       model.addAttribute("addressSearch", addressSearch);
-      model.addAttribute("addressSearchResults", addressFlow.getSearchResults());
-      model.addAttribute("originalPostcode", "SA5 8AB");
-      model.addAttribute("originalBuildingSearch", "10");
+      model.addAttribute("addressSearchResults", results);
       model.addAttribute(
           "formAction", "%s/sections/correspondence-address/search".formatted(caseContext));
-      model.addAttribute(
-          "searchAgainUrl",
-          "/%s/sections/correspondence-address/search-again".formatted(caseContext));
-      model.addAttribute(
-          "manualEntryUrl", "/%s/sections/correspondence-address/manual".formatted(caseContext));
       addLayoutAttributes(model);
       model.addAttribute(BindingResult.MODEL_KEY_PREFIX + "addressSearch", bindingResult);
       return "application/sections/address-search-results";
-    }
-
-    @GetMapping("/test/correspondence-confirmation/{caseContext}")
-    public String renderCorrespondenceAddressConfirmation(
-        @PathVariable final String caseContext, final Model model) {
-      final AddressResultRowDisplay selectedAddress = new AddressResultRowDisplay();
-      selectedAddress.setFullAddress("10 Example Street");
-      model.addAttribute("selectedAddress", selectedAddress);
-      model.addAttribute("showClientCaption", false);
-      model.addAttribute("backUrl", "/%s/sections/correspondence-address".formatted(caseContext));
-      model.addAttribute(
-          "confirmUrl", "/%s/sections/correspondence-address/confirm".formatted(caseContext));
-      model.addAttribute(
-          "changeUrl", "/%s/sections/correspondence-address/search".formatted(caseContext));
-      model.addAttribute(
-          "searchAgainUrl",
-          "/%s/sections/correspondence-address/search-again".formatted(caseContext));
-      model.addAttribute(
-          "manualEntryUrl", "/%s/sections/correspondence-address/manual".formatted(caseContext));
-      addLayoutAttributes(model);
-      return "application/sections/address-confirmation";
     }
 
     private void populateConfirmedClientAddress(final ClientFormDataAddressDetails addressDetails) {
