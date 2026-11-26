@@ -179,7 +179,7 @@ public class AssessmentController {
   public String assessmentGet(
       @PathVariable("caseContext") final CaseContext caseContext,
       @RequestParam(value = "assessment") final String assessment,
-      @RequestParam("invoked-from") final String invokedFrom,
+      @RequestParam("invoked-from") final String requestedInvokedFrom,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final HttpSession session,
       final Model model) {
@@ -190,6 +190,15 @@ public class AssessmentController {
     if (assessmentRulebase == null) {
       throw new CaabApplicationException("Invalid assessment type");
     }
+
+    // Whether this is the means reassessment comes from the session, not the request.
+    final boolean reassessment =
+        assessmentRulebase == AssessmentRulebase.MEANS && holdsReassessment(session);
+    if (MEANS_REASSESSMENT_INVOKED_FROM.equals(requestedInvokedFrom) && !reassessment) {
+      throw new AccessDeniedException("No means reassessment is open in this session");
+    }
+    final String invokedFrom =
+        reassessment ? MEANS_REASSESSMENT_INVOKED_FROM : requestedInvokedFrom;
 
     // The billing and POA journeys run against a live case rather than a draft application, so
     // they take the EBS case straight from the session. Amend-case persists a draft and loads it
@@ -426,6 +435,16 @@ public class AssessmentController {
     }
 
     return application;
+  }
+
+  /**
+   * Whether the session holds a means reassessment: its application is kept in memory under {@code
+   * APPLICATION}, with no persisted {@code APPLICATION_ID}, as {@code MeansReassessmentController}
+   * leaves it.
+   */
+  private static boolean holdsReassessment(final HttpSession session) {
+    return session.getAttribute(APPLICATION_ID) == null
+        && session.getAttribute(APPLICATION) instanceof ApplicationDetail;
   }
 
   /**

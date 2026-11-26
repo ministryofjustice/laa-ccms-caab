@@ -7,10 +7,13 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -21,6 +24,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.Authentication;
@@ -42,6 +47,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.security.CcmsOidcUser;
 import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.service.UserService;
+import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(SpringExtension.class)
@@ -229,6 +235,31 @@ class OidcPrincipalControllerAdviceTest {
         advice.addOidcPrincipalToModel(authentication, model, session, request);
 
         verify(securityEventLogger).privilegesReloaded(List.of("VIEW"), List.of("VIEW", "DELETE"));
+      } finally {
+        SecurityContextHolder.clearContext();
+      }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"1, 2, true", "1, 1, false"})
+    @DisplayName("A provider changed elsewhere drops the open case when Home reloads the user")
+    public void providerChangedElsewhereDropsTheOpenCase(
+        int sessionProvider, int reloadedProvider, boolean cleared) {
+      UserDetail sessionUser = new UserDetail();
+      sessionUser.setLoginId("test");
+      sessionUser.setProvider(new BaseProvider().id(sessionProvider));
+      userDetails.setProvider(new BaseProvider().id(reloadedProvider));
+      when(session.getAttribute("user")).thenReturn(sessionUser);
+      HandlerMethod handler = mock(HandlerMethod.class);
+      when(request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE))
+          .thenReturn(handler);
+      doReturn(HomeController.class).when(handler).getBeanType();
+
+      try {
+        advice.addOidcPrincipalToModel(authentication, model, session, request);
+
+        verify(session, times(cleared ? 1 : 0)).removeAttribute(ACTIVE_CASE);
+        verify(session, times(cleared ? 1 : 0)).removeAttribute(APPLICATION_ID);
       } finally {
         SecurityContextHolder.clearContext();
       }

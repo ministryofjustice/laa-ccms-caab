@@ -314,6 +314,66 @@ public class AssessmentControllerTest {
   }
 
   @Test
+  @DisplayName("A persisted application cannot be assessed as a means reassessment")
+  void assessmentGet_claimedReassessmentWithoutOneOpenIsRefused() {
+    final Exception exception =
+        assertThrows(
+            ServletException.class,
+            () ->
+                mockMvc.perform(
+                    get("/amendments/assessments")
+                        .param("assessment", "means")
+                        .param("invoked-from", "CCMS_MNA05")
+                        .sessionAttr(USER_DETAILS, userDetails)
+                        .sessionAttr(APPLICATION_ID, "applicationId")
+                        .sessionAttr(ACTIVE_CASE, activeCase)));
+
+    assertInstanceOf(AccessDeniedException.class, exception.getCause());
+    verify(assessmentService, never())
+        .startAssessment(any(), any(), any(), any(), anyBoolean(), any());
+  }
+
+  @Test
+  @DisplayName("A held means reassessment is run as one whatever the request's invoked-from")
+  void assessmentGet_heldReassessmentIgnoresTheRequestedInvokedFrom() throws Exception {
+    final ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+    application.setCaseReferenceNumber("CASE123");
+    application.setApplicationType(new ApplicationType().id("EMER").displayValue("Emergency"));
+    when(contextSecurityUtil.createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            eq("CCMS_MNA05"),
+            anyString(),
+            anyString()))
+        .thenReturn("contextToken");
+    when(clientService.getClient(anyString())).thenReturn(Mono.just(new ClientDetail()));
+    final AssessmentDetail assessmentDetail = buildAssessmentDetail(new Date());
+    assessmentDetail.setId(1L);
+    when(assessmentService.getAssessments(any(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessmentDetail)));
+
+    mockMvc
+        .perform(
+            get("/amendments/assessments")
+                .param("assessment", "means")
+                .param("invoked-from", "summary")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(APPLICATION, application)
+                .sessionAttr(CASE, new ApplicationDetail().caseReferenceNumber("CASE123"))
+                .sessionAttr(ACTIVE_CASE, activeCase))
+        .andExpect(status().isOk());
+
+    final ArgumentCaptor<ApplicationDetail> captor =
+        ArgumentCaptor.forClass(ApplicationDetail.class);
+    verify(assessmentService)
+        .startAssessment(captor.capture(), any(), any(), any(), eq(true), isNull());
+    assertEquals("SUB", captor.getValue().getApplicationType().getId());
+  }
+
+  @Test
   public void assessmentGet_meansReassessment_rejectsStaleSessionApplication() {
     // A session application left over from a different case must not be used.
     final ApplicationDetail application =
@@ -1063,9 +1123,6 @@ public class AssessmentControllerTest {
 
   @Test
   public void assessmentGet_meansReassessment_refusedWithoutViewCaseDetails() throws Exception {
-    when(applicationService.getApplication(anyString()))
-        .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
-
     assertRefusedLikeTheRouteRules(
         get("/application/assessments")
             .param("assessment", "means")

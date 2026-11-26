@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.advice;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.util.Objects;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.security.UserFunctionAuthorities;
 import uk.gov.laa.ccms.caab.service.UserService;
+import uk.gov.laa.ccms.caab.util.ApplicationEditorState;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -73,6 +75,11 @@ public class OidcPrincipalControllerAdvice {
         if (previous != null && user != null) {
           UserFunctionAuthorities.replace(authentication, previous, user, session);
           securityEventLogger.privilegesReloaded(previous.getFunctions(), user.getFunctions());
+          // Switched elsewhere (legacy PUI or EBS): nothing open under the old provider carries
+          // over.
+          if (!Objects.equals(providerId(previous), providerId(user))) {
+            ApplicationEditorState.clearOpenApplication(session);
+          }
         }
       }
 
@@ -86,6 +93,10 @@ public class OidcPrincipalControllerAdvice {
 
       session.setAttribute("user", user);
     }
+  }
+
+  private static Integer providerId(UserDetail user) {
+    return user.getProvider() == null ? null : user.getProvider().getId();
   }
 
   /** Loads the user, treating a failed load like a missing user so that it fails closed. */
