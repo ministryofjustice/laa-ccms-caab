@@ -45,16 +45,15 @@ public class DraftApplicationOnlyInterceptor implements HandlerInterceptor {
           "/application/abandon/**");
 
   /**
-   * Submitting or abandoning through these creates or ends the application's case, so they are for
-   * a draft only: an amendment is validated and submitted under /amendments, under SUBAMD.
+   * The only guarded pages an amendment may use: the validation corrections post its provider
+   * details and correspondence address here, and its client's details share these pages. Every
+   * other amendment page is under /amendments, behind the amendment's own rules.
    */
-  private static final List<PathPattern> DRAFT_ONLY_PATHS =
+  private static final List<PathPattern> AMENDMENT_CORRECTION_PATHS =
       Stream.of(
-              "/application/validate",
-              "/application/submit/**",
-              "/application/declaration",
-              "/application/abandon",
-              "/application/abandon/**")
+              "/application/sections/provider-details",
+              "/application/sections/correspondence-address",
+              "/application/sections/client/details/**")
           .map(PathPatternParser.defaultInstance::parse)
           .toList();
 
@@ -66,7 +65,7 @@ public class DraftApplicationOnlyInterceptor implements HandlerInterceptor {
         && session.getAttribute(ACTIVE_CASE) instanceof ActiveCase activeCase
         && (activeCase.isDraftApplication()
             || (activeCase.isAmendment()
-                && !isDraftOnlyPath(request)
+                && isAmendmentCorrectionPath(request)
                 && holdsAmendmentFunctions(request)))) {
       return true;
     }
@@ -74,18 +73,18 @@ public class DraftApplicationOnlyInterceptor implements HandlerInterceptor {
         "Only a draft, or an amendment the user may view, can be changed through these pages");
   }
 
+  private static boolean isAmendmentCorrectionPath(HttpServletRequest request) {
+    // Decoded, as MVC matches handlers on decoded segments.
+    PathContainer path =
+        PathContainer.parsePath(UrlPathHelper.defaultInstance.getPathWithinApplication(request));
+    return AMENDMENT_CORRECTION_PATHS.stream().anyMatch(pattern -> pattern.matches(path));
+  }
+
   /**
    * The functions the amendment pages' own rules need: VC, as an amendment is made to an open case,
    * and CD as well for its client's details.
    */
-  private static boolean isDraftOnlyPath(HttpServletRequest request) {
-    PathContainer path =
-        PathContainer.parsePath(UrlPathHelper.defaultInstance.getPathWithinApplication(request));
-    return DRAFT_ONLY_PATHS.stream().anyMatch(pattern -> pattern.matches(path));
-  }
-
   private static boolean holdsAmendmentFunctions(HttpServletRequest request) {
-    // Decoded, as MVC matches handlers on decoded segments.
     boolean clientDetails =
         UrlPathHelper.defaultInstance
             .getPathWithinApplication(request)

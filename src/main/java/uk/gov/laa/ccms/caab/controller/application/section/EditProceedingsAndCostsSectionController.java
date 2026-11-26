@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
@@ -281,12 +282,14 @@ public class EditProceedingsAndCostsSectionController {
       @PathVariable("proceeding-id") final Integer proceedingId,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(APPLICATION_PROCEEDINGS) final List<ProceedingDetail> proceedings,
-      @SessionAttribute(USER_DETAILS) final UserDetail user) {
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final HttpSession session) {
 
     final boolean proceedingExists =
         proceedings.stream().anyMatch(proceeding -> proceeding.getId().equals(proceedingId));
 
     if (proceedingExists) {
+      requireProceedingOfOpenApplication(proceedingId, session);
       applicationService.deleteProceeding(applicationId, proceedingId, user);
     } else {
       throw new CaabApplicationException(
@@ -974,6 +977,7 @@ public class EditProceedingsAndCostsSectionController {
         proceeding.getStatus().setDisplayValue(STATUS_DISPLAY_VALUE_UPDATED);
       }
 
+      requireProceedingOfOpenApplication(proceeding.getId(), session);
       applicationService.updateProceeding(proceeding, user);
     }
 
@@ -1410,6 +1414,19 @@ public class EditProceedingsAndCostsSectionController {
     if (!belongs) {
       throw new AccessDeniedException(
           "Prior authority %s is not part of the open application".formatted(priorAuthorityId));
+    }
+  }
+
+  private void requireProceedingOfOpenApplication(
+      final Integer proceedingId, final HttpSession session) {
+    final boolean belongs =
+        Optional.ofNullable(openApplication(session).getProceedings())
+            .orElse(Collections.emptyList())
+            .stream()
+            .anyMatch(proceeding -> Objects.equals(proceeding.getId(), proceedingId));
+    if (!belongs) {
+      throw new AccessDeniedException(
+          "Proceeding %s is not part of the open application".formatted(proceedingId));
     }
   }
 

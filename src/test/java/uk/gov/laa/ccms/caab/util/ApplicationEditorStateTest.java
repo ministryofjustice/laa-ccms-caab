@@ -6,8 +6,11 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PRIOR_AUTHORITIES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRIOR_AUTHORITY_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_SUMMARY;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -61,8 +64,15 @@ class ApplicationEditorStateTest {
     MockHttpSession session = sessionEditing(1);
     session.setAttribute(APPLICATION_ID, "1");
     session.setAttribute(CASE, new Object());
+    session.setAttribute(CASE_REFERENCE_NUMBER, "300001");
+    session.setAttribute(SUBMISSION_SUMMARY, new Object());
+    session.setAttribute(SUBMISSION_TRANSACTION_ID, "transaction1");
 
     ApplicationEditorState.clearOpenApplication(session);
+
+    assertNull(session.getAttribute(CASE_REFERENCE_NUMBER));
+    assertNull(session.getAttribute(SUBMISSION_SUMMARY));
+    assertNull(session.getAttribute(SUBMISSION_TRANSACTION_ID));
 
     assertNull(session.getAttribute(ACTIVE_CASE));
     assertNull(session.getAttribute(APPLICATION_ID));

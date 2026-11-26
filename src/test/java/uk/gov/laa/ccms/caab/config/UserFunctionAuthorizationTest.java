@@ -187,6 +187,11 @@ class UserFunctionAuthorizationTest {
             UserRole.VIEW_NOTIFICATION_ATTACHMENT,
             UserRole.VIEW_NOTIFICATIONS),
         route(
+            "GET",
+            "/notifications/7/attachments/3/retrieveCoverSheet",
+            UserRole.VIEW_NOTIFICATION_ATTACHMENT,
+            UserRole.VIEW_NOTIFICATIONS),
+        route(
             "POST",
             "/notifications/7/provide-documents-or-evidence",
             UserRole.SUBMIT_DOCUMENT_UPLOAD,

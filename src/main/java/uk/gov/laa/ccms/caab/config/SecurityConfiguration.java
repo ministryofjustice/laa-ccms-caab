@@ -240,7 +240,9 @@ public class SecurityConfiguration {
         .access(caseAction())
         // Every notification page is reached by opening the notification, which needs NOT.
         .requestMatchers(
-            "/notifications/*/attachments/*/retrieve", "/notifications/*/attachments/*/download")
+            "/notifications/*/attachments/*/retrieve",
+            "/notifications/*/attachments/*/retrieveCoverSheet",
+            "/notifications/*/attachments/*/download")
         .access(notificationAction(UserRole.VIEW_NOTIFICATION_ATTACHMENT))
         // Submitting documents is the end of the provide documents flow, which needs EVID.
         .requestMatchers(HttpMethod.POST, "/notifications/*/provide-documents-or-evidence")

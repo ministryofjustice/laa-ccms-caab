@@ -170,9 +170,13 @@ class DraftApplicationOnlyInterceptorTest {
         "/application/submit/summary",
         "/application/declaration",
         "/application/abandon",
-        "/application/abandon/confirmed"
+        "/application/abandon/confirmed",
+        "/application/sections/application-type",
+        "/application/case-costs",
+        "/application/proceedings/1/remove",
+        "/application/prior-authorities/1/remove"
       })
-  @DisplayName("An amendment cannot be submitted or abandoned through the application's pages")
+  @DisplayName("An amendment can use no application page beyond its corrections")
   void amendmentCannotUseApplicationSubmission(String path) {
     session.setAttribute(ACTIVE_CASE, amendment());
     loggedInWith(
@@ -184,6 +188,22 @@ class DraftApplicationOnlyInterceptorTest {
 
     assertThatThrownBy(() -> interceptor.preHandle(submission, response, new Object()))
         .isInstanceOf(AccessDeniedException.class);
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "/application/sections/provider-details",
+        "/application/sections/correspondence-address"
+      })
+  @DisplayName("An amendment's validation corrections are still allowed")
+  void amendmentCorrectionsAreAllowed(String path) throws Exception {
+    session.setAttribute(ACTIVE_CASE, amendment());
+    loggedInWith(UserRole.VIEW_CASE_DETAILS.getCode());
+    MockHttpServletRequest correction = new MockHttpServletRequest("POST", path);
+    correction.setSession(session);
+
+    assertThat(interceptor.preHandle(correction, response, new Object())).isTrue();
   }
 
   @Test

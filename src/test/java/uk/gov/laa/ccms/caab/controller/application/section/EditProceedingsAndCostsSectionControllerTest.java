@@ -281,6 +281,8 @@ class EditProceedingsAndCostsSectionControllerTest {
       doNothing()
           .when(applicationService)
           .deleteProceeding(eq(applicationId), anyInt(), any(UserDetail.class));
+      when(applicationService.getApplication(applicationId))
+          .thenReturn(Mono.just(new ApplicationDetail().proceedings(proceedings)));
 
       mockMvc
           .perform(
@@ -293,6 +295,29 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       verify(applicationService, times(1))
           .deleteProceeding(eq(applicationId), eq(proceedingId), eq(userDetail));
+    }
+
+    @ParameterizedTest
+    @DisplayName("Refuses a proceeding that is not part of the open application")
+    @ValueSource(strings = {"application", "amendments"})
+    void refusesProceedingOfAnotherApplication(String caseContext) {
+      // The session list still holds another application's proceeding.
+      final List<ProceedingDetail> retained = List.of(new ProceedingDetail().id(1));
+      when(applicationService.getApplication("open"))
+          .thenReturn(Mono.just(new ApplicationDetail().proceedings(List.of())));
+
+      final Exception exception =
+          assertThrows(
+              ServletException.class,
+              () ->
+                  mockMvc.perform(
+                      post("/{caseContext}/proceedings/{proceeding-id}/remove", caseContext, 1)
+                          .sessionAttr(APPLICATION_ID, "open")
+                          .sessionAttr(APPLICATION_PROCEEDINGS, retained)
+                          .sessionAttr(USER_DETAILS, new UserDetail())));
+
+      assertInstanceOf(AccessDeniedException.class, exception.getCause());
+      verify(applicationService, never()).deleteProceeding(any(), any(), any());
     }
   }
 
@@ -1666,6 +1691,11 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
       session.setAttribute(CURRENT_PROCEEDING, proceeding);
       session.setAttribute(USER_DETAILS, user);
+      session.setAttribute(APPLICATION_ID, "123");
+      when(applicationService.getApplication("123"))
+          .thenReturn(
+              Mono.just(
+                  new ApplicationDetail().proceedings(List.of(new ProceedingDetail().id(123)))));
 
       mockMvc
           .perform(
@@ -1673,6 +1703,40 @@ class EditProceedingsAndCostsSectionControllerTest {
                   .session(session))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/%s/proceedings/%s/confirm".formatted(caseContext, action)));
+    }
+
+    @ParameterizedTest
+    @DisplayName("Refuses confirming onto a proceeding left by another application")
+    @ValueSource(strings = {"application", "amendments"})
+    void refusesConfirmOntoProceedingOfAnotherApplication(String caseContext) {
+      final ProceedingDetail retained = new ProceedingDetail().id(123);
+      retained.setScopeLimitations(new ArrayList<>());
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(CURRENT_SCOPE_LIMITATION, new ScopeLimitationDetail());
+      session.setAttribute(
+          APPLICATION,
+          new ApplicationDetail()
+              .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+              .applicationType(new ApplicationType().id("applicationTypeId")));
+      session.setAttribute(PROCEEDING_FLOW_FORM_DATA, new ProceedingFlowFormData("edit"));
+      session.setAttribute(
+          SCOPE_LIMITATION_FLOW_FORM_DATA, new ScopeLimitationFlowFormData("edit"));
+      session.setAttribute(CURRENT_PROCEEDING, retained);
+      session.setAttribute(USER_DETAILS, new UserDetail());
+      session.setAttribute(APPLICATION_ID, "123");
+      when(applicationService.getApplication("123"))
+          .thenReturn(Mono.just(new ApplicationDetail().proceedings(List.of())));
+
+      final Exception exception =
+          assertThrows(
+              ServletException.class,
+              () ->
+                  mockMvc.perform(
+                      post("/{caseContext}/proceedings/scope-limitations/confirm", caseContext)
+                          .session(session)));
+
+      assertInstanceOf(AccessDeniedException.class, exception.getCause());
+      verify(applicationService, never()).updateProceeding(any(), any());
     }
 
     @ParameterizedTest

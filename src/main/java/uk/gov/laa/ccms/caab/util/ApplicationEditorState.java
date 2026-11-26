@@ -10,6 +10,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PRIOR_
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PROCEEDINGS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_SCOPE_LIMITATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_PROCEEDINGS_ALLOWED;
@@ -23,6 +24,11 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FO
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_SCOPE_LIMITATIONS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SCOPE_LIMITATION_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SECTIONS_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_QUICK_EDIT_TYPE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_SUMMARY;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 
 import jakarta.servlet.http.HttpSession;
 import java.util.List;
@@ -70,7 +76,18 @@ public final class ApplicationEditorState {
    */
   public static void clearOpenApplication(HttpSession session) {
     EDITOR_ATTRIBUTES.forEach(session::removeAttribute);
-    List.of(ACTIVE_CASE, APPLICATION_ID, CASE, APPLICATION_SUMMARY, SECTIONS_DATA)
+    List.of(
+            ACTIVE_CASE,
+            APPLICATION_ID,
+            CASE,
+            CASE_REFERENCE_NUMBER,
+            APPLICATION_SUMMARY,
+            SECTIONS_DATA,
+            SUBMISSION_SUMMARY,
+            SUBMISSION_TRANSACTION_ID,
+            SUBMISSION_RESULT,
+            SUBMISSION_POLL_COUNT,
+            SUBMISSION_QUICK_EDIT_TYPE)
         .forEach(session::removeAttribute);
   }
 

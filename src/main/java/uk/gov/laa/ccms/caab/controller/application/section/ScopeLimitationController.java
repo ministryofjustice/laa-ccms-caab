@@ -302,6 +302,7 @@ public class ScopeLimitationController {
     } else {
       final ProceedingDetail proceeding =
           (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
+      requirePartOfOpenApplication(proceeding, session);
 
       if (scopeLimitation.getId() == null) {
         proceeding.getScopeLimitations().add(scopeLimitation);
