@@ -69,7 +69,9 @@ public final class ApplicationEditorState {
   /**
    * Clears everything the session holds for a case, application, client or journey, as after a
    * provider change: nothing begun under the old provider is carried over. The login, its timeout
-   * and the framework's own state are kept; those keys are fully qualified, or listed here.
+   * and the framework's own state are kept; those keys are fully qualified, or listed here. So is
+   * {@link SentApplications}, deliberately: it only locks a sent application while its submission
+   * is pending, and clearing it would let switching provider and back reopen one mid-submission.
    *
    * @param session the user's session
    */

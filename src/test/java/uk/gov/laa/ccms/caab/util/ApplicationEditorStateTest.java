@@ -115,6 +115,16 @@ class ApplicationEditorStateTest {
   }
 
   @Test
+  void providerChangeKeepsTheSentApplicationLock() {
+    MockHttpSession session = sessionEditing(1);
+    SentApplications.record(session, 1, "transaction1");
+
+    ApplicationEditorState.clearOpenApplication(session);
+
+    assertThat(SentApplications.transactionFor(session, 1)).contains("transaction1");
+  }
+
+  @Test
   void openingAnotherApplicationDropsTheSubmissionState() {
     MockHttpSession session = sessionEditing(1);
     session.setAttribute(SUBMISSION_TRANSACTION_ID, "transaction1");
