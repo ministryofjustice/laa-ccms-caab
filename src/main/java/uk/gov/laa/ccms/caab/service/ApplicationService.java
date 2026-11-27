@@ -33,6 +33,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
@@ -625,14 +626,14 @@ public class ApplicationService {
                 if (activeProviderId != null) {
                   if (ownerId == null) {
                     sink.error(
-                        new CaabApplicationException(
+                        new AccessDeniedException(
                             "Application %s does not contain an active provider owner"
                                 .formatted(id)));
                     return;
                   }
                   if (!activeProviderId.equals(String.valueOf(ownerId))) {
                     sink.error(
-                        new CaabApplicationException(
+                        new AccessDeniedException(
                             "Application %s does not belong to active provider".formatted(id)));
                     return;
                   }

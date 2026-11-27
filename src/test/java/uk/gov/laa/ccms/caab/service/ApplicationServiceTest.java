@@ -73,6 +73,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
@@ -1757,7 +1758,7 @@ class ApplicationServiceTest {
     ProviderContext.setProviderId("12345");
     try {
       StepVerifier.create(applicationService.getApplication(applicationId))
-          .expectError(CaabApplicationException.class)
+          .expectError(AccessDeniedException.class)
           .verify();
     } finally {
       ProviderContext.clear();
@@ -1773,7 +1774,7 @@ class ApplicationServiceTest {
     ProviderContext.setProviderId("12345");
     try {
       StepVerifier.create(applicationService.getApplication(applicationId))
-          .expectError(CaabApplicationException.class)
+          .expectError(AccessDeniedException.class)
           .verify();
     } finally {
       ProviderContext.clear();

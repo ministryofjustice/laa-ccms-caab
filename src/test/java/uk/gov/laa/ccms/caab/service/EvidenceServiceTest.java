@@ -30,6 +30,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
@@ -161,7 +162,7 @@ class EvidenceServiceTest {
     ProviderContext.setProviderId("456");
     try {
       StepVerifier.create(evidenceService.getEvidenceDocument(evidenceDocumentId))
-          .expectError(CaabApplicationException.class)
+          .expectError(AccessDeniedException.class)
           .verify();
     } finally {
       ProviderContext.clear();
@@ -179,7 +180,7 @@ class EvidenceServiceTest {
     ProviderContext.setProviderId("456");
     try {
       StepVerifier.create(evidenceService.getEvidenceDocument(evidenceDocumentId))
-          .expectError(CaabApplicationException.class)
+          .expectError(AccessDeniedException.class)
           .verify();
     } finally {
       ProviderContext.clear();
@@ -197,7 +198,7 @@ class EvidenceServiceTest {
     ProviderContext.setProviderId("456");
     try {
       StepVerifier.create(evidenceService.getEvidenceDocument(evidenceDocumentId))
-          .expectError(CaabApplicationException.class)
+          .expectError(AccessDeniedException.class)
           .verify();
     } finally {
       ProviderContext.clear();

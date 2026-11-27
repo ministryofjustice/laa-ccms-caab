@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -46,6 +47,7 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -432,8 +434,9 @@ class EvidenceSectionControllerTest {
                 .sessionAttr(ACTIVE_CASE, activeCase)
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, switchedFirmUser))
-        .andExpect(status().isOk())
-        .andExpect(view().name("error"));
+        .andExpect(status().is3xxRedirection())
+        .andExpect(
+            result -> assertInstanceOf(AccessDeniedException.class, result.getResolvedException()));
 
     verify(evidenceService, never())
         .registerDocument(any(), any(), any(), any(), any(), any(), any());
@@ -457,8 +460,9 @@ class EvidenceSectionControllerTest {
                 .sessionAttr(ACTIVE_CASE, activeCase)
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, userWithoutProvider))
-        .andExpect(status().isOk())
-        .andExpect(view().name("error"));
+        .andExpect(status().is3xxRedirection())
+        .andExpect(
+            result -> assertInstanceOf(AccessDeniedException.class, result.getResolvedException()));
 
     verify(evidenceService, never())
         .registerDocument(any(), any(), any(), any(), any(), any(), any());
@@ -481,8 +485,9 @@ class EvidenceSectionControllerTest {
                 .sessionAttr(ACTIVE_CASE, activeCase)
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, user))
-        .andExpect(status().isOk())
-        .andExpect(view().name("error"));
+        .andExpect(status().is3xxRedirection())
+        .andExpect(
+            result -> assertInstanceOf(AccessDeniedException.class, result.getResolvedException()));
 
     verify(evidenceService, never())
         .registerDocument(any(), any(), any(), any(), any(), any(), any());

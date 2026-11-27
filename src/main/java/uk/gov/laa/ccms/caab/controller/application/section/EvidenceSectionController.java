@@ -185,13 +185,13 @@ public class EvidenceSectionController {
     final Integer userProviderId =
         userDetail.getProvider() != null ? userDetail.getProvider().getId() : null;
     if (userProviderId == null) {
-      throw new CaabApplicationException("Current provider could not be established");
+      throw new AccessDeniedException("Current provider could not be established");
     }
     if (activeCase.getProviderId() == null) {
-      throw new CaabApplicationException("Active case does not contain a provider");
+      throw new AccessDeniedException("Active case does not contain a provider");
     }
     if (!userProviderId.equals(activeCase.getProviderId())) {
-      throw new CaabApplicationException("Active case does not belong to current provider");
+      throw new AccessDeniedException("Active case does not belong to current provider");
     }
 
     // The document is filed against the open case, whatever the request or a kept form says.

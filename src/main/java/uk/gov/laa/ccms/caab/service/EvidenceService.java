@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -106,14 +107,14 @@ public class EvidenceService {
                 if (activeProviderId != null) {
                   if (ownerId == null || ownerId.isEmpty()) {
                     sink.error(
-                        new CaabApplicationException(
+                        new AccessDeniedException(
                             "Evidence document %s does not contain an active provider owner"
                                 .formatted(evidenceDocumentId)));
                     return;
                   }
                   if (!activeProviderId.equals(ownerId)) {
                     sink.error(
-                        new CaabApplicationException(
+                        new AccessDeniedException(
                             "Evidence document %s does not belong to active provider"
                                 .formatted(evidenceDocumentId)));
                     return;
