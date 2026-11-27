@@ -60,12 +60,6 @@ public class StartApplicationController {
       final HttpSession session) {
     log.info("Starting application");
 
-    // The searches in this journey keep their criteria in the session, so a new application must
-    // not
-    // open them already filled in from the application before.
-    session.removeAttribute(CLIENT_SEARCH_CRITERIA);
-    session.removeAttribute(CASE_SEARCH_CRITERIA);
-
     final ApplicationFormData applicationFormData = getApplicationDetails();
     model.addAttribute(APPLICATION_FORM_DATA, applicationFormData);
 
@@ -79,6 +73,12 @@ public class StartApplicationController {
       }
       return "redirect:/amendments/application-type";
     }
+
+    // Applications only. The searches in this journey keep their criteria in the session, so a new
+    // application must not open them filled in from the one before. An amendment runs no search of
+    // its own, and clearing these would lose the case search that found the case being amended.
+    session.removeAttribute(CLIENT_SEARCH_CRITERIA);
+    session.removeAttribute(CASE_SEARCH_CRITERIA);
 
     return "redirect:/application/office";
   }

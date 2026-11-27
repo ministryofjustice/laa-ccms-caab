@@ -82,6 +82,19 @@ class StartApplicationControllerTest {
   }
 
   @Test
+  @DisplayName("GET: /amendments/new keeps the case search that found the case")
+  void shouldKeepSearchCriteriaForNewAmendment() {
+    CaseSearchCriteria caseCriteria = new CaseSearchCriteria();
+    caseCriteria.setCaseReference("300001");
+
+    assertThat(
+            mockMvc.perform(get("/amendments/new").sessionAttr(CASE_SEARCH_CRITERIA, caseCriteria)))
+        .request()
+        .sessionAttributes()
+        .containsEntry(CASE_SEARCH_CRITERIA, caseCriteria);
+  }
+
+  @Test
   @DisplayName("GET: /amendments/new should create new application and redirect")
   void shouldCreateNewAmendment() {
     assertThat(mockMvc.perform(get("/amendments/new")))
