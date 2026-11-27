@@ -611,9 +611,6 @@ public class ApplicationService {
   public Mono<ApplicationDetail> getApplication(final String id) {
     final String threadProviderId = ProviderContext.getProviderId();
     final Mono<ApplicationDetail> applicationMono = caabApiClient.getApplication(id);
-    if (applicationMono == null) {
-      return null;
-    }
     return Mono.deferContextual(
         contextView -> {
           final String resolved = ProviderContext.resolveProviderId(contextView);

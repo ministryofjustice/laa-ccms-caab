@@ -95,9 +95,6 @@ public class EvidenceService {
     final String threadProviderId = ProviderContext.getProviderId();
     final Mono<EvidenceDocumentDetail> documentMono =
         caabApiClient.getEvidenceDocument(evidenceDocumentId);
-    if (documentMono == null) {
-      return null;
-    }
     return Mono.deferContextual(
         contextView -> {
           final String resolved = ProviderContext.resolveProviderId(contextView);
