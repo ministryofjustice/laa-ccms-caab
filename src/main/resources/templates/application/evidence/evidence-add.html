@@ -38,6 +38,7 @@
             <div th:replace="~{partials/forms :: largeTextInput('documentDescription', ${#messages.msg('application.evidence.add.documentDescription')}, 255)}"></div>
 
             <div class="govuk-form-group"
+                 th:if="${caseContext.isApplication() or !evidenceRequired.isEmpty()}"
                  th:classappend="${#fields.hasErrors('evidenceTypes')} ? 'govuk-form-group--error' : ''">
                 <fieldset class="govuk-fieldset">
                     <legend class="govuk-fieldset__legend" th:text="#{application.evidence.add.whichEvidence}"></legend>
