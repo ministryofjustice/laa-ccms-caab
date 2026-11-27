@@ -214,6 +214,44 @@ class EvidenceUploadValidatorTest {
   }
 
   @Test
+  @DisplayName("validate - An amendment upload needs no evidence type")
+  void validate_amendmentWithoutEvidenceTypes_hasNoErrors() {
+    evidenceUploadFormData = buildEvidenceUploadFormData();
+    evidenceUploadFormData.setCcmsModule(CcmsModule.AMENDMENT);
+    evidenceUploadFormData.setEvidenceTypes(Collections.emptyList());
+
+    validator.validate(evidenceUploadFormData, errors);
+
+    assertFalse(errors.hasErrors());
+  }
+
+  @Test
+  @DisplayName("validate - An amendment upload with no evidence types selected at all is accepted")
+  void validate_amendmentWithNullEvidenceTypes_hasNoErrors() {
+    evidenceUploadFormData = buildEvidenceUploadFormData();
+    evidenceUploadFormData.setCcmsModule(CcmsModule.AMENDMENT);
+    evidenceUploadFormData.setEvidenceTypes(null);
+
+    validator.validate(evidenceUploadFormData, errors);
+
+    assertFalse(errors.hasErrors());
+  }
+
+  @Test
+  @DisplayName("validate - An amendment upload still validates the file")
+  void validate_amendmentWithoutFile_stillRejectsFile() {
+    evidenceUploadFormData = buildEvidenceUploadFormData();
+    evidenceUploadFormData.setCcmsModule(CcmsModule.AMENDMENT);
+    evidenceUploadFormData.setEvidenceTypes(Collections.emptyList());
+    evidenceUploadFormData.setFile(null);
+
+    validator.validate(evidenceUploadFormData, errors);
+
+    assertEquals(1, errors.getErrorCount());
+    assertNotNull(errors.getFieldError("file"));
+  }
+
+  @Test
   public void validate_descriptionMaxLength() {
     evidenceUploadFormData = buildEvidenceUploadFormData();
     evidenceUploadFormData.setDocumentDescription("a".repeat(256));
