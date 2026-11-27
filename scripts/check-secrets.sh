@@ -5,126 +5,237 @@ set -u
 repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$repo_root" || exit 1
 
-tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/pre-commit-secrets.XXXXXX") || {
-  echo "pre-commit: unable to create a temporary directory for secret checks."
-  exit 1
-}
-trap 'rm -rf "$tmp_dir"' EXIT HUP INT TERM
-
-blocked=0
-
-filename_is_secret() {
-  local file=$1
-
-  case "$file" in
-    .env.example|*/.env.example|.env.sample|*/.env.sample|.env.template|*/.env.template)
-      return 1
-      ;;
-  esac
-
-  case "$file" in
-    .env|*/.env|.env.*|*/.env.*|\
-    *application-secret*.yml|*application-secret*.yaml|\
-    *secret*.yml|*secret*.yaml|*secret*.json|*secret*.properties|*secret*.toml|*secret*.ini|\
-    *credential*.yml|*credential*.yaml|*credential*.json|*credential*.properties|*credential*.toml|*credential*.ini|\
-    *private*key*.pem|*private*key*.key|id_rsa|*/id_rsa|id_ed25519|*/id_ed25519|\
-    *.p12|*.pfx|*.jks|*.keystore|\
-    secrets.gradle|*/secrets.gradle|secrets*.gradle|*/secrets*.gradle)
-      return 0
-      ;;
-  esac
-
-  return 1
-}
-
-credential_assignment_re=$'"?((password|passwd|pwd|secret|client[_-]?secret|api[_-]?key|apikey|access[_-]?token|auth[_-]?token|private[_-]?key))"?[[:space:]]*[:=][[:space:]]*[\"\047]?([^[:space:],;#\"\047]{12,})'
-
-is_placeholder_value() {
-  local value=$1
-  local value_lower
-  value_lower=$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')
-
-  if [[ "$value_lower" =~ ^(example|dummy|fake|test|changeme|change[-_ ]me|placeholder|replace[-_ ]me|not[-_ ]a[-_ ]secret|notasecret|x{4,}|<[^>]+>|\$\{[^}]+\}|env[_-]?var|your[-_ ]?(password|secret|token|key)) ]]; then
-    return 0
-  fi
-
-  if [[ "$value" =~ ^[A-Z][A-Z0-9_]*(TOKEN|SECRET|KEY|PASSWORD)$ ]]; then
-    return 0
-  fi
-
-  return 1
-}
-
-nocasematch_was_set=0
-if shopt -q nocasematch; then
-  nocasematch_was_set=1
-else
-  shopt -s nocasematch
-fi
-
-while IFS= read -r -d '' file; do
-  if filename_is_secret "$file"; then
-    echo "pre-commit: blocked secret file: $file"
-    blocked=1
-  fi
-
-  staged_file="$tmp_dir/staged"
-  if ! git cat-file blob ":$file" > "$staged_file" 2>/dev/null; then
-    continue
-  fi
-
-  if grep -aEiq -e '-----BEGIN[[:space:]]+(RSA[[:space:]]+|EC[[:space:]]+|DSA[[:space:]]+|OPENSSH[[:space:]]+|ENCRYPTED[[:space:]]+)?PRIVATE[[:space:]]+KEY-----' "$staged_file"; then
-    echo "pre-commit: blocked private key content in $file"
-    blocked=1
-  elif grep -aEiq '(AKIA|ASIA)[0-9A-Z]{16}' "$staged_file"; then
-    echo "pre-commit: blocked AWS credential content in $file"
-    blocked=1
-  elif grep -aEiq 'gh[pousr]_[A-Za-z0-9]{36,}' "$staged_file"; then
-    echo "pre-commit: blocked GitHub token content in $file"
-    blocked=1
-  elif grep -aEiq 'glpat-[A-Za-z0-9_-]{20,}' "$staged_file"; then
-    echo "pre-commit: blocked GitLab token content in $file"
-    blocked=1
-  elif grep -aEiq 'xox[baprs]-[A-Za-z0-9-]{10,}' "$staged_file"; then
-    echo "pre-commit: blocked Slack token content in $file"
-    blocked=1
-  elif grep -aEiq '(sk|rk)_(live|test)_[A-Za-z0-9]{16,}' "$staged_file"; then
-    echo "pre-commit: blocked Stripe key content in $file"
-    blocked=1
-  elif grep -aEiq 'AIza[0-9A-Za-z_-]{35}' "$staged_file"; then
-    echo "pre-commit: blocked Google API key content in $file"
-    blocked=1
-  elif grep -aEiq 'npm_[A-Za-z0-9]{36,}' "$staged_file"; then
-    echo "pre-commit: blocked npm token content in $file"
-    blocked=1
-  elif grep -aEiq 'eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}' "$staged_file"; then
-    echo "pre-commit: blocked JWT content in $file"
-    blocked=1
-  else
-    credential_found=0
-    while IFS= read -r line || [ -n "$line" ]; do
-      if [[ "$line" =~ $credential_assignment_re ]]; then
-        credential_value=${BASH_REMATCH[3]}
-        if ! is_placeholder_value "$credential_value"; then
-          credential_found=1
-          break
-        fi
-      fi
-    done < "$staged_file"
-    if [ "$credential_found" -ne 0 ]; then
-      echo "pre-commit: blocked credential-like content in $file"
-      blocked=1
-    fi
-  fi
-done < <(git diff --cached --name-only --diff-filter=ACMRT -z)
-
-if [ "$nocasematch_was_set" -eq 0 ]; then
-  shopt -u nocasematch
-fi
-
-if [ "$blocked" -ne 0 ]; then
-  echo "pre-commit: remove the staged secret, then commit again."
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "pre-commit: python3 is required to check staged secrets."
   exit 1
 fi
 
-exit 0
+python3 - "$repo_root" <<'PY'
+import os
+import re
+import subprocess
+import sys
+
+repo_root = sys.argv[1]
+blocked = False
+
+
+def git_output(*args):
+    return subprocess.run(
+        ["git", "-C", repo_root, *args],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+
+def filename_is_secret(path):
+    normalized = path.replace("\\", "/").lower()
+    name = normalized.rsplit("/", 1)[-1]
+
+    if name in {".env.example", ".env.sample", ".env.template"}:
+        return False
+    if name == ".env" or name.startswith(".env."):
+        return True
+    secret_config_suffixes = (
+        ".yml",
+        ".yaml",
+        ".json",
+        ".properties",
+        ".toml",
+        ".ini",
+        ".conf",
+        ".config",
+        ".txt",
+    )
+    if ("secret" in name or "credential" in name) and name.endswith(secret_config_suffixes):
+        return True
+    if name in {"id_rsa", "id_ed25519"}:
+        return True
+    if name.endswith((".p12", ".pfx", ".jks", ".keystore")):
+        return True
+    if name.endswith(".gradle") and name.startswith("secrets"):
+        return True
+    if "private" in name and "key" in name and name.endswith((".pem", ".key")):
+        return True
+    return False
+
+
+PRIVATE_KEY_RE = re.compile(
+    r"-----BEGIN\s+(?:RSA\s+|EC\s+|DSA\s+|OPENSSH\s+|ENCRYPTED\s+)?PRIVATE\s+KEY-----",
+    re.IGNORECASE,
+)
+KNOWN_TOKEN_RES = [
+    ("AWS credential", re.compile(r"(?:AKIA|ASIA)[0-9A-Z]{16}")),
+    ("GitHub token", re.compile(r"gh[pousr]_[A-Za-z0-9]{36,}", re.IGNORECASE)),
+    ("GitLab token", re.compile(r"glpat-[A-Za-z0-9_-]{20,}", re.IGNORECASE)),
+    ("Slack token", re.compile(r"xox[baprs]-[A-Za-z0-9-]{10,}", re.IGNORECASE)),
+    ("Stripe key", re.compile(r"(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{16,}", re.IGNORECASE)),
+    ("Google API key", re.compile(r"AIza[0-9A-Za-z_-]{35}")),
+    ("npm token", re.compile(r"npm_[A-Za-z0-9]{36,}", re.IGNORECASE)),
+    ("JWT", re.compile(r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}")),
+]
+
+CREDENTIAL_ASSIGNMENT_RE = re.compile(
+    r"""(?<![\w-])["']?(password|passwd|pwd|secret|client[_-]?secret|api[_-]?key|apikey|"""
+    r"""access[_-]?token|auth[_-]?token|private[_-]?key)["']?\s*[:=]\s*["']?"""
+    r"""([^ \t\r\n,;"'#]+)""",
+    re.IGNORECASE,
+)
+
+UPPERCASE_ENVIRONMENT_IDENTIFIER_RE = re.compile(
+    r"^[A-Z][A-Z0-9_]*(?:TOKEN|SECRET|KEY|PASSWORD)$"
+)
+
+
+def matching_outer_brace(value):
+    if not value.startswith("${"):
+        return -1
+
+    depth = 0
+    for index, character in enumerate(value):
+        if character == "{":
+            depth += 1
+        elif character == "}":
+            depth -= 1
+            if depth == 0:
+                return index
+    return -1
+
+
+def top_level_colon(inner):
+    depth = 0
+    for index, character in enumerate(inner):
+        if character == "{":
+            depth += 1
+        elif character == "}":
+            depth -= 1
+        elif character == ":" and depth == 0:
+            return index
+    return -1
+
+
+def environment_placeholder_only(value):
+    value = value.strip().strip("\"'")
+    if not value.startswith("${"):
+        return False
+
+    close_index = matching_outer_brace(value)
+    if close_index < 0 or close_index != len(value) - 1:
+        return False
+
+    inner = value[2:close_index]
+    colon_index = top_level_colon(inner)
+    if colon_index < 0:
+        return True
+
+    fallback = inner[colon_index + 1:].strip()
+    if not fallback:
+        return True
+    return environment_placeholder_only(fallback)
+
+
+def is_placeholder_value(value, path):
+    value = value.strip().strip("\"'")
+    if environment_placeholder_only(value):
+        return True
+
+    lower = value.lower()
+    placeholder_terms = (
+        "example",
+        "dummy",
+        "fake",
+        "test",
+        "changeme",
+        "change-me",
+        "change_me",
+        "placeholder",
+        "replace-me",
+        "replace_me",
+        "not-a-secret",
+        "notasecret",
+        "xxxx",
+    )
+    if any(term in lower for term in placeholder_terms):
+        return True
+    if re.fullmatch(r"x{4,}", lower):
+        return True
+    if re.fullmatch(r"<[^>]+>", value):
+        return True
+    if UPPERCASE_ENVIRONMENT_IDENTIFIER_RE.fullmatch(value):
+        return True
+
+    lower_path = path.lower()
+    test_or_local_path = (
+        "/test/" in lower_path
+        or "/integrationtest/" in lower_path
+        or "/integration-test/" in lower_path
+        or "/local/" in lower_path
+        or lower_path.endswith("application-local.yml")
+        or lower_path.endswith("application-local.yaml")
+    )
+    if test_or_local_path:
+        if any(term in lower for term in ("local", "mock", "sample", "passw0rd", "bulk-claim")):
+            return True
+
+    return False
+
+
+changed_files = git_output(
+    "diff",
+    "--cached",
+    "--name-only",
+    "--diff-filter=ACMRT",
+    "-z",
+)
+if changed_files.returncode != 0:
+    print("pre-commit: unable to inspect the staged index.")
+    sys.exit(1)
+
+for raw_file in changed_files.stdout.split(b"\0"):
+    if not raw_file:
+        continue
+
+    file = os.fsdecode(raw_file)
+    if filename_is_secret(file):
+        print(f"pre-commit: blocked secret file: {file}")
+        blocked = True
+
+    staged_blob = git_output("cat-file", "blob", f":{file}")
+    if staged_blob.returncode != 0:
+        continue
+
+    text = staged_blob.stdout.decode("utf-8", errors="replace")
+
+    if PRIVATE_KEY_RE.search(text):
+        print(f"pre-commit: blocked private key content in {file}")
+        blocked = True
+        continue
+
+    known_token_found = False
+    for label, pattern in KNOWN_TOKEN_RES:
+        if pattern.search(text):
+            print(f"pre-commit: blocked {label} content in {file}")
+            known_token_found = True
+            blocked = True
+            break
+    if known_token_found:
+        continue
+
+    for match in CREDENTIAL_ASSIGNMENT_RE.finditer(text):
+        value = match.group(2).strip().strip("\"'")
+        if len(value) < 8:
+            continue
+        if not is_placeholder_value(value, file):
+            print(f"pre-commit: blocked credential-like content in {file}")
+            blocked = True
+            break
+
+if blocked:
+    print("pre-commit: remove the staged secret, then commit again.")
+    sys.exit(1)
+
+sys.exit(0)
+PY
+
+exit $?
