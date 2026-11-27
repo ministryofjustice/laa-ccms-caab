@@ -28,7 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.Nullable;
@@ -44,6 +46,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
@@ -115,6 +118,8 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class EditProceedingsAndCostsSectionController {
 
   public static final String IS_SUBSTANTIVE_DEVOLVED_POWERS_APP = "isSubstantiveDevolvedPowersApp";
+  private static final int MATTER_TYPE_LOOKUP_CONCURRENCY = 8;
+
   // services
   private final ApplicationService applicationService;
   private final LookupService lookupService;
@@ -381,11 +386,10 @@ public class EditProceedingsAndCostsSectionController {
       final Model model,
       final HttpSession session) {
 
-    populateMatterTypeDropdown(model, application.getCategoryOfLaw().getId());
-
     if (ACTION_ADD.equals(action)) {
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
 
+      populateMatterTypeDropdown(model, application);
       model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
       model.addAttribute("matterTypeDetails", proceedingFlow.getMatterTypeDetails());
 
@@ -396,6 +400,8 @@ public class EditProceedingsAndCostsSectionController {
 
       final ProceedingFlowFormData proceedingFlow =
           proceedingAndCostsMapper.toProceedingFlow(proceeding, null);
+
+      populateMatterTypeDropdown(model, application);
 
       // set orderTypeRequired flag if typeOfOrder is not null
       Optional.ofNullable(proceeding.getTypeOfOrder().getId())
@@ -439,7 +445,7 @@ public class EditProceedingsAndCostsSectionController {
 
     if (bindingResult.hasErrors()) {
       model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
-      populateMatterTypeDropdown(model, application.getCategoryOfLaw().getId());
+      populateMatterTypeDropdown(model, application);
       return "application/proceedings-matter-type";
     }
 
@@ -472,16 +478,58 @@ public class EditProceedingsAndCostsSectionController {
    * Populates the matter type dropdown for the proceedings form.
    *
    * @param model The Model object to add attributes to for the view.
-   * @param categoryOfLaw The category of law to fetch the matter types for.
+   * @param application The application details.
    */
-  private void populateMatterTypeDropdown(final Model model, final String categoryOfLaw) {
+  private void populateMatterTypeDropdown(final Model model, final ApplicationDetail application) {
+
+    model.addAttribute("matterTypes", Collections.emptyList());
+    model.addAttribute("matterTypeOptionsAvailable", false);
+    model.addAttribute("matterTypeContextMissing", false);
+
+    final String categoryOfLaw = getCategoryOfLawCode(application);
+    final String applicationType = getApplicationTypeId(application);
+    if (!lookupService.hasRequiredAvailableProceedingsContext(
+        categoryOfLaw, application.getLarScopeFlag(), applicationType)) {
+      log.warn(
+          "Cannot display matter types because required application selection context is incomplete");
+      model.addAttribute("matterTypeContextMissing", true);
+      return;
+    }
 
     final List<MatterTypeLookupValueDetail> matterTypes =
         Optional.ofNullable(lookupService.getMatterTypes(categoryOfLaw).block())
             .map(MatterTypeLookupDetail::getContent)
             .orElse(Collections.emptyList());
+    final List<MatterTypeLookupValueDetail> candidateMatterTypes =
+        matterTypes.stream()
+            .filter(Objects::nonNull)
+            .filter(matterType -> matterType.getMatterType() != null)
+            .filter(matterType -> !matterType.getMatterType().isBlank())
+            .toList();
 
-    model.addAttribute("matterTypes", matterTypes);
+    final Set<String> matterTypesWithProceedings =
+        Flux.fromIterable(candidateMatterTypes)
+            .flatMap(
+                matterType ->
+                    lookupService
+                        .hasAvailableProceedings(
+                            categoryOfLaw,
+                            matterType.getMatterType(),
+                            application.getAmendment(),
+                            application.getLarScopeFlag(),
+                            applicationType)
+                        .filter(Boolean.TRUE::equals)
+                        .map(available -> matterType.getMatterType()),
+                MATTER_TYPE_LOOKUP_CONCURRENCY)
+            .collect(Collectors.toSet())
+            .block();
+
+    final List<MatterTypeLookupValueDetail> availableMatterTypes =
+        candidateMatterTypes.stream()
+            .filter(matterType -> matterTypesWithProceedings.contains(matterType.getMatterType()))
+            .toList();
+    model.addAttribute("matterTypes", availableMatterTypes);
+    model.addAttribute("matterTypeOptionsAvailable", !availableMatterTypes.isEmpty());
   }
 
   /**
@@ -578,25 +626,33 @@ public class EditProceedingsAndCostsSectionController {
    */
   private void populateProceedingTypeDropdown(
       final Model model, final ApplicationDetail application, final String matterType) {
-
-    final List<uk.gov.laa.ccms.data.model.ProceedingDetail> proceedingDetails =
-        Optional.ofNullable(
-                lookupService
-                    .getAvailableProceedings(
-                        Optional.ofNullable(application.getCategoryOfLaw())
-                            .map(StringDisplayValue::getId)
-                            .orElse(null),
-                        matterType,
-                        application.getAmendment(),
-                        application.getLarScopeFlag(),
-                        Optional.ofNullable(application.getApplicationType())
-                            .map(applicationType -> applicationType.getId())
-                            .orElse(null))
-                    .block())
+    model.addAttribute(
+        "proceedingTypes",
+        Optional.ofNullable(findAvailableProceedings(application, matterType).block())
             .map(ProceedingDetails::getContent)
-            .orElse(Collections.emptyList());
+            .orElse(Collections.emptyList()));
+  }
 
-    model.addAttribute("proceedingTypes", proceedingDetails);
+  private Mono<ProceedingDetails> findAvailableProceedings(
+      final ApplicationDetail application, final String matterType) {
+    return lookupService.getAvailableProceedings(
+        getCategoryOfLawCode(application),
+        matterType,
+        application.getAmendment(),
+        application.getLarScopeFlag(),
+        getApplicationTypeId(application));
+  }
+
+  private String getCategoryOfLawCode(final ApplicationDetail application) {
+    return Optional.ofNullable(application.getCategoryOfLaw())
+        .map(StringDisplayValue::getId)
+        .orElse(null);
+  }
+
+  private String getApplicationTypeId(final ApplicationDetail application) {
+    return Optional.ofNullable(application.getApplicationType())
+        .map(applicationType -> applicationType.getId())
+        .orElse(null);
   }
 
   /**

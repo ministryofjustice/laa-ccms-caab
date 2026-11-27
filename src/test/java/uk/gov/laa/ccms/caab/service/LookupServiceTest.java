@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -147,7 +148,91 @@ public class LookupServiceTest {
             details -> details.getContent() != null && details.getContent().isEmpty())
         .verifyComplete();
 
+    StepVerifier.create(lookupService.hasAvailableProceedings("CON", "NCONT", false, null, "SUB"))
+        .expectNext(false)
+        .verifyComplete();
+
     verifyNoInteractions(ebsApiClient);
+  }
+
+  @Test
+  @DisplayName("hasAvailableProceedings uses the scoped criteria and only needs non-empty content")
+  void hasAvailableProceedings_nonEmptyResultWithNullMatterType() {
+    final ProceedingDetails result =
+        new ProceedingDetails().content(List.of(new ProceedingDetail().matterType(null)));
+    when(ebsApiClient.getProceedings(any(), eq(Boolean.FALSE), eq("ECF"), eq(Boolean.TRUE), eq(1)))
+        .thenReturn(Mono.just(result));
+
+    StepVerifier.create(
+            lookupService.hasAvailableProceedings("CON", "NIGDS", true, Boolean.FALSE, "ECF"))
+        .expectNext(true)
+        .verifyComplete();
+
+    final ArgumentCaptor<ProceedingDetail> criteria =
+        ArgumentCaptor.forClass(ProceedingDetail.class);
+    verify(ebsApiClient)
+        .getProceedings(criteria.capture(), eq(Boolean.FALSE), eq("ECF"), eq(Boolean.TRUE), eq(1));
+    assertEquals("CON", criteria.getValue().getCategoryOfLawCode());
+    assertEquals("NIGDS", criteria.getValue().getMatterType());
+    assertEquals(Boolean.TRUE, criteria.getValue().getEnabled());
+    assertNull(criteria.getValue().getAmendmentOnly());
+  }
+
+  @Test
+  @DisplayName("hasAvailableProceedings returns false for an empty response")
+  void hasAvailableProceedings_emptyResult() {
+    when(ebsApiClient.getProceedings(any(), eq(Boolean.TRUE), eq("SUB"), eq(Boolean.TRUE), eq(1)))
+        .thenReturn(Mono.just(new ProceedingDetails().content(List.of())));
+
+    StepVerifier.create(
+            lookupService.hasAvailableProceedings("CON", "NCONT", false, Boolean.TRUE, "SUB"))
+        .expectNext(false)
+        .verifyComplete();
+  }
+
+  @Test
+  @DisplayName("hasAvailableProceedings returns false when response content is null")
+  void hasAvailableProceedings_nullContent() {
+    when(ebsApiClient.getProceedings(any(), eq(Boolean.TRUE), eq("SUB"), eq(Boolean.TRUE), eq(1)))
+        .thenReturn(Mono.just(new ProceedingDetails().content(null)));
+
+    StepVerifier.create(
+            lookupService.hasAvailableProceedings("CON", "NCONT", false, Boolean.TRUE, "SUB"))
+        .expectNext(false)
+        .verifyComplete();
+  }
+
+  @Test
+  @DisplayName("hasAvailableProceedings treats an empty publisher as unavailable")
+  void hasAvailableProceedings_emptyPublisher() {
+    when(ebsApiClient.getProceedings(any(), eq(Boolean.TRUE), eq("SUB"), eq(Boolean.TRUE), eq(1)))
+        .thenReturn(Mono.empty());
+
+    StepVerifier.create(
+            lookupService.hasAvailableProceedings("CON", "NCONT", false, Boolean.TRUE, "SUB"))
+        .expectNext(false)
+        .verifyComplete();
+  }
+
+  @Test
+  @DisplayName("hasAvailableProceedings propagates lookup failures")
+  void hasAvailableProceedings_propagatesFailure() {
+    when(ebsApiClient.getProceedings(any(), eq(Boolean.TRUE), eq("SUB"), eq(Boolean.TRUE), eq(1)))
+        .thenReturn(Mono.error(new IllegalStateException("lookup failed")));
+
+    StepVerifier.create(
+            lookupService.hasAvailableProceedings("CON", "NCONT", false, Boolean.TRUE, "SUB"))
+        .expectError(IllegalStateException.class)
+        .verify();
+  }
+
+  @Test
+  @DisplayName("Required proceeding context accepts a false LAR flag")
+  void hasRequiredAvailableProceedingsContext_acceptsFalseLarFlag() {
+    assertTrue(lookupService.hasRequiredAvailableProceedingsContext("CON", Boolean.FALSE, "ECF"));
+    assertFalse(lookupService.hasRequiredAvailableProceedingsContext("CON", null, "ECF"));
+    assertFalse(lookupService.hasRequiredAvailableProceedingsContext(" ", Boolean.FALSE, "ECF"));
+    assertFalse(lookupService.hasRequiredAvailableProceedingsContext("CON", Boolean.FALSE, " "));
   }
 
   @Test
