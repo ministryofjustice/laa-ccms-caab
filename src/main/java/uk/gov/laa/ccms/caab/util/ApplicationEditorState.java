@@ -4,6 +4,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.LINKED_CASES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_OPPONENTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PRIOR_AUTHORITIES;
@@ -11,8 +12,17 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PROCEE
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_CONTEXT;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_INFORMATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_REFERENCE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CORRESPONDENCE_ADDRESS_FLOW;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATE_CLIENT_ADDRESS_FLOW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_SCOPE_LIMITATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_CLIENT_ADDRESS_FLOW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_PROCEEDINGS_ALLOWED;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_REQUIRED;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FORM_DATA;
@@ -88,6 +98,19 @@ public final class ApplicationEditorState {
             SUBMISSION_RESULT,
             SUBMISSION_POLL_COUNT,
             SUBMISSION_QUICK_EDIT_TYPE)
+        .forEach(session::removeAttribute);
+    // A client or application being created under the old provider is not carried over either.
+    List.of(
+            APPLICATION_FORM_DATA,
+            CLIENT_REFERENCE,
+            CLIENT_INFORMATION,
+            CLIENT_FLOW_FORM_DATA,
+            CLIENT_FLOW_CONTEXT,
+            CLIENT_SEARCH_CRITERIA,
+            CLIENT_SEARCH_RESULTS,
+            CORRESPONDENCE_ADDRESS_FLOW,
+            CREATE_CLIENT_ADDRESS_FLOW,
+            EDIT_CLIENT_ADDRESS_FLOW)
         .forEach(session::removeAttribute);
   }
 

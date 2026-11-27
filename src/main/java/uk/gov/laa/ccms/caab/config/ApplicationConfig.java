@@ -6,6 +6,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.ServletListenerRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -22,6 +23,7 @@ import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.i18n.FixedLocaleResolver;
+import org.springframework.web.util.HttpSessionMutexListener;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import uk.gov.laa.ccms.caab.security.DraftApplicationOnlyInterceptor;
@@ -152,6 +154,12 @@ public class ApplicationConfig implements WebMvcConfigurer {
    *
    * @return A WebClient instance configured for the Ebs API URL.
    */
+  /** Gives each session its own lock object, for updates that read and write a session map. */
+  @Bean
+  public ServletListenerRegistrationBean<HttpSessionMutexListener> httpSessionMutexListener() {
+    return new ServletListenerRegistrationBean<>(new HttpSessionMutexListener());
+  }
+
   @Bean("ebsApiWebClient")
   WebClient ebsApiWebClient() {
     return createWebClient(ebsApiProperties, EBS_API_REGISTRATION);
