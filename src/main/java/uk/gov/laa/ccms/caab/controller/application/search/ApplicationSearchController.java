@@ -115,9 +115,8 @@ public class ApplicationSearchController {
       @RequestParam(value = "reset", required = false) final boolean reset,
       final Model model) {
 
-    // The criteria outlive the form so the back link from the results can return to them. Starting
-    // a
-    // search afresh must not inherit them: the form would arrive filled in and searching without
+    // The criteria outlive the form so the back link from the results can return to them. A search
+    // started afresh must not inherit them: the form would arrive filled in, and searching without
     // editing it would repeat the last search instead of asking for criteria.
     if (reset) {
       // Replaced rather than removed: the attribute is session scoped, so a removal here would be
