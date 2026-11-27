@@ -162,10 +162,10 @@ class PrivilegeTemplateRenderTest {
   @DisplayName("Header navigation items follow the user's granted authorities")
   void headerNavigationFollowsAuthorities() {
     assertThat(renderHome("YCA", "NOT"))
-        .contains("href=\"/application/search\"")
+        .contains("href=\"/application/search?reset=true\"")
         .contains("href=\"/notifications/search?notification_type=all\"");
     assertThat(renderHome("CA"))
-        .doesNotContain("href=\"/application/search\"")
+        .doesNotContain("/application/search")
         .doesNotContain("notification_type=all");
   }
 

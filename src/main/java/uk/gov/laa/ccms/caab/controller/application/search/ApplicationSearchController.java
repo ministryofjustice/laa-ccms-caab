@@ -112,7 +112,19 @@ public class ApplicationSearchController {
   public String applicationSearch(
       @ModelAttribute(CASE_SEARCH_CRITERIA) final CaseSearchCriteria searchCriteria,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
+      @RequestParam(value = "reset", required = false) final boolean reset,
       final Model model) {
+
+    // The criteria outlive the form so the back link from the results can return to them. Starting
+    // a
+    // search afresh must not inherit them: the form would arrive filled in and searching without
+    // editing it would repeat the last search instead of asking for criteria.
+    if (reset) {
+      // Replaced rather than removed: the attribute is session scoped, so a removal here would be
+      // undone by the model being written back to the session once this returns.
+      model.addAttribute(CASE_SEARCH_CRITERIA, new CaseSearchCriteria());
+      return "redirect:/application/search";
+    }
 
     populateDropdowns(userDetails, model);
 
