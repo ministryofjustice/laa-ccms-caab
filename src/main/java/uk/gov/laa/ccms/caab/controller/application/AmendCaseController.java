@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
@@ -40,6 +41,7 @@ import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
+import uk.gov.laa.ccms.caab.util.ApplicationEditorState;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -112,12 +114,13 @@ public class AmendCaseController {
   public String amendCaseSummary(
       @SessionAttribute(APPLICATION_SUMMARY) final BaseApplicationDetail tdsApplication,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       Model model,
       HttpSession httpSession) {
 
     final ApplicationDetail amendment =
         applicationService.getApplication(String.valueOf(tdsApplication.getId())).block();
+    // Built from the amendment, never from whatever case or draft was active before it.
+    final ActiveCase activeCase = ActiveCaseModelAdvice.forCase(amendment);
     final ApplicationDetail activeCaseDetail = (ApplicationDetail) httpSession.getAttribute(CASE);
     if (activeCaseDetail != null) {
       amendment.setAvailableFunctions(activeCaseDetail.getAvailableFunctions());
@@ -153,7 +156,10 @@ public class AmendCaseController {
     final List<EvidenceRequired> evidenceRequired =
         evidenceMapper.toEvidenceRequiredList(evidenceRequiredLookups, uploadedDocuments);
 
+    ApplicationEditorState.clearWhenApplicationChanges(httpSession, amendment.getId());
     activeCase.setApplicationId(amendment.getId());
+    activeCase.setAmendment(true);
+    activeCase.setDraftApplication(false);
 
     httpSession.setAttribute(AMEND_CLIENT_ORIGIN, AmendClientOrigin.AMEND_CASE);
     httpSession.setAttribute(APPLICATION, amendment);

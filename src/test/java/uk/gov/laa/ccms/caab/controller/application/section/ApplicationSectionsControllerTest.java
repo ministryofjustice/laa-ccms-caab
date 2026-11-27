@@ -1,8 +1,14 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -14,29 +20,47 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SECTIONS_BACK_URL;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SECTIONS_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 
+import jakarta.servlet.ServletException;
 import java.util.Date;
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationSectionValidator;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.util.SentApplications;
+import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,6 +81,65 @@ class ApplicationSectionsControllerTest {
   @BeforeEach
   public void setup() {
     mockMvc = standaloneSetup(applicationSectionsController).build();
+    SecurityContextHolder.getContext()
+        .setAuthentication(
+            new TestingAuthenticationToken("user", null, UserRole.VIEW_CASE_DETAILS.getCode()));
+  }
+
+  @AfterEach
+  void clearAuthentication() {
+    SecurityContextHolder.clearContext();
+  }
+
+  @Test
+  @DisplayName("An amendment's sections are refused without VC, a draft's are not")
+  void amendmentSectionsNeedViewCase() throws Exception {
+    SecurityContextHolder.getContext()
+        .setAuthentication(new TestingAuthenticationToken("user", null, "YCA"));
+    final ApplicationDetail amendment = buildApplicationDetail(1, true, new Date());
+    amendment.setAmendment(true);
+    when(applicationService.getApplication("1")).thenReturn(Mono.just(amendment));
+
+    final Exception exception =
+        assertThrows(
+            ServletException.class,
+            () ->
+                mockMvc.perform(
+                    get("/application/sections")
+                        .sessionAttr("applicationId", "1")
+                        .sessionAttr("user", new UserDetail())));
+
+    assertInstanceOf(AccessDeniedException.class, exception.getCause());
+    verify(applicationService, never()).getApplicationSections(any(), any());
+  }
+
+  @Test
+  @DisplayName("Opening a draft drops the state an amendment left in the session")
+  void openingDraftDropsAmendmentEditorState() throws Exception {
+    final MockHttpSession session = new MockHttpSession();
+    session.setAttribute(
+        "activeCase", ActiveCase.builder().applicationId(9).amendment(true).build());
+    session.setAttribute("caseApplication", new ApplicationDetail().id(9));
+    session.setAttribute("costs", new CostStructureDetail());
+    session.setAttribute("opponents", List.of());
+    session.setAttribute("priorAuthorities", List.of(new PriorAuthorityDetail().id(5)));
+    session.setAttribute("proceeding", new ProceedingDetail().id(7));
+    session.setAttribute("applicationId", "1");
+    session.setAttribute("user", new UserDetail());
+
+    final ApplicationDetail draft = buildApplicationDetail(1, true, new Date());
+    draft.setAmendment(false);
+    when(applicationService.getApplication("1")).thenReturn(Mono.just(draft));
+    when(applicationService.getApplicationSections(any(), any()))
+        .thenReturn(ApplicationSectionDisplay.builder().build());
+
+    mockMvc.perform(get("/application/sections").session(session)).andExpect(status().isOk());
+
+    assertThat(session.getAttribute("caseApplication")).isNull();
+    assertThat(session.getAttribute("costs")).isNull();
+    assertThat(session.getAttribute("opponents")).isNull();
+    assertThat(session.getAttribute("priorAuthorities")).isNull();
+    assertThat(session.getAttribute("proceeding")).isNull();
   }
 
   @Test
@@ -161,5 +244,106 @@ class ApplicationSectionsControllerTest {
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/validate"));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"false,true", "true,false"})
+  @DisplayName("Only an application that is not an amendment is marked as a draft")
+  void marksOnlyNonAmendmentsAsDrafts(final boolean amendment, final boolean draftApplication)
+      throws Exception {
+    final ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+    application.setAmendment(amendment);
+
+    when(applicationService.getApplication(anyString())).thenReturn(Mono.just(application));
+    when(applicationService.getApplicationSections(
+            any(ApplicationDetail.class), any(UserDetail.class)))
+        .thenReturn(ApplicationSectionDisplay.builder().build());
+
+    this.mockMvc
+        .perform(
+            get("/application/sections")
+                .sessionAttr("applicationId", "123")
+                .sessionAttr("user", new UserDetail()))
+        .andExpect(status().isOk())
+        .andExpect(
+            model().attribute("activeCase", hasProperty("draftApplication", is(draftApplication))))
+        .andExpect(
+            model().attribute("activeCase", hasProperty("amendment", is(!draftApplication))));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"PENDING,false", "SUCCESS,false", "ERROR,true"})
+  @DisplayName(
+      "An application this session has sent is a draft again only if its submission failed")
+  void aSentApplicationIsReopenedOnlyWhenItsSubmissionFailed(
+      final String submissionStatus, final boolean draftApplication) throws Exception {
+    stubApplicationWithSections();
+    when(applicationService.getCaseStatus("transaction1"))
+        .thenReturn(Mono.just(new TransactionStatus().submissionStatus(submissionStatus)));
+
+    this.mockMvc
+        .perform(get("/application/sections").session(sessionHavingSent(1, "transaction1")))
+        .andExpect(status().isOk())
+        .andExpect(
+            model().attribute("activeCase", hasProperty("draftApplication", is(draftApplication))));
+  }
+
+  @Test
+  @DisplayName("A sent application stays locked after leaving its case and a later submission")
+  void aSentApplicationStaysLockedAfterTheCaseScopedSessionIsReset() throws Exception {
+    stubApplicationWithSections();
+    when(applicationService.getCaseStatus("transaction1"))
+        .thenReturn(Mono.just(new TransactionStatus().submissionStatus("PENDING")));
+    final MockHttpSession session = sessionHavingSent(1, "transaction1");
+    // Opening another case drops the active case; another submission replaces the transaction.
+    session.removeAttribute(ACTIVE_CASE);
+    session.setAttribute(SUBMISSION_TRANSACTION_ID, "clientUpdate");
+
+    this.mockMvc
+        .perform(get("/application/sections").session(session))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("activeCase", hasProperty("draftApplication", is(false))));
+  }
+
+  @Test
+  @DisplayName("Only a submission recorded for this application locks it")
+  void aSubmissionRecordedForAnotherApplicationOrNoneDoesNotLockThisOne() throws Exception {
+    stubApplicationWithSections();
+
+    this.mockMvc
+        .perform(get("/application/sections").session(sessionHavingSent(99, "transaction1")))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("activeCase", hasProperty("draftApplication", is(true))));
+
+    final MockHttpSession nothingSent = new MockHttpSession();
+    nothingSent.setAttribute("applicationId", "123");
+    nothingSent.setAttribute("user", new UserDetail());
+    nothingSent.setAttribute(SUBMISSION_TRANSACTION_ID, "transaction1");
+    this.mockMvc
+        .perform(get("/application/sections").session(nothingSent))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("activeCase", hasProperty("draftApplication", is(true))));
+
+    verify(applicationService, never()).getCaseStatus(anyString());
+  }
+
+  private static MockHttpSession sessionHavingSent(
+      final Integer applicationId, final String transactionId) {
+    final MockHttpSession session = new MockHttpSession();
+    session.setAttribute("applicationId", "123");
+    session.setAttribute("user", new UserDetail());
+    session.setAttribute(ACTIVE_CASE, ActiveCase.builder().applicationId(applicationId).build());
+    session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
+    SentApplications.record(session, applicationId, transactionId);
+    return session;
+  }
+
+  private void stubApplicationWithSections() {
+    final ApplicationDetail application = buildApplicationDetail(1, false, new Date());
+    application.setId(1);
+    when(applicationService.getApplication(anyString())).thenReturn(Mono.just(application));
+    when(applicationService.getApplicationSections(
+            any(ApplicationDetail.class), any(UserDetail.class)))
+        .thenReturn(ApplicationSectionDisplay.builder().build());
   }
 }

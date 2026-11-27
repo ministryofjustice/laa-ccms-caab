@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.MEANS_REASSESSMENT_APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDetail;
 
@@ -20,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,6 +34,7 @@ import reactor.util.function.Tuple3;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
@@ -177,7 +180,7 @@ public class AssessmentController {
   public String assessmentGet(
       @PathVariable("caseContext") final CaseContext caseContext,
       @RequestParam(value = "assessment") final String assessment,
-      @RequestParam("invoked-from") final String invokedFrom,
+      @RequestParam("invoked-from") final String requestedInvokedFrom,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final HttpSession session,
       final Model model) {
@@ -189,14 +192,45 @@ public class AssessmentController {
       throw new CaabApplicationException("Invalid assessment type");
     }
 
+    // Whether this is the means reassessment comes from the session, not the request.
+    final boolean reassessment =
+        assessmentRulebase == AssessmentRulebase.MEANS && holdsReassessment(session);
+    if (MEANS_REASSESSMENT_INVOKED_FROM.equals(requestedInvokedFrom) && !reassessment) {
+      throw new AccessDeniedException("No means reassessment is open in this session");
+    }
+    final String invokedFrom =
+        reassessment ? MEANS_REASSESSMENT_INVOKED_FROM : requestedInvokedFrom;
+
     // The billing and POA journeys run against a live case rather than a draft application, so
     // they take the EBS case straight from the session. Amend-case persists a draft and loads it
     // by id; the standalone means reassessment holds its application in memory (no draft until
     // submit), so use the session application when there is no persisted id.
     final ApplicationDetail application =
         assessmentRulebase.isFinancialAssessment()
-            ? resolveBillingCase(session, assessmentRulebase)
+            ? resolveBillingCase(session, assessmentRulebase, user)
             : resolveAssessmentApplication(session);
+
+    // A means or merits assessment of anything but the open draft works on an open case, which
+    // needs VC. The /application form of this URL carries no rule for it, and the request's own
+    // invoked-from cannot be what exempts a case from it.
+    if (!assessmentRulebase.isFinancialAssessment()
+        && !(!Boolean.TRUE.equals(application.getAmendment())
+            && isOpenDraftOf(session, application.getCaseReferenceNumber()))
+        && !holdsViewCaseDetails(user)) {
+      throw new AccessDeniedException(
+          "User does not hold the functions needed to assess an open case");
+    }
+
+    // An amendment's assessment is part of the Amend Case flow, so it also needs AC. The means
+    // reassessment shares this URL but is opened by its own action.
+    if (!assessmentRulebase.isFinancialAssessment()
+        && Boolean.TRUE.equals(application.getAmendment())
+        && !reassessment
+        && !Optional.ofNullable(user.getFunctions())
+            .orElseGet(List::of)
+            .contains(UserRole.AMEND_CASE.getCode())) {
+      throw new AccessDeniedException("An amendment's assessment needs the amend case function");
+    }
 
     // The TDS draft application does not carry a computed default cost limitation, which the OPA
     // prepop maps into DEFAULT_COST_LIMITATION and the merits rulebase needs to resolve its
@@ -467,6 +501,18 @@ public class AssessmentController {
   }
 
   /**
+   * Whether the session holds a means reassessment: the application its journey put in the session,
+   * still the session's application and with no persisted {@code APPLICATION_ID}. The case overview
+   * also keeps an amendment in {@code APPLICATION}, so that alone is not enough.
+   */
+  private static boolean holdsReassessment(final HttpSession session) {
+    final Object application = session.getAttribute(APPLICATION);
+    return session.getAttribute(APPLICATION_ID) == null
+        && application instanceof ApplicationDetail
+        && application == session.getAttribute(MEANS_REASSESSMENT_APPLICATION);
+  }
+
+  /**
    * Resolves the live case a billing assessment runs against. The POA and bill journeys are started
    * from the case statement of account, which works on the EBS case held in the session rather than
    * on a draft application.
@@ -475,7 +521,9 @@ public class AssessmentController {
    * @return the case to prepopulate the assessment from
    */
   private ApplicationDetail resolveBillingCase(
-      final HttpSession session, final AssessmentRulebase assessmentRulebase) {
+      final HttpSession session,
+      final AssessmentRulebase assessmentRulebase,
+      final UserDetail user) {
     final ApplicationDetail ebsCase =
         Optional.ofNullable((ApplicationDetail) session.getAttribute(CASE))
             .orElseThrow(() -> new CaabApplicationException("Failed to retrieve case"));
@@ -483,10 +531,7 @@ public class AssessmentController {
     // The interview URL is reachable directly, so the case must be re-checked for the billing
     // function here and not only on the screen that links to it (old PUI gates the equivalent
     // StartOpaAssessment step with TestUserAuthorizedFunction).
-    final String requiredFunction =
-        assessmentRulebase == AssessmentRulebase.POA
-            ? FunctionConstants.ADD_UPDATE_POA
-            : FunctionConstants.ADD_UPDATE_BILL;
+    final String requiredFunction = billingFunction(assessmentRulebase);
 
     if (ebsCase.getAvailableFunctions() == null
         || !ebsCase.getAvailableFunctions().contains(requiredFunction)) {
@@ -495,7 +540,77 @@ public class AssessmentController {
               .formatted(assessmentRulebase.getType()));
     }
 
+    // The case supporting the action says nothing about whether this user holds it: available
+    // functions are a property of the case, as BillingController reads them to decide whether
+    // billing is offered at all. This interview sits under /application, which carries no
+    // user-function rule, so the functions /case/billing/** requires are checked here too.
+    requireBillingFunctions(assessmentRulebase, user);
+
     return ebsCase;
+  }
+
+  private static String billingFunction(final AssessmentRulebase assessmentRulebase) {
+    return assessmentRulebase == AssessmentRulebase.POA
+        ? FunctionConstants.ADD_UPDATE_POA
+        : FunctionConstants.ADD_UPDATE_BILL;
+  }
+
+  private static void requireBillingFunctions(
+      final AssessmentRulebase assessmentRulebase, final UserDetail user) {
+    final List<String> userFunctions = Optional.ofNullable(user.getFunctions()).orElseGet(List::of);
+    if (!userFunctions.containsAll(
+        List.of(
+            UserRole.VIEW_CASE_DETAILS.getCode(),
+            UserRole.VIEW_CASE_BILL.getCode(),
+            billingFunction(assessmentRulebase)))) {
+      throw new AccessDeniedException(
+          "User does not hold the functions needed to run the %s assessment"
+              .formatted(assessmentRulebase.getType()));
+    }
+  }
+
+  /**
+   * The answers page is reached from a link OPA hands back, so the functions the interview needed
+   * are checked again: billing's for a bill or POA, and VC for anything but the open draft.
+   */
+  private static void requireConfirmFunctions(
+      final AssessmentRulebase assessmentRulebase,
+      final ContextToken contextToken,
+      final UserDetail user,
+      final HttpSession session) {
+    if (assessmentRulebase.isFinancialAssessment()) {
+      requireBillingFunctions(assessmentRulebase, user);
+      return;
+    }
+    final boolean reassessment =
+        MEANS_REASSESSMENT_INVOKED_FROM.equals(contextToken.getInvokedForm());
+    final boolean openDraft = !reassessment && isOpenDraftOf(session, contextToken.getCaseId());
+    if (!openDraft && !holdsViewCaseDetails(user)) {
+      throw new AccessDeniedException(
+          "User does not hold the functions needed to view this assessment");
+    }
+    // Anything else on an open case is an amendment's assessment, part of Amend Case.
+    if (!openDraft
+        && !reassessment
+        && !Optional.ofNullable(user.getFunctions())
+            .orElseGet(List::of)
+            .contains(UserRole.AMEND_CASE.getCode())) {
+      throw new AccessDeniedException("An amendment's assessment needs the amend case function");
+    }
+  }
+
+  /** Whether the session's active case is the draft application for this case. */
+  private static boolean isOpenDraftOf(
+      final HttpSession session, final String caseReferenceNumber) {
+    return session.getAttribute(ACTIVE_CASE) instanceof ActiveCase activeCase
+        && activeCase.isDraftApplication()
+        && Objects.equals(activeCase.getCaseReferenceNumber(), caseReferenceNumber);
+  }
+
+  private static boolean holdsViewCaseDetails(final UserDetail user) {
+    return Optional.ofNullable(user.getFunctions())
+        .orElseGet(List::of)
+        .contains(UserRole.VIEW_CASE_DETAILS.getCode());
   }
 
   private String getCancelLinkUrl(final CaseContext caseContext, final String invokedFrom) {
@@ -562,7 +677,7 @@ public class AssessmentController {
   public String assessmentConfirm(
       @PathVariable("caseContext") final CaseContext caseContext,
       @RequestParam(value = "val") final String token,
-      @SessionAttribute(value = USER_DETAILS, required = false) final UserDetail user,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
       final HttpSession session,
       final Model model) {
     final ContextToken contextToken = contextSecurityUtil.createContextToken(token);
@@ -572,6 +687,7 @@ public class AssessmentController {
 
     // get the rulebase from the token
     final AssessmentRulebase assessmentRulebase = AssessmentRulebase.findById(rulebaseId);
+    requireConfirmFunctions(assessmentRulebase, contextToken, user, session);
 
     // get the assessment details mono
     final Mono<AssessmentDetails> assessmentDetailsMono =

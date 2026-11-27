@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -194,6 +195,21 @@ class CcmsUserIdentityResolverTest {
     @DisplayName("Fails when the claim is absent, rather than sending an email to the API")
     void failsWhenClaimAbsent() {
       when(oidcUser.getClaims()).thenReturn(Map.of("something-else", "value"));
+      when(oidcUser.getEmail()).thenReturn(ENTRA_EMAIL);
+
+      final CcmsUserResolutionException exception =
+          assertThrows(
+              CcmsUserResolutionException.class,
+              () -> resolver(true, SILAS_CLAIM).resolveCcmsLoginId(oidcUser));
+
+      assertTrue(exception.getMessage().contains(SILAS_CLAIM));
+      verifyNoInteractions(userService);
+    }
+
+    @Test
+    @DisplayName("Fails when the claim carries a single null, rather than erroring")
+    void failsWhenClaimCarriesOnlyNull() {
+      when(oidcUser.getClaims()).thenReturn(Map.of(SILAS_CLAIM, Collections.singletonList(null)));
       when(oidcUser.getEmail()).thenReturn(ENTRA_EMAIL);
 
       final CcmsUserResolutionException exception =

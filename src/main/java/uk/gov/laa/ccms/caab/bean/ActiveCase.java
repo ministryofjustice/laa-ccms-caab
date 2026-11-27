@@ -14,4 +14,10 @@ public class ActiveCase {
   private String caseReferenceNumber;
   private String providerCaseReferenceNumber;
   private Integer providerId;
+
+  /** Set only for a draft application, which has no submitted case behind it. */
+  private boolean draftApplication;
+
+  /** Set for an amendment being made to a case, which is edited by the application's pages too. */
+  private boolean amendment;
 }

@@ -97,6 +97,7 @@ import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.AmendmentUtil;
+import uk.gov.laa.ccms.caab.util.SentApplications;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ClientDetail;
@@ -973,6 +974,10 @@ public class ApplicationSubmissionController {
 
     session.removeAttribute(SUBMISSION_RESULT);
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
+    SentApplications.record(session, activeCase.getApplicationId(), response.getTransactionId());
+    // A sent application is no longer a draft, whether or not its polling is seen through.
+    activeCase.setDraftApplication(false);
+    session.setAttribute(ACTIVE_CASE, activeCase);
 
     return "redirect:/application/%s".formatted(SUBMISSION_SUBMIT_CASE);
   }

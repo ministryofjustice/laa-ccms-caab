@@ -2,8 +2,11 @@ package uk.gov.laa.ccms.caab.controller.provider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -26,6 +29,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -34,10 +43,13 @@ import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.GlobalBinderAdvice;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.provider.ProviderFirmFormData;
 import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
 import uk.gov.laa.ccms.caab.bean.validators.provider.ProviderFirmValidator;
+import uk.gov.laa.ccms.caab.security.CcmsOidcUser;
 import uk.gov.laa.ccms.caab.security.ProviderContext;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.service.NotificationSearchOptionsCache;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
@@ -54,6 +66,8 @@ public class ProviderControllerTest {
   @Mock UserService userService;
 
   @Mock NotificationSearchOptionsCache notificationSearchOptionsCache;
+
+  @Mock SecurityEventLogger securityEventLogger;
 
   @InjectMocks ProviderController providerController;
 
@@ -148,12 +162,16 @@ public class ProviderControllerTest {
               providerDuringUpdateCall.set(ProviderContext.getProviderId());
               return Mono.just(new ClientTransactionResponse());
             });
+    when(userService.getUserByLoginId(loginId))
+        .thenReturn(Mono.just(new UserDetail().loginId(loginId).functions(List.of("CA", "VC"))));
 
     HttpSession session =
         this.mockMvc
             .perform(
                 post("/provider-switch")
                     .sessionAttr("user", userDetails)
+                    .sessionAttr("activeCase", ActiveCase.builder().applicationId(5).build())
+                    .sessionAttr("applicationId", "5")
                     .flashAttr("providerFirmFormData", providerFirmFormData))
             .andDo(print())
             .andExpect(status().is3xxRedirection())
@@ -166,7 +184,60 @@ public class ProviderControllerTest {
     assertEquals("12345", providerDuringUpdateCall.get());
     assertEquals("67890", ProviderContext.getProviderId());
     assertEquals(providerFirm2, ((UserDetail) session.getAttribute("user")).getProvider());
+    assertEquals(List.of("CA", "VC"), ((UserDetail) session.getAttribute("user")).getFunctions());
     verify(notificationSearchOptionsCache).clear();
+    // The previous provider's application is not carried over to the new one.
+    assertNull(session.getAttribute("activeCase"));
+    assertNull(session.getAttribute("applicationId"));
+  }
+
+  @Test
+  public void switchingProviderReloadsFunctionsInTheLoggedInAuthentication() throws Exception {
+    String loginId = "testLoginId";
+    BaseProvider providerFirm1 = new BaseProvider().id(12345).name("providerFirm1");
+    BaseProvider providerFirm2 = new BaseProvider().id(67890).name("providerFirm2");
+    UserDetail userDetails =
+        new UserDetail()
+            .userId(1)
+            .userType("testUserType")
+            .loginId(loginId)
+            .firms(List.of(providerFirm1, providerFirm2))
+            .provider(providerFirm1)
+            .functions(List.of("CA", "NOT"));
+    ProviderFirmFormData providerFirmFormData = new ProviderFirmFormData();
+    providerFirmFormData.setProviderFirmId(67890);
+    CcmsOidcUser principal =
+        new CcmsOidcUser(
+            mock(OidcUser.class),
+            loginId,
+            List.of(
+                new SimpleGrantedAuthority("group1"),
+                new SimpleGrantedAuthority("CA"),
+                new SimpleGrantedAuthority("NOT")));
+    OAuth2AuthenticationToken authentication =
+        new OAuth2AuthenticationToken(principal, principal.getAuthorities(), "silas-identity");
+
+    when(userService.updateUserOptions(67890, loginId, "testUserType"))
+        .thenReturn(Mono.just(new ClientTransactionResponse()));
+    when(userService.getUserByLoginId(loginId))
+        .thenReturn(Mono.just(new UserDetail().loginId(loginId).functions(List.of("NOT", "VC"))));
+
+    try {
+      this.mockMvc
+          .perform(
+              post("/provider-switch")
+                  .principal(authentication)
+                  .sessionAttr("user", userDetails)
+                  .flashAttr("providerFirmFormData", providerFirmFormData))
+          .andExpect(redirectedUrl("/home"));
+
+      assertThat(SecurityContextHolder.getContext().getAuthentication().getAuthorities())
+          .extracting(GrantedAuthority::getAuthority)
+          .containsExactlyInAnyOrder("group1", "NOT", "VC");
+      verify(securityEventLogger).privilegesReloaded(List.of("CA", "NOT"), List.of("NOT", "VC"));
+    } finally {
+      SecurityContextHolder.clearContext();
+    }
   }
 
   @Test
@@ -205,5 +276,74 @@ public class ProviderControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("provider/provider-switch"))
         .andExpect(model().attribute("providerFirms", List.of(providerFirm)));
+  }
+
+  @Test
+  public void switchingProviderEndsTheSessionWhenTheUserCannotBeReloaded() throws Exception {
+    String loginId = "testLoginId";
+    BaseProvider providerFirm1 = new BaseProvider().id(12345).name("providerFirm1");
+    BaseProvider providerFirm2 = new BaseProvider().id(67890).name("providerFirm2");
+    UserDetail userDetails =
+        new UserDetail()
+            .userId(1)
+            .userType("testUserType")
+            .loginId(loginId)
+            .firms(List.of(providerFirm1, providerFirm2))
+            .provider(providerFirm1)
+            .functions(List.of("CA"));
+    ProviderFirmFormData providerFirmFormData = new ProviderFirmFormData();
+    providerFirmFormData.setProviderFirmId(67890);
+
+    when(userService.updateUserOptions(67890, loginId, "testUserType"))
+        .thenReturn(Mono.just(new ClientTransactionResponse()));
+    when(userService.getUserByLoginId(loginId)).thenReturn(Mono.empty());
+
+    MockHttpSession session = new MockHttpSession();
+    session.setAttribute("user", userDetails);
+
+    this.mockMvc
+        .perform(
+            post("/provider-switch")
+                .session(session)
+                .flashAttr("providerFirmFormData", providerFirmFormData))
+        .andExpect(redirectedUrl("/home"));
+
+    assertTrue(session.isInvalid());
+    assertEquals(providerFirm1, userDetails.getProvider());
+  }
+
+  @Test
+  public void switchingProviderEndsTheSessionWhenTheUserReloadFails() throws Exception {
+    String loginId = "testLoginId";
+    BaseProvider providerFirm1 = new BaseProvider().id(12345).name("providerFirm1");
+    BaseProvider providerFirm2 = new BaseProvider().id(67890).name("providerFirm2");
+    UserDetail userDetails =
+        new UserDetail()
+            .userId(1)
+            .userType("testUserType")
+            .loginId(loginId)
+            .firms(List.of(providerFirm1, providerFirm2))
+            .provider(providerFirm1)
+            .functions(List.of("CA"));
+    ProviderFirmFormData providerFirmFormData = new ProviderFirmFormData();
+    providerFirmFormData.setProviderFirmId(67890);
+
+    when(userService.updateUserOptions(67890, loginId, "testUserType"))
+        .thenReturn(Mono.just(new ClientTransactionResponse()));
+    when(userService.getUserByLoginId(loginId))
+        .thenReturn(Mono.error(new RuntimeException("User service unavailable")));
+
+    MockHttpSession session = new MockHttpSession();
+    session.setAttribute("user", userDetails);
+
+    this.mockMvc
+        .perform(
+            post("/provider-switch")
+                .session(session)
+                .flashAttr("providerFirmFormData", providerFirmFormData))
+        .andExpect(redirectedUrl("/home"));
+
+    assertTrue(session.isInvalid());
+    assertEquals(providerFirm1, userDetails.getProvider());
   }
 }

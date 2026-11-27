@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -69,6 +70,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -95,6 +99,7 @@ import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidat
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.scopelimitation.ScopeLimitationDetailsValidator;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
@@ -159,6 +164,39 @@ class EditProceedingsAndCostsSectionControllerTest {
         MockMvcBuilders.standaloneSetup(controller, scopeLimitationController)
             .setConversionService(getConversionService())
             .build();
+    loggedInWith(UserRole.ADD_PROCEEDING, UserRole.VIEW_PROCEEDING);
+  }
+
+  @AfterEach
+  void clearLogin() {
+    SecurityContextHolder.clearContext();
+  }
+
+  private static void loggedInWith(UserRole... roles) {
+    SecurityContextHolder.getContext()
+        .setAuthentication(
+            new TestingAuthenticationToken(
+                "user",
+                null,
+                java.util.Arrays.stream(roles).map(UserRole::getCode).toArray(String[]::new)));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"add, VIEW_PROCEEDING", "edit, ADD_PROCEEDING"})
+  @DisplayName("A scope limitation page needs the function of the proceeding flow in progress")
+  void scopeLimitationNeedsTheFlowsFunction(String action, UserRole held) {
+    loggedInWith(held);
+    final MockHttpSession session = new MockHttpSession();
+    session.setAttribute(PROCEEDING_FLOW_FORM_DATA, new ProceedingFlowFormData(action));
+
+    final Exception exception =
+        assertThrows(
+            ServletException.class,
+            () ->
+                mockMvc.perform(
+                    get("/application/proceedings/scope-limitations/1/remove").session(session)));
+
+    assertInstanceOf(AccessDeniedException.class, exception.getCause());
   }
 
   private static final UserDetail user =
@@ -280,6 +318,8 @@ class EditProceedingsAndCostsSectionControllerTest {
       doNothing()
           .when(applicationService)
           .deleteProceeding(eq(applicationId), anyInt(), any(UserDetail.class));
+      when(applicationService.getApplication(applicationId))
+          .thenReturn(Mono.just(new ApplicationDetail().proceedings(proceedings)));
 
       mockMvc
           .perform(
@@ -292,6 +332,29 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       verify(applicationService, times(1))
           .deleteProceeding(eq(applicationId), eq(proceedingId), eq(userDetail));
+    }
+
+    @ParameterizedTest
+    @DisplayName("Refuses a proceeding that is not part of the open application")
+    @ValueSource(strings = {"application", "amendments"})
+    void refusesProceedingOfAnotherApplication(String caseContext) {
+      // The session list still holds another application's proceeding.
+      final List<ProceedingDetail> retained = List.of(new ProceedingDetail().id(1));
+      when(applicationService.getApplication("open"))
+          .thenReturn(Mono.just(new ApplicationDetail().proceedings(List.of())));
+
+      final Exception exception =
+          assertThrows(
+              ServletException.class,
+              () ->
+                  mockMvc.perform(
+                      post("/{caseContext}/proceedings/{proceeding-id}/remove", caseContext, 1)
+                          .sessionAttr(APPLICATION_ID, "open")
+                          .sessionAttr(APPLICATION_PROCEEDINGS, retained)
+                          .sessionAttr(USER_DETAILS, new UserDetail())));
+
+      assertInstanceOf(AccessDeniedException.class, exception.getCause());
+      verify(applicationService, never()).deleteProceeding(any(), any(), any());
     }
   }
 
@@ -1825,6 +1888,11 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
       session.setAttribute(CURRENT_PROCEEDING, proceeding);
       session.setAttribute(USER_DETAILS, user);
+      session.setAttribute(APPLICATION_ID, "123");
+      when(applicationService.getApplication("123"))
+          .thenReturn(
+              Mono.just(
+                  new ApplicationDetail().proceedings(List.of(new ProceedingDetail().id(123)))));
 
       mockMvc
           .perform(
@@ -1832,6 +1900,40 @@ class EditProceedingsAndCostsSectionControllerTest {
                   .session(session))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/%s/proceedings/%s/confirm".formatted(caseContext, action)));
+    }
+
+    @ParameterizedTest
+    @DisplayName("Refuses confirming onto a proceeding left by another application")
+    @ValueSource(strings = {"application", "amendments"})
+    void refusesConfirmOntoProceedingOfAnotherApplication(String caseContext) {
+      final ProceedingDetail retained = new ProceedingDetail().id(123);
+      retained.setScopeLimitations(new ArrayList<>());
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(CURRENT_SCOPE_LIMITATION, new ScopeLimitationDetail());
+      session.setAttribute(
+          APPLICATION,
+          new ApplicationDetail()
+              .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+              .applicationType(new ApplicationType().id("applicationTypeId")));
+      session.setAttribute(PROCEEDING_FLOW_FORM_DATA, new ProceedingFlowFormData("edit"));
+      session.setAttribute(
+          SCOPE_LIMITATION_FLOW_FORM_DATA, new ScopeLimitationFlowFormData("edit"));
+      session.setAttribute(CURRENT_PROCEEDING, retained);
+      session.setAttribute(USER_DETAILS, new UserDetail());
+      session.setAttribute(APPLICATION_ID, "123");
+      when(applicationService.getApplication("123"))
+          .thenReturn(Mono.just(new ApplicationDetail().proceedings(List.of())));
+
+      final Exception exception =
+          assertThrows(
+              ServletException.class,
+              () ->
+                  mockMvc.perform(
+                      post("/{caseContext}/proceedings/scope-limitations/confirm", caseContext)
+                          .session(session)));
+
+      assertInstanceOf(AccessDeniedException.class, exception.getCause());
+      verify(applicationService, never()).updateProceeding(any(), any());
     }
 
     @ParameterizedTest
@@ -1947,11 +2049,16 @@ class EditProceedingsAndCostsSectionControllerTest {
       final String action = "edit";
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
       final UserDetail user = new UserDetail();
-      final ProceedingDetail proceeding = new ProceedingDetail();
+      final ProceedingDetail proceeding = new ProceedingDetail().id(7);
       proceeding.setScopeLimitations(
           new ArrayList<>(List.of(new ScopeLimitationDetail().id(scopeLimitationId))));
+      when(applicationService.getApplication("123"))
+          .thenReturn(
+              Mono.just(
+                  new ApplicationDetail().proceedings(List.of(new ProceedingDetail().id(7)))));
 
       final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(APPLICATION_ID, "123");
       session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
       session.setAttribute(USER_DETAILS, user);
       session.setAttribute(CURRENT_PROCEEDING, proceeding);
@@ -1969,6 +2076,40 @@ class EditProceedingsAndCostsSectionControllerTest {
       assertTrue(
           proceeding.getScopeLimitations().isEmpty(),
           "ProceedingDetail's scope limitations should be empty after removal");
+    }
+
+    @ParameterizedTest
+    @DisplayName("Refuses a proceeding left in the session by another application")
+    @ValueSource(strings = {"application", "amendments"})
+    void refusesProceedingFromAnotherApplication(String caseContext) {
+      final ProceedingDetail amendmentProceeding = new ProceedingDetail().id(7);
+      amendmentProceeding.setScopeLimitations(
+          new ArrayList<>(List.of(new ScopeLimitationDetail().id(1))));
+      when(applicationService.getApplication("123"))
+          .thenReturn(
+              Mono.just(
+                  new ApplicationDetail().proceedings(List.of(new ProceedingDetail().id(8)))));
+
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(APPLICATION_ID, "123");
+      session.setAttribute(PROCEEDING_FLOW_FORM_DATA, new ProceedingFlowFormData("edit"));
+      session.setAttribute(USER_DETAILS, new UserDetail());
+      session.setAttribute(CURRENT_PROCEEDING, amendmentProceeding);
+
+      final Exception exception =
+          assertThrows(
+              ServletException.class,
+              () ->
+                  mockMvc.perform(
+                      post(
+                              "/{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/remove",
+                              caseContext,
+                              1)
+                          .session(session)));
+
+      assertInstanceOf(AccessDeniedException.class, exception.getCause());
+      assertFalse(amendmentProceeding.getScopeLimitations().isEmpty());
+      verify(applicationService, never()).updateProceeding(any(), any());
     }
   }
 
@@ -2320,6 +2461,46 @@ class EditProceedingsAndCostsSectionControllerTest {
   @DisplayName("POST: /{caseContext}/prior-authorities/{action}/details")
   class PostPriorAuthoritiesDetails {
 
+    private void stubPriorAuthorityOfApplication(final String applicationId) {
+      final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
+      priorAuthority.setId(5);
+      when(proceedingAndCostsMapper.toPriorAuthority(any(), any())).thenReturn(priorAuthority);
+      when(applicationService.getApplication(applicationId))
+          .thenReturn(Mono.just(new ApplicationDetail().priorAuthorities(List.of(priorAuthority))));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    @DisplayName("Refuses editing a prior authority that is not part of the open application")
+    void refusesEditingPriorAuthorityFromAnotherApplication(final String caseContext) {
+      final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
+      typeDetails.setPriorAuthorityType("1");
+      final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData("edit");
+      priorAuthorityFlow.setPriorAuthorityTypeFormData(typeDetails);
+      // The flow still holds an amendment's prior authority after a draft was opened.
+      final PriorAuthorityDetail amendmentPriorAuthority = new PriorAuthorityDetail();
+      amendmentPriorAuthority.setId(5);
+      when(proceedingAndCostsMapper.toPriorAuthority(any(), any()))
+          .thenReturn(amendmentPriorAuthority);
+      when(applicationService.getApplication("draft"))
+          .thenReturn(Mono.just(new ApplicationDetail().priorAuthorities(List.of())));
+
+      final Exception exception =
+          assertThrows(
+              ServletException.class,
+              () ->
+                  mockMvc.perform(
+                      post("/{caseContext}/prior-authorities/edit/details", caseContext)
+                          .sessionAttr(APPLICATION_ID, "draft")
+                          .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
+                          .sessionAttr(USER_DETAILS, new UserDetail())
+                          .flashAttr(
+                              "priorAuthorityDetails", new PriorAuthorityDetailsFormData())));
+
+      assertInstanceOf(AccessDeniedException.class, exception.getCause());
+      verify(applicationService, never()).updatePriorAuthority(any(), any());
+    }
+
     @ParameterizedTest(name = "{0} case with action type {1}")
     @CsvSource({"application, add", "application, edit", "amendments, add", "amendments, edit"})
     @DisplayName("Should return expected result")
@@ -2335,6 +2516,10 @@ class EditProceedingsAndCostsSectionControllerTest {
       final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(action);
       priorAuthorityFlow.setPriorAuthorityTypeFormData(typeDetails);
       priorAuthorityFlow.setPriorAuthorityDetailsFormData(priorAuthorityDetails);
+
+      if ("edit".equals(action)) {
+        stubPriorAuthorityOfApplication(applicationId);
+      }
 
       mockMvc
           .perform(
@@ -2428,6 +2613,10 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       priorAuthorityDetails.setJustification(RandomStringUtils.insecure().nextAlphabetic(200));
       priorAuthorityDetails.setSummary(RandomStringUtils.insecure().nextAlphabetic(35));
+
+      if ("edit".equals(action)) {
+        stubPriorAuthorityOfApplication(applicationId);
+      }
 
       mockMvc
           .perform(
@@ -2648,8 +2837,8 @@ class EditProceedingsAndCostsSectionControllerTest {
       final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
       priorAuthority.setId(priorAuthorityId);
 
-      final List<PriorAuthorityDetail> priorAuthorities = new ArrayList<>();
-      priorAuthorities.add(priorAuthority);
+      when(applicationService.getApplication("123"))
+          .thenReturn(Mono.just(new ApplicationDetail().priorAuthorities(List.of(priorAuthority))));
 
       mockMvc
           .perform(
@@ -2657,7 +2846,7 @@ class EditProceedingsAndCostsSectionControllerTest {
                       "/{caseContext}/prior-authorities/{prior-authority-id}/remove",
                       caseContext,
                       priorAuthorityId)
-                  .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)
+                  .sessionAttr(APPLICATION_ID, "123")
                   .sessionAttr(USER_DETAILS, user))
           .andExpect(status().is3xxRedirection())
           .andExpect(
@@ -2668,11 +2857,15 @@ class EditProceedingsAndCostsSectionControllerTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"application", "amendments"})
-    @DisplayName("Should throw exception when prior authority not found")
-    void shouldThrowExceptionWhenPriorAuthorityNotFound(String caseContext) {
+    @DisplayName("Refuses a prior authority that is not part of the open application")
+    void refusesPriorAuthorityFromAnotherApplication(String caseContext) {
       final int priorAuthorityId = 1;
       final UserDetail user = new UserDetail();
-      final List<PriorAuthorityDetail> priorAuthorities = new ArrayList<>();
+      // The amendment's prior authority, still in the session after switching to a draft.
+      final PriorAuthorityDetail amendmentPriorAuthority = new PriorAuthorityDetail();
+      amendmentPriorAuthority.setId(priorAuthorityId);
+      when(applicationService.getApplication("123"))
+          .thenReturn(Mono.just(new ApplicationDetail().priorAuthorities(List.of())));
 
       final Exception exception =
           assertThrows(
@@ -2683,13 +2876,25 @@ class EditProceedingsAndCostsSectionControllerTest {
                               "/{caseContext}/prior-authorities/{prior-authority-id}/remove",
                               caseContext,
                               priorAuthorityId)
-                          .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)
+                          .sessionAttr(APPLICATION_ID, "123")
+                          .sessionAttr(
+                              APPLICATION_PRIOR_AUTHORITIES, List.of(amendmentPriorAuthority))
                           .sessionAttr(USER_DETAILS, user)));
 
-      assertInstanceOf(CaabApplicationException.class, exception.getCause());
-      assertEquals(
-          "No prior authority found with id: " + priorAuthorityId,
-          exception.getCause().getMessage());
+      assertInstanceOf(AccessDeniedException.class, exception.getCause());
+      verify(applicationService, never()).deletePriorAuthority(anyInt(), any());
     }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"application", "amendments"})
+  @DisplayName("A proceeding action other than add or edit is not mapped")
+  void unsupportedProceedingActionIsNotMapped(final String caseContext) throws Exception {
+    mockMvc
+        .perform(post("/{caseContext}/proceedings/other/confirm", caseContext))
+        .andExpect(status().isNotFound());
+    mockMvc
+        .perform(get("/{caseContext}/proceedings/other/matter-type", caseContext))
+        .andExpect(status().isNotFound());
   }
 }

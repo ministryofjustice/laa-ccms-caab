@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.Nullable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -286,12 +287,14 @@ public class EditProceedingsAndCostsSectionController {
       @PathVariable("proceeding-id") final Integer proceedingId,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(APPLICATION_PROCEEDINGS) final List<ProceedingDetail> proceedings,
-      @SessionAttribute(USER_DETAILS) final UserDetail user) {
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final HttpSession session) {
 
     final boolean proceedingExists =
         proceedings.stream().anyMatch(proceeding -> proceeding.getId().equals(proceedingId));
 
     if (proceedingExists) {
+      requireProceedingOfOpenApplication(proceedingId, session);
       applicationService.deleteProceeding(applicationId, proceedingId, user);
     } else {
       throw new CaabApplicationException(
@@ -375,7 +378,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return The name of the view to be rendered.
    */
-  @GetMapping("/{caseContext}/proceedings/{action}/matter-type")
+  @GetMapping("/{caseContext}/proceedings/{action:add|edit}/matter-type")
   public String proceedingsActionMatterType(
       @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("action") final String action,
@@ -426,7 +429,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return A redirect instruction to the proceeding type view.
    */
-  @PostMapping("/{caseContext}/proceedings/{action}/matter-type")
+  @PostMapping("/{caseContext}/proceedings/{action:add|edit}/matter-type")
   public String proceedingsActionMatterTypePost(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
@@ -538,7 +541,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param model The Model object to add attributes to for the view.
    * @return The name of the view to be rendered.
    */
-  @GetMapping("/{caseContext}/proceedings/{action}/proceeding-type")
+  @GetMapping("/{caseContext}/proceedings/{action:add|edit}/proceeding-type")
   public String proceedingsActionProceedingType(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
@@ -567,7 +570,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return A redirect instruction to the proceedings further details view.
    */
-  @PostMapping("/{caseContext}/proceedings/{action}/proceeding-type")
+  @PostMapping("/{caseContext}/proceedings/{action:add|edit}/proceeding-type")
   public String proceedingsActionProceedingTypePost(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
@@ -661,7 +664,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param model The Model object to add attributes to for the view.
    * @return The name of the view to be rendered.
    */
-  @GetMapping("/{caseContext}/proceedings/{action}/further-details")
+  @GetMapping("/{caseContext}/proceedings/{action:add|edit}/further-details")
   public String proceedingsActionFurtherDetails(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) ProceedingFlowFormData proceedingFlow,
@@ -711,7 +714,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return A redirect instruction to the proceedings confirm view.
    */
-  @PostMapping("/{caseContext}/proceedings/{action}/further-details")
+  @PostMapping("/{caseContext}/proceedings/{action:add|edit}/further-details")
   public String proceedingsActionFurtherDetailsPost(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
@@ -847,7 +850,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return The name of the view to be rendered.
    */
-  @GetMapping("/{caseContext}/proceedings/{action}/confirm")
+  @GetMapping("/{caseContext}/proceedings/{action:add|edit}/confirm")
   public String proceedingsActionConfirm(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
@@ -964,7 +967,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return A redirect instruction to the proceedings and costs view.
    */
-  @PostMapping("/{caseContext}/proceedings/{action}/confirm")
+  @PostMapping("/{caseContext}/proceedings/{action:add|edit}/confirm")
   public String proceedingsActionConfirmPost(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
@@ -1030,6 +1033,7 @@ public class EditProceedingsAndCostsSectionController {
         proceeding.getStatus().setDisplayValue(STATUS_DISPLAY_VALUE_UPDATED);
       }
 
+      requireProceedingOfOpenApplication(proceeding.getId(), session);
       applicationService.updateProceeding(proceeding, user);
     }
 
@@ -1143,7 +1147,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param bindingResult the result of form validation.
    * @return the redirect URL for the prior authority details page.
    */
-  @PostMapping("/{caseContext}/prior-authorities/{action}/type")
+  @PostMapping("/{caseContext}/prior-authorities/{action:add|edit}/type")
   public String priorAuthorityTypePost(
       @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("action") final String priorAuthorityAction,
@@ -1182,7 +1186,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param model the model for adding attributes to the view.
    * @return the view name for prior authority details.
    */
-  @GetMapping("/{caseContext}/prior-authorities/{action}/details")
+  @GetMapping("/{caseContext}/prior-authorities/{action:add|edit}/details")
   public String priorAuthorityDetails(
       @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("action") final String priorAuthorityAction,
@@ -1222,7 +1226,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param bindingResult the result of form validation.
    * @return the redirect URL for the next step or back to details on error.
    */
-  @PostMapping("/{caseContext}/prior-authorities/{action}/details")
+  @PostMapping("/{caseContext}/prior-authorities/{action:add|edit}/details")
   public String priorAuthorityDetailsPost(
       @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("action") final String priorAuthorityAction,
@@ -1233,7 +1237,8 @@ public class EditProceedingsAndCostsSectionController {
       @Validated @ModelAttribute("priorAuthorityDetails")
           final PriorAuthorityDetailsFormData priorAuthorityDetails,
       final BindingResult bindingResult,
-      final Model model) {
+      final Model model,
+      final HttpSession session) {
 
     proceedingAndCostsMapper.toPriorAuthorityDetailsFormData(
         priorAuthorityDetails, priorAuthorityFlow);
@@ -1260,6 +1265,7 @@ public class EditProceedingsAndCostsSectionController {
     if (ACTION_ADD.equals(priorAuthorityAction)) {
       applicationService.addPriorAuthority(applicationId, priorAuthority, user);
     } else {
+      requirePriorAuthorityOfOpenApplication(priorAuthority.getId(), session);
       applicationService.updatePriorAuthority(priorAuthority, user);
     }
 
@@ -1442,21 +1448,49 @@ public class EditProceedingsAndCostsSectionController {
   public String priorAuthorityRemovePost(
       @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("prior-authority-id") final int priorAuthorityId,
-      @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES)
-          final List<PriorAuthorityDetail> priorAuthorities,
-      @SessionAttribute(USER_DETAILS) final UserDetail user) {
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final HttpSession session) {
 
-    // existence check
-    final boolean exists =
-        priorAuthorities.stream().anyMatch(pa -> pa.getId().equals(priorAuthorityId));
-
-    if (!exists) {
-      throw new CaabApplicationException("No prior authority found with id: " + priorAuthorityId);
-    }
+    requirePriorAuthorityOfOpenApplication(priorAuthorityId, session);
 
     applicationService.deletePriorAuthority(priorAuthorityId, user);
 
     return "redirect:/%s/proceedings-and-costs#prior-authority"
         .formatted(caseContext.getPathValue());
+  }
+
+  /** Checked against the application now open, not state kept from whichever was open before. */
+  private void requirePriorAuthorityOfOpenApplication(
+      final Integer priorAuthorityId, final HttpSession session) {
+    final boolean belongs =
+        Optional.ofNullable(openApplication(session).getPriorAuthorities())
+            .orElse(Collections.emptyList())
+            .stream()
+            .anyMatch(pa -> pa.getId().equals(priorAuthorityId));
+    if (!belongs) {
+      throw new AccessDeniedException(
+          "Prior authority %s is not part of the open application".formatted(priorAuthorityId));
+    }
+  }
+
+  private void requireProceedingOfOpenApplication(
+      final Integer proceedingId, final HttpSession session) {
+    final boolean belongs =
+        Optional.ofNullable(openApplication(session).getProceedings())
+            .orElse(Collections.emptyList())
+            .stream()
+            .anyMatch(proceeding -> Objects.equals(proceeding.getId(), proceedingId));
+    if (!belongs) {
+      throw new AccessDeniedException(
+          "Proceeding %s is not part of the open application".formatted(proceedingId));
+    }
+  }
+
+  private ApplicationDetail openApplication(final HttpSession session) {
+    return Optional.ofNullable(
+            applicationService
+                .getApplication(String.valueOf(session.getAttribute(APPLICATION_ID)))
+                .block())
+        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve application"));
   }
 }

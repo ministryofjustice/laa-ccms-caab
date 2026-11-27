@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='VIEWPROC,ADDPROC,DELPROC')}"
-      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs},pageRoles='VIEW_PROCEEDING,ADD_PROCEEDING,DELETE_PROCEEDING')}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" xmlns:govuk="http://www.thymeleaf.org">
 <head>
   <title th:if="${caseContext.isApplication()}" th:text="#{service.name} + ' - ' + #{application.create}"/>
   <title th:if="${caseContext.isAmendment()}" th:text="#{service.name} + ' - ' + #{amendment.case}"/>
@@ -57,8 +57,12 @@
           <tbody class="govuk-table__body">
           <tr class="govuk-table__row" th:each="proceeding : ${proceedings}" th:unless="${proceedings.isEmpty()}">
             <td class="govuk-table__cell">
-              <div th:replace="~{partials/actions :: restrictedActionLink(${proceeding.matterType.displayValue},
-              ${user.functions}, 'VIEWPROC', false, '', @{/{caseContext}/proceedings/{id}/summary(id=${proceeding.id},caseContext=${caseContext.pathValue})}, true)}"></div>
+              <a class="govuk-link"
+                 sec:authorize="hasAuthority(@roles.viewProceeding)"
+                 th:text="${proceeding.matterType.displayValue}"
+                 th:href="@{/{caseContext}/proceedings/{id}/summary(id=${proceeding.id},caseContext=${caseContext.pathValue})}"></a>
+              <span sec:authorize="!hasAuthority(@roles.viewProceeding)"
+                    th:text="${proceeding.matterType.displayValue}"></span>
             </td>
             <td class="govuk-table__cell" th:text="${proceeding.proceedingType.displayValue}"/>
             <td class="govuk-table__cell" th:text="${proceeding.levelOfService.displayValue}"/>
@@ -77,8 +81,11 @@
             <td class="govuk-table__cell">
               <th:block th:with="showDelete=${deleteProceedingAllowedLookup.get(proceeding.id)}, showMakeLead=${proceeding.leadProceedingInd != true}">
               <th:block th:if="${showDelete}">
-              <th:block th:replace="~{partials/actions :: restrictedActionLink(#{site.delete},
-            ${user.functions}, 'DELPROC', false, '', @{/{caseContext}/proceedings/{id}/remove(id=${proceeding.id},caseContext=${caseContext.pathValue})}, true)}"/>
+              <a class="govuk-link"
+                 sec:authorize="hasAuthority(@roles.deleteProceeding)"
+                 th:text="#{site.delete}"
+                 th:href="@{/{caseContext}/proceedings/{id}/remove(id=${proceeding.id},caseContext=${caseContext.pathValue})}"></a>
+              <span sec:authorize="!hasAuthority(@roles.deleteProceeding)" th:text="#{site.delete}"></span>
               </th:block>
               <th:block th:if="${showDelete && showMakeLead}">
               |
@@ -95,9 +102,10 @@
           </tr>
           </tbody>
         </table>
-        <th:block
-            th:replace="~{partials/actions :: restrictedActionLink(#{proceedings.button.addProceeding},
-            ${user.functions}, 'ADDPROC', true, 'govuk-button--secondary', @{/{caseContext}/proceedings/add/matter-type(caseContext=${caseContext.pathValue})}, false)}"/>
+        <a id="add-proceeding-link" class="govuk-button govuk-button--secondary" data-module="govuk-button"
+           sec:authorize="hasAuthority(@roles.addProceeding)"
+           th:text="#{proceedings.button.addProceeding}"
+           th:href="@{/{caseContext}/proceedings/add/matter-type(caseContext=${caseContext.pathValue})}"></a>
       </div>
 
         <!-- Case costs -->

@@ -2,8 +2,12 @@ package uk.gov.laa.ccms.caab.advice;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.util.Objects;
+import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -11,9 +15,12 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
 import uk.gov.laa.ccms.caab.controller.HomeController;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.security.ProviderContext;
 import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
+import uk.gov.laa.ccms.caab.security.UserFunctionAuthorities;
 import uk.gov.laa.ccms.caab.service.UserService;
+import uk.gov.laa.ccms.caab.util.ApplicationEditorState;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -22,6 +29,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
  */
 @ControllerAdvice
 @RequiredArgsConstructor
+@Slf4j
 public class OidcPrincipalControllerAdvice {
 
   private final UserService userService;
@@ -58,14 +66,26 @@ public class OidcPrincipalControllerAdvice {
         user = (UserDetail) session.getAttribute("user");
 
         if (!user.getLoginId().equals(loginId)) {
-          user = userService.getUser(user.getUserId()).block();
+          final Integer userId = user.getUserId();
+          user = loadUser(() -> userService.getUser(userId).block(), loginId);
         }
 
       } else {
-        user = userService.getUserByLoginId(loginId).block();
+        user = loadUser(() -> userService.getUserByLoginId(loginId).block(), loginId);
         if (previous != null && user != null) {
+          UserFunctionAuthorities.replace(authentication, previous, user, session);
           securityEventLogger.privilegesReloaded(previous.getFunctions(), user.getFunctions());
+          // Switched elsewhere (legacy PUI or EBS): nothing open under the old provider carries
+          // over.
+          if (!Objects.equals(providerId(previous), providerId(user))) {
+            ApplicationEditorState.clearOpenApplication(session);
+          }
         }
+      }
+
+      if (user == null) {
+        endLogin(session);
+        throw new CaabApplicationException("Unable to retrieve user details for " + loginId);
       }
 
       model.addAttribute("user", user);
@@ -74,6 +94,31 @@ public class OidcPrincipalControllerAdvice {
       session.setAttribute("user", user);
       ProviderContext.setFromUser(user);
     }
+  }
+
+  private static Integer providerId(UserDetail user) {
+    return user.getProvider() == null ? null : user.getProvider().getId();
+  }
+
+  /** Loads the user, treating a failed load like a missing user so that it fails closed. */
+  private static UserDetail loadUser(Supplier<UserDetail> load, String loginId) {
+    try {
+      return load.get();
+    } catch (RuntimeException e) {
+      log.error("Unable to load user {}", loginId, e);
+      return null;
+    }
+  }
+
+  /**
+   * Drops the logged-in authentication, so its functions cannot be used without a user to check
+   * them against, and the next request logs the user in again.
+   */
+  private static void endLogin(HttpSession session) {
+    ProviderContext.clear();
+    SecurityContextHolder.clearContext();
+    // The whole session goes, so the next login cannot inherit the open case or application.
+    session.invalidate();
   }
 
   /**

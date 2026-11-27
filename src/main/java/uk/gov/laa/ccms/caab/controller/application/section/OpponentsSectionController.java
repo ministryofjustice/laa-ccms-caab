@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -519,6 +520,7 @@ public class OpponentsSectionController {
       }
     }
 
+    requireOpponentOfOpenApplication(applicationId, opponentId);
     opponentService.updateOpponent(applicationId, opponentId, currentOpponent, user);
 
     return redirectToOpponents(resolvedCaseContext);
@@ -583,6 +585,7 @@ public class OpponentsSectionController {
       throw new CaabApplicationException("Invalid Opponent Id: %s".formatted(opponentId));
     }
 
+    requireOpponentOfOpenApplication(applicationId, opponentId);
     opponentService.deleteOpponent(opponentId, user);
 
     return redirectToOpponents(resolvedCaseContext);
@@ -613,6 +616,19 @@ public class OpponentsSectionController {
   private String redirectToOpponents(final CaseContext caseContext) {
     return "redirect:/%s/sections/opponents"
         .formatted(resolveCaseContext(caseContext).getPathValue());
+  }
+
+  /** Checked against the application now open, not a list kept from whichever was open before. */
+  private void requireOpponentOfOpenApplication(
+      final String applicationId, final Integer opponentId) {
+    final boolean belongs =
+        StringUtils.hasText(applicationId)
+            && applicationService.getOpponents(applicationId).stream()
+                .anyMatch(opponent -> opponentId.equals(opponent.getId()));
+    if (!belongs) {
+      throw new AccessDeniedException(
+          "Opponent %s is not part of the open application".formatted(opponentId));
+    }
   }
 
   private AbstractOpponentFormData getCurrentOpponent(

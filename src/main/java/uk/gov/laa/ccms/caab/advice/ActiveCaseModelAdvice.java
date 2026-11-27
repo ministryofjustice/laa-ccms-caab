@@ -103,7 +103,7 @@ public class ActiveCaseModelAdvice {
     } else if (session.getAttribute(CASE) != null) {
       Object sessionCase = session.getAttribute(CASE);
       if (sessionCase instanceof ApplicationDetail ebsCase) {
-        final ActiveCase activeCase = buildActiveCaseFromSessionCase(ebsCase);
+        final ActiveCase activeCase = forCase(ebsCase);
         model.addAttribute(ACTIVE_CASE, activeCase);
         session.setAttribute(ACTIVE_CASE, activeCase);
       } else {
@@ -113,7 +113,13 @@ public class ActiveCaseModelAdvice {
     }
   }
 
-  private ActiveCase buildActiveCaseFromSessionCase(ApplicationDetail ebsCase) {
+  /**
+   * Builds the active case for a case or amendment from its own details.
+   *
+   * @param ebsCase the case or amendment
+   * @return its active case, without an application id or flags
+   */
+  public static ActiveCase forCase(ApplicationDetail ebsCase) {
     String caseReference = ebsCase.getCaseReferenceNumber();
 
     ClientDetail client = ebsCase.getClient();
@@ -124,7 +130,9 @@ public class ActiveCaseModelAdvice {
       log.debug("Unable to find client for case: '{}'", caseReference);
     } else {
       String clientSurname = client.getSurname();
-      clientFullName = client.getFirstName() + (clientSurname.isEmpty() ? "" : " " + clientSurname);
+      clientFullName =
+          client.getFirstName()
+              + (clientSurname == null || clientSurname.isEmpty() ? "" : " " + clientSurname);
 
       clientReference = client.getReference();
     }

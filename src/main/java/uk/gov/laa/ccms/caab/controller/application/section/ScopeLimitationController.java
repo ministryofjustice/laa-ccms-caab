@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EMERGENCY_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_SCOPE_LIMITATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA;
@@ -13,9 +14,11 @@ import jakarta.servlet.http.HttpSession;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -30,12 +33,14 @@ import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails;
 import uk.gov.laa.ccms.caab.bean.validators.scopelimitation.ScopeLimitationDetailsValidator;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
+import uk.gov.laa.ccms.caab.security.HeldFunctions;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -67,6 +72,22 @@ public class ScopeLimitationController {
   private final LookupService lookupService;
   private final ScopeLimitationDetailsValidator scopeLimitationDetailsValidator;
   private final ProceedingAndCostsMapper proceedingAndCostsMapper;
+
+  /**
+   * Scope limitations are edited inside the add and the edit proceeding flows, which share their
+   * URLs, so the flow in progress decides the function: ADDPROC to add, VIEWPROC to edit.
+   */
+  @ModelAttribute
+  public void requireProceedingFlowFunction(final HttpSession session) {
+    if (session.getAttribute(PROCEEDING_FLOW_FORM_DATA) instanceof ProceedingFlowFormData flow) {
+      final UserRole required =
+          ACTION_ADD.equals(flow.getAction()) ? UserRole.ADD_PROCEEDING : UserRole.VIEW_PROCEEDING;
+      if (!HeldFunctions.holdsAll(required)) {
+        throw new AccessDeniedException(
+            "The %s proceeding flow needs %s".formatted(flow.getAction(), required.getCode()));
+      }
+    }
+  }
 
   /**
    * Starts editing an existing scope limitation.
@@ -134,7 +155,7 @@ public class ScopeLimitationController {
    * @param session the HTTP session containing any in-progress scope limitation flow.
    * @return the scope limitation details view.
    */
-  @GetMapping("/{caseContext}/proceedings/scope-limitations/{action}/details")
+  @GetMapping("/{caseContext}/proceedings/scope-limitations/{action:add|edit}/details")
   public String scopeLimitationDetails(
       @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("action") final String scopeLimitationAction,
@@ -176,7 +197,7 @@ public class ScopeLimitationController {
    * @param bindingResult the validation result.
    * @return a redirect to confirmation, or the details view when validation fails.
    */
-  @PostMapping("/{caseContext}/proceedings/scope-limitations/{action}/details")
+  @PostMapping("/{caseContext}/proceedings/scope-limitations/{action:add|edit}/details")
   public String scopeLimitationDetailsPost(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
@@ -299,6 +320,7 @@ public class ScopeLimitationController {
     } else {
       final ProceedingDetail proceeding =
           (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
+      requirePartOfOpenApplication(proceeding, session);
 
       if (scopeLimitation.getId() == null) {
         proceeding.getScopeLimitations().add(scopeLimitation);
@@ -380,6 +402,7 @@ public class ScopeLimitationController {
     } else {
       final ProceedingDetail proceeding =
           (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
+      requirePartOfOpenApplication(proceeding, session);
       final List<ScopeLimitationDetail> scopeLimitations = proceeding.getScopeLimitations();
 
       scopeLimitations.removeIf(
@@ -510,5 +533,22 @@ public class ScopeLimitationController {
     }
 
     return criteria;
+  }
+
+  /** Refuses a proceeding kept in the session that belongs to another application. */
+  private void requirePartOfOpenApplication(
+      final ProceedingDetail proceeding, final HttpSession session) {
+    final ApplicationDetail application =
+        Optional.ofNullable(
+                applicationService
+                    .getApplication(String.valueOf(session.getAttribute(APPLICATION_ID)))
+                    .block())
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve application"));
+    final boolean belongs =
+        Optional.ofNullable(application.getProceedings()).orElse(List.of()).stream()
+            .anyMatch(candidate -> Objects.equals(candidate.getId(), proceeding.getId()));
+    if (!belongs) {
+      throw new AccessDeniedException("The proceeding is not part of the open application");
+    }
   }
 }

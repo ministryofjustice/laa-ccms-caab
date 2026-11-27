@@ -88,14 +88,13 @@ class SecurityEventsEndToEndTest {
 
   @Test
   void aRouteTheUserLacksTheFunctionForIsRefusedAndLoggedAsADenial() throws Exception {
-    int status =
-        mockMvc
-            .perform(get("/case/overview").with(user("jane").authorities()))
-            .andReturn()
-            .getResponse()
-            .getStatus();
+    // A refused page load is returned to a page the user may see, as the legacy PUI does, so the
+    // refusal shows as a redirect rather than a 403.
+    MvcResult refused =
+        mockMvc.perform(get("/case/overview").with(user("jane").authorities())).andReturn();
 
-    assertThat(status).isEqualTo(403);
+    assertThat(refused.getResponse().getStatus()).isEqualTo(302);
+    assertThat(refused.getResponse().getRedirectedUrl()).isEqualTo("/home");
     assertThat(eventTypes()).contains("AUTHORIZATION_DENIED");
     assertThat(keyValue("AUTHORIZATION_DENIED", "event_detail")).isEqualTo("GET /case/overview");
     org.mockito.Mockito.verify(puiMetricService)
@@ -109,16 +108,19 @@ class SecurityEventsEndToEndTest {
     final var csrf =
         org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
             .csrf();
+    // An outcome is submitted from an open case, so VC is held alongside SUBOUT and POD.
     final var submitter =
         user("jane")
             .authorities(
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("VC"),
                 new org.springframework.security.core.authority.SimpleGrantedAuthority("SUBOUT"),
                 new org.springframework.security.core.authority.SimpleGrantedAuthority("POD"));
+    // A refused page load is returned to a page the user may see, so it redirects.
     mockMvc
         .perform(post(path).with(user("jane").authorities()).with(csrf))
         .andExpect(
-            org.springframework.test.web.servlet.result.MockMvcResultMatchers.status()
-                .isForbidden());
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl(
+                "/home"));
     mockMvc
         .perform(
             post(path)
@@ -140,19 +142,24 @@ class SecurityEventsEndToEndTest {
 
   @org.junit.jupiter.params.ParameterizedTest
   @org.junit.jupiter.params.provider.CsvSource({
-    "submit, SUBOUT, 404",
-    "submit, POD, 403",
-    "submit, VO, 403",
+    "submit, SUBOUT, 302",
+    "submit, SUBOUT PO, 404",
+    "submit, POD, 302",
+    "submit, VO, 302",
     "submit, SUBOUT POD, 404",
-    "discharge, SUBOUT, 403",
-    "discharge, POD, 403",
-    "discharge, VO, 403",
+    "discharge, SUBOUT, 302",
+    "discharge, SUBOUT PO, 302",
+    "discharge, POD, 302",
+    "discharge, VO, 302",
     "discharge, SUBOUT POD, 404"
   })
   void outcomeJourneyEnforcesLegacyPermissionsForGetAndPost(
       String destination, String functions, int expectedStatus) throws Exception {
+    // Outcome pages are reached from an open case, so every user here holds VC; the outcome flow
+    // also needs PO or POD. A refused page load redirects (302) rather than returning a 403.
     final var authorities =
-        java.util.Arrays.stream(functions.split(" "))
+        java.util.stream.Stream.concat(
+                java.util.stream.Stream.of("VC"), java.util.Arrays.stream(functions.split(" ")))
             .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
             .toList();
     final String path = "/case/outcome-and-awards/" + destination;
@@ -181,27 +188,27 @@ class SecurityEventsEndToEndTest {
   })
   void theNotificationDownloadRoutesNeedTheirOwnFunction(
       String path, String function, boolean refused) throws Exception {
-    var authorities =
-        function == null
-            ? new org.springframework.security.core.GrantedAuthority[0]
-            : new org.springframework.security.core.GrantedAuthority[] {
-              new org.springframework.security.core.authority.SimpleGrantedAuthority(
-                  uk.gov.laa.ccms.caab.config.UserRole.valueOf(
-                          "ATT".equals(function) ? "VIEW_NOTIFICATION_ATTACHMENT" : function)
-                      .getCode())
-            };
+    // Every notification page also needs NOT, which opens the notification.
+    var authorities = new java.util.ArrayList<org.springframework.security.core.GrantedAuthority>();
+    authorities.add(
+        new org.springframework.security.core.authority.SimpleGrantedAuthority(
+            uk.gov.laa.ccms.caab.config.UserRole.VIEW_NOTIFICATIONS.getCode()));
+    if (function != null) {
+      authorities.add(
+          new org.springframework.security.core.authority.SimpleGrantedAuthority(
+              uk.gov.laa.ccms.caab.config.UserRole.valueOf(
+                      "ATT".equals(function) ? "VIEW_NOTIFICATION_ATTACHMENT" : function)
+                  .getCode()));
+    }
 
-    int status =
-        mockMvc
-            .perform(get(path).with(user("jane").authorities(authorities)))
-            .andReturn()
-            .getResponse()
-            .getStatus();
+    MvcResult result =
+        mockMvc.perform(get(path).with(user("jane").authorities(authorities))).andReturn();
 
+    // A refused page load is returned to a page the user may see rather than given a 403.
     if (refused) {
-      assertThat(status).isEqualTo(403);
+      assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/home");
     } else {
-      assertThat(status).isNotEqualTo(403);
+      assertThat(result.getResponse().getRedirectedUrl()).isNotEqualTo("/home");
     }
   }
 
@@ -213,16 +220,14 @@ class SecurityEventsEndToEndTest {
       })
   void aHeadRequestToTheDownloadRoutesIsRefusedLikeAGetWithoutTheFunction(String path)
       throws Exception {
-    int status =
+    MvcResult result =
         mockMvc
             .perform(
                 org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head(path)
                     .with(user("jane").authorities()))
-            .andReturn()
-            .getResponse()
-            .getStatus();
+            .andReturn();
 
-    assertThat(status).isEqualTo(403);
+    assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/home");
   }
 
   @Test

@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpSession;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -24,10 +25,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationSectionValidator;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
+import uk.gov.laa.ccms.caab.security.HeldFunctions;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.util.ApplicationEditorState;
+import uk.gov.laa.ccms.caab.util.SentApplications;
+import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /** Controller for the application sections. */
@@ -63,6 +69,11 @@ public class ApplicationSectionsController {
             .orElseThrow(
                 () -> new CaabApplicationException("Failed to retrieve application detail"));
 
+    if (Boolean.TRUE.equals(application.getAmendment())
+        && !HeldFunctions.holdsAll(UserRole.VIEW_CASE_DETAILS)) {
+      throw new AccessDeniedException("An amendment's sections need VC");
+    }
+
     final ApplicationSectionDisplay sections =
         Optional.ofNullable(applicationService.getApplicationSections(application, user))
             .orElseThrow(
@@ -73,8 +84,14 @@ public class ApplicationSectionsController {
     model.addAttribute("summary", sections);
     model.addAttribute("backUrl", backUrl);
 
+    final boolean draft =
+        !Boolean.TRUE.equals(application.getAmendment())
+            && !isSentAndNotFailed(session, application.getId());
+
     final ActiveCase activeCase =
         ActiveCase.builder()
+            .draftApplication(draft)
+            .amendment(Boolean.TRUE.equals(application.getAmendment()))
             .applicationId(application.getId())
             .caseReferenceNumber(sections.getCaseReferenceNumber())
             .providerId(application.getProviderDetails().getProvider().getId())
@@ -84,6 +101,7 @@ public class ApplicationSectionsController {
             .build();
 
     model.addAttribute(ACTIVE_CASE, activeCase);
+    ApplicationEditorState.clearWhenApplicationChanges(session, application.getId());
     session.setAttribute(ACTIVE_CASE, activeCase);
     session.removeAttribute(CLIENT_FLOW_FORM_DATA);
     session.removeAttribute(CLIENT_FLOW_CONTEXT);
@@ -96,6 +114,25 @@ public class ApplicationSectionsController {
     model.addAttribute("formData", new Object());
 
     return "application/sections/task-page";
+  }
+
+  /**
+   * Whether this session has sent the application and the submission has not failed. A sent
+   * application stays in the draft store until its submission is confirmed and cleaned up, so until
+   * then it must not be reopened for editing; one whose submission failed is still the user's to
+   * correct.
+   */
+  private boolean isSentAndNotFailed(final HttpSession session, final Integer applicationId) {
+    final Optional<String> transactionId = SentApplications.transactionFor(session, applicationId);
+    if (transactionId.isEmpty()) {
+      return false;
+    }
+    final TransactionStatus status = applicationService.getCaseStatus(transactionId.get()).block();
+    if (status != null && "ERROR".equalsIgnoreCase(status.getSubmissionStatus())) {
+      SentApplications.forget(session, applicationId);
+      return false;
+    }
+    return true;
   }
 
   /**
