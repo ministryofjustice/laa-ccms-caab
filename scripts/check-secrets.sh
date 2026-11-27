@@ -77,10 +77,20 @@ KNOWN_TOKEN_RES = [
 ]
 
 CREDENTIAL_ASSIGNMENT_RE = re.compile(
-    r"""(?<![\w-])["']?(password|passwd|pwd|secret|client[_-]?secret|api[_-]?key|apikey|"""
-    r"""access[_-]?token|auth[_-]?token|private[_-]?key)["']?\s*[:=]\s*["']?"""
-    r"""([^ \t\r\n,;"'#]+)""",
-    re.IGNORECASE,
+    r"""
+    (?<![\w-])
+    ["']?
+    (password|passwd|pwd|secret|client[_-]?secret|api[_-]?key|apikey|
+     access[_-]?token|auth[_-]?token|private[_-]?key)
+    ["']?
+    \s*[:=]\s*
+    (?:
+        "([^"]*)" |
+        '([^']*)' |
+        ([^ \t\r\n,;"'#]+)
+    )
+    """,
+    re.IGNORECASE | re.VERBOSE,
 )
 
 UPPERCASE_ENVIRONMENT_IDENTIFIER_RE = re.compile(
@@ -141,7 +151,7 @@ def is_placeholder_value(value, path):
         return True
 
     lower = value.lower()
-    placeholder_terms = (
+    exact_global_placeholders = {
         "example",
         "dummy",
         "fake",
@@ -155,10 +165,17 @@ def is_placeholder_value(value, path):
         "not-a-secret",
         "notasecret",
         "xxxx",
-    )
-    if any(term in lower for term in placeholder_terms):
+    }
+    if lower in exact_global_placeholders:
         return True
-    if re.fullmatch(r"x{4,}", lower):
+
+    delimited_fixture = re.compile(
+        r"^(?:(?:test|dummy|fake|mock|sample|example|placeholder|changeme|local|synthetic)"
+        r"(?:[-_.:].+)?"
+        r"|.+[-_.](?:test|dummy|fake|mock|sample|example|placeholder|changeme|local|synthetic))$",
+        re.IGNORECASE,
+    )
+    if delimited_fixture.fullmatch(value):
         return True
     if re.fullmatch(r"<[^>]+>", value):
         return True
@@ -175,7 +192,24 @@ def is_placeholder_value(value, path):
         or lower_path.endswith("application-local.yaml")
     )
     if test_or_local_path:
-        if any(term in lower for term in ("local", "mock", "sample", "passw0rd", "bulk-claim")):
+        exact_test_placeholders = {
+            "password",
+            "secret",
+            "passw0rd",
+            "bulk-claim-client",
+            "synthetic-invoice-token",
+            "test-access-key",
+            "test-secret-key",
+            "test-client-id",
+            "test-client-secret",
+            "local-user-details-api-token",
+        }
+        if lower in exact_test_placeholders:
+            return True
+        if re.fullmatch(
+            r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+            lower,
+        ):
             return True
 
     return False
@@ -223,7 +257,10 @@ for raw_file in changed_files.stdout.split(b"\0"):
         continue
 
     for match in CREDENTIAL_ASSIGNMENT_RE.finditer(text):
-        value = match.group(2).strip().strip("\"'")
+        value = next(
+            (group for group in match.groups()[1:] if group is not None),
+            "",
+        ).strip()
         if len(value) < 8:
             continue
         if not is_placeholder_value(value, file):
