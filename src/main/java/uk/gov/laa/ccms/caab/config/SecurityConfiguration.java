@@ -331,6 +331,9 @@ public class SecurityConfiguration {
         .access(outcomeAction(UserRole.UPDATE_PROCEEDING_OUTCOME))
         .requestMatchers("/case/outcome-and-awards", "/case/outcome-and-awards/**")
         .access(outcomeAction())
+        // Abandoning an amendment, and editing its general details, are part of Amend Case.
+        .requestMatchers("/case/amendment/**")
+        .access(caseAction(UserRole.AMEND_CASE))
         .requestMatchers("/case/**")
         .access(caseAction());
   }

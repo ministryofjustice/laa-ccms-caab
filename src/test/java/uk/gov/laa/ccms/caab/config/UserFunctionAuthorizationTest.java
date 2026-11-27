@@ -396,6 +396,13 @@ class UserFunctionAuthorizationTest {
             UserRole.AMEND_CASE,
             UserRole.VIEW_CASE_DETAILS),
         route("POST", "/amendments/evidence/add", UserRole.AMEND_CASE, UserRole.VIEW_CASE_DETAILS),
+        route("GET", "/case/amendment/abandon", UserRole.AMEND_CASE, UserRole.VIEW_CASE_DETAILS),
+        route("POST", "/case/amendment/abandon", UserRole.AMEND_CASE, UserRole.VIEW_CASE_DETAILS),
+        route(
+            "GET",
+            "/case/amendment/edit-general-details",
+            UserRole.AMEND_CASE,
+            UserRole.VIEW_CASE_DETAILS),
         route("GET", "/case/details", UserRole.VIEW_CASE_DETAILS));
   }
 
