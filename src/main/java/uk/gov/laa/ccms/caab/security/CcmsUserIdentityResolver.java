@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.security;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
@@ -178,6 +179,6 @@ public class CcmsUserIdentityResolver {
                   + "access denied")
               .formatted(values.size(), claimName));
     }
-    return values.stream().findFirst().orElse(null);
+    return values.stream().filter(Objects::nonNull).findFirst().orElse(null);
   }
 }
