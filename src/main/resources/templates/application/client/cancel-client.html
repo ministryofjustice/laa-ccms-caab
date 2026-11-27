@@ -9,6 +9,7 @@
     <div id="breadcrumbs"></div>
     <div id="main-content" class="govuk-!-padding-top-7">
         <form action="#" th:action="@{/application/client/details/cancel}" method="post">
+            <input type="hidden" name="registrationId" th:value="${registrationId}">
             <span class="govuk-caption-l" th:text="#{client.about}"></span>
             <h1 class="govuk-heading-l" th:text="#{client.cancel}"></h1>
             <p class="govuk-body-l" th:text="#{client.cancel.leadParagraph}">
@@ -17,7 +18,7 @@
                 <govuk:button type="submit" th:text="#{site.confirm}"/>
                 <govuk:button classes="govuk-button--secondary"
                               th:text="#{site.back}"
-                              th:href="@{/application/client/details/basic}"/>
+                              th:href="@{/application/client/details/basic(registrationId=${registrationId})}"/>
             </div>
         </form>
     </div>

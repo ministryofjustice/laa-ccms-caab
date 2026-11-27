@@ -28,6 +28,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -63,12 +64,14 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
+import uk.gov.laa.ccms.caab.service.AddressLookupUnavailableException;
 import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.util.PaginationUtil;
+import uk.gov.laa.ccms.caab.util.UkPostcode;
 import uk.gov.laa.ccms.caab.util.UserRoleUtil;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
@@ -124,10 +127,14 @@ public class EditGeneralDetailsSectionController {
     final AddressLookupFlowData<AddressFormData> addressFlow =
         getOrCreateCorrespondenceAddressFlow(session, addressContext);
 
-    AddressFormData addressDetails =
-        addressFlow.getSelectedAddress() != null ? addressFlow.getAddressDetails() : null;
+    AddressFormData addressDetails = addressFlow.getAddressDetails();
     if (addressDetails == null) {
-      addressDetails = getCorrespondenceAddressFormData(caseContext, ebsCase, applicationId);
+      final AddressFormData savedAddress =
+          getCorrespondenceAddressFormData(caseContext, ebsCase, applicationId);
+      addressDetails = savedAddress == null ? new AddressFormData() : savedAddress;
+      if (hasSavedAddress(addressDetails)) {
+        addressFlow.setSource(AddressLookupFlowData.Source.EXISTING);
+      }
     }
 
     if (addressFlow.getSelectedAddress() != null) {
@@ -138,6 +145,9 @@ public class EditGeneralDetailsSectionController {
     addressFlow.setAddressDetails(addressDetails);
     session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
     model.addAttribute(ADDRESS_DETAILS_MODEL_ATTRIBUTE, addressDetails);
+    model.addAttribute(
+        "addressLookupUnavailable",
+        addressFlow.getStep() == AddressLookupFlowData.Step.LOOKUP_UNAVAILABLE);
 
     populateCorrespondenceAddressDropdowns(model);
 
@@ -215,8 +225,16 @@ public class EditGeneralDetailsSectionController {
     final String addressContext = correspondenceAddressContext(caseContext, ebsCase, applicationId);
     final AddressLookupFlowData<AddressFormData> addressFlow =
         getOrCreateCorrespondenceAddressFlow(session, addressContext);
+    final boolean caseSpecific = "CASE".equals(addressDetails.getPreferredAddress());
 
-    if (ACTION_FIND_ADDRESS.equals(action)) {
+    if (ACTION_FIND_ADDRESS.equals(action) && !caseSpecific) {
+      addressFlow.searchAgain();
+      bindingResult.rejectValue(
+          "preferredAddress", "address.lookup.caseOnly", "Choose the case address to search");
+    } else if (ACTION_FIND_ADDRESS.equals(action)) {
+      addressFlow.beginSearch(addressDetails.getPostcode(), addressDetails.getHouseNameNumber());
+      addressFlow.setAddressDetails(addressDetails);
+      session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
       findAddressValidator.validate(addressDetails, bindingResult);
     } else {
       correspondenceAddressValidator.validate(addressDetails, bindingResult);
@@ -224,39 +242,50 @@ public class EditGeneralDetailsSectionController {
 
     if (bindingResult.hasErrors()) {
       populateCorrespondenceAddressDropdowns(model);
+      model.addAttribute(ADDRESS_DETAILS_MODEL_ATTRIBUTE, addressDetails);
+      model.addAttribute(
+          "addressLookupUnavailable",
+          addressFlow.getStep() == AddressLookupFlowData.Step.LOOKUP_UNAVAILABLE);
       addressFlow.setAddressDetails(addressDetails);
       session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
       return "application/sections/correspondence-address-details";
     }
 
     if (ACTION_FIND_ADDRESS.equals(action)) {
-      ResultsDisplay<AddressResultRowDisplay> addressSearchResults =
-          addressService.getAddresses(addressDetails.getPostcode());
-
-      if (addressSearchResults.getContent() == null
-          || addressSearchResults.getContent().isEmpty()) {
-        bindingResult.reject(
-            "address.none", "Your input for address details has not returned any results");
-      } else {
-        addressSearchResults =
-            addressService.filterByHouseNumber(
-                addressDetails.getHouseNameNumber(), addressSearchResults);
-        addressFlow.setSearchResults(addressSearchResults);
-      }
-
-      if (bindingResult.hasErrors()) {
-        populateCorrespondenceAddressDropdowns(model);
+      final ResultsDisplay<AddressResultRowDisplay> addressSearchResults;
+      try {
+        addressSearchResults = addressService.getAddresses(addressDetails.getPostcode());
+      } catch (AddressLookupUnavailableException exception) {
+        addressFlow.markLookupUnavailable();
         addressFlow.setAddressDetails(addressDetails);
         session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
+        populateCorrespondenceAddressDropdowns(model);
+        model.addAttribute(ADDRESS_DETAILS_MODEL_ATTRIBUTE, addressDetails);
+        model.addAttribute("addressLookupUnavailable", true);
         return "application/sections/correspondence-address-details";
       }
 
-      addressFlow.setAddressDetails(addressDetails);
+      ResultsDisplay<AddressResultRowDisplay> filteredResults = addressSearchResults;
+      if (addressSearchResults.getContent() != null
+          && !addressSearchResults.getContent().isEmpty()) {
+        filteredResults =
+            addressService.filterByHouseNumber(
+                addressDetails.getHouseNameNumber(), addressSearchResults);
+      }
+      addressFlow.setSearchResults(filteredResults);
       session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
       return "redirect:/%s/sections/correspondence-address/search"
           .formatted(caseContext.getPathValue());
 
     } else {
+      if (addressFlow.getSource() != AddressLookupFlowData.Source.SEARCHED
+          && addressFlow.getSource() != AddressLookupFlowData.Source.EXISTING) {
+        if ("GBR".equals(addressDetails.getCountry())) {
+          addressDetails.setPostcode(UkPostcode.normalize(addressDetails.getPostcode()));
+        }
+      }
+      addressFlow.setAddressDetails(addressDetails);
+      session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
       if (caseContext.isAmendment()) {
         final ApplicationDetail amendmentCase = requireEbsCase(ebsCase);
         if (!UserRoleUtil.hasRole(user, UserRole.SUBMIT_AMENDMENT)) {
@@ -287,6 +316,16 @@ public class EditGeneralDetailsSectionController {
         .build();
   }
 
+  private boolean hasSavedAddress(final AddressFormData addressDetails) {
+    return StringUtils.hasText(addressDetails.getCountry())
+        || StringUtils.hasText(addressDetails.getPostcode())
+        || StringUtils.hasText(addressDetails.getHouseNameNumber())
+        || StringUtils.hasText(addressDetails.getAddressLine1())
+        || StringUtils.hasText(addressDetails.getAddressLine2())
+        || StringUtils.hasText(addressDetails.getCityTown())
+        || StringUtils.hasText(addressDetails.getCounty());
+  }
+
   /**
    * Handles the GET request for edit correspondence address search page.
    *
@@ -296,7 +335,7 @@ public class EditGeneralDetailsSectionController {
    * @param applicationId the application ID.
    * @param addressSearch The address search model containing the uprn.
    * @param model The model for the view.
-   * @return The view name for the client basic details page
+   * @return The view name for the correspondence address results page
    */
   @GetMapping("/{caseContext}/sections/correspondence-address/search")
   public String correspondenceAddressGet(
@@ -310,7 +349,9 @@ public class EditGeneralDetailsSectionController {
       final Model model) {
 
     if (!isCurrentCorrespondenceAddressFlow(caseContext, ebsCase, applicationId, addressFlow)
-        || addressFlow.getSearchResults() == null) {
+        || addressFlow.getSearchResults() == null
+        || (addressFlow.getStep() != AddressLookupFlowData.Step.RESULTS
+            && addressFlow.getStep() != AddressLookupFlowData.Step.NO_RESULTS)) {
       clearCorrespondenceAddressSession(session);
       return "redirect:/%s/sections/correspondence-address".formatted(caseContext.getPathValue());
     }
@@ -350,13 +391,15 @@ public class EditGeneralDetailsSectionController {
 
     if (!isCurrentCorrespondenceAddressFlow(caseContext, ebsCase, applicationId, addressFlow)
         || addressFlow.getSearchResults() == null
+        || addressFlow.getStep() != AddressLookupFlowData.Step.RESULTS
         || addressFlow.getAddressDetails() == null) {
       clearCorrespondenceAddressSession(session);
       return "redirect:/%s/sections/correspondence-address".formatted(caseContext.getPathValue());
     }
 
     // validate if an address is selected
-    addressSearchValidator.validate(addressSearch, bindingResult);
+    addressSearchValidator.validateSelection(
+        addressSearch, addressFlow.getSearchResults(), bindingResult);
     if (bindingResult.hasErrors()) {
       model.addAttribute(ADDRESS_SEARCH_RESULTS, addressFlow.getSearchResults());
       model.addAttribute(
@@ -367,8 +410,16 @@ public class EditGeneralDetailsSectionController {
 
     final AddressResultRowDisplay selectedAddress =
         addressService.getSelectedAddress(addressSearch.getUprn(), addressFlow.getSearchResults());
-    addressFlow.setSelectedAddress(selectedAddress);
+    if (selectedAddress == null) {
+      bindingResult.rejectValue("uprn", "invalid.selection", "Select an address from the results");
+      model.addAttribute(ADDRESS_SEARCH_RESULTS, addressFlow.getSearchResults());
+      model.addAttribute(
+          "formAction",
+          "%s/sections/correspondence-address/search".formatted(caseContext.getPathValue()));
+      return "application/sections/address-search-results";
+    }
     addressFlow.setSearchResults(null);
+    addressFlow.setSelectedAddress(selectedAddress);
     session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
 
     return "redirect:/%s/sections/correspondence-address".formatted(caseContext.getPathValue());

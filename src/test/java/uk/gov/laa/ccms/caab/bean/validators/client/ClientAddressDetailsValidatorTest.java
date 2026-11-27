@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -153,6 +154,66 @@ class ClientAddressDetailsValidatorTest {
     assertNotNull(errors.getFieldError("postcode"));
     assertEquals("invalid.format", errors.getFieldError("postcode").getCode());
     assertEquals(1, errors.getErrorCount());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"sa58ab, SA5 8AB", "SA58AB, SA5 8AB", "SA5 8AB, SA5 8AB"})
+  public void validate_acceptsUkPostcodeInputVariants(String postcode, String expected) {
+    addressDetails.setPostcode(postcode);
+    clientAddressDetailsValidator.validate(addressDetails, errors);
+    assertFalse(errors.hasErrors());
+    assertEquals(expected, uk.gov.laa.ccms.caab.util.UkPostcode.normalize(postcode));
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {" ", "   "})
+  public void validateForAddressComponent_postcodeOptionalForInternationalAddress(String postcode) {
+    addressDetails.setCountry("USA");
+    addressDetails.setPostcode(postcode);
+    clientAddressDetailsValidator.validateForAddressComponent(addressDetails, errors);
+    assertFalse(errors.hasErrors());
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {" ", "   "})
+  public void validateForAddressComponent_postcodeRequiredForUkAddress(String postcode) {
+    addressDetails.setPostcode(postcode);
+    clientAddressDetailsValidator.validateForAddressComponent(addressDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertNotNull(errors.getFieldError("postcode"));
+    assertEquals("required.postcode", errors.getFieldError("postcode").getCode());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"USA, @@@@@@", "GBR, @@@@@@", "GBR, SW1A"})
+  public void validateForAddressComponent_rejectsInvalidPostcodeFormat(
+      String country, String postcode) {
+    addressDetails.setCountry(country);
+    addressDetails.setPostcode(postcode);
+    clientAddressDetailsValidator.validateForAddressComponent(addressDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertNotNull(errors.getFieldError("postcode"));
+    assertEquals("invalid.format", errors.getFieldError("postcode").getCode());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"USA, 90210", "GBR, sa58ab", "GBR, SA58AB", "GBR, SA5 8AB"})
+  public void validateForAddressComponent_acceptsValidPostcode(String country, String postcode) {
+    addressDetails.setCountry(country);
+    addressDetails.setPostcode(postcode);
+    clientAddressDetailsValidator.validateForAddressComponent(addressDetails, errors);
+    assertFalse(errors.hasErrors());
+  }
+
+  @Test
+  public void validateForAddressComponent_houseNameNumberOptional() {
+    addressDetails.setHouseNameNumber(null);
+    clientAddressDetailsValidator.validateForAddressComponent(addressDetails, errors);
+    assertFalse(errors.hasErrors());
   }
 
   private ClientFormDataAddressDetails buildClientFormDataAddressDetails() {

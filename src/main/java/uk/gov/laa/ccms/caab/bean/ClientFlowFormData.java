@@ -1,10 +1,17 @@
 package uk.gov.laa.ccms.caab.bean;
 
+import java.util.UUID;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /** Represents the client details stored during client creation/edit flows. */
 @Data
 public class ClientFlowFormData {
+
+  /** Server-owned identity retained for the lifetime of this registration. */
+  @EqualsAndHashCode.Exclude @ToString.Exclude
+  private final String registrationId = UUID.randomUUID().toString();
 
   private String action;
 

@@ -5,9 +5,11 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_D
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATE_CLIENT_ADDRESS_FLOW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -112,13 +114,16 @@ public class ClientSearchResultsController {
    */
   @PostMapping("/application/client/results")
   public String clientSearch(
-      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData, Model model) {
+      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
+      Model model,
+      HttpSession session) {
 
     // a post only occurs when register new client has been clicked ,if so we want to amend
     // application created to false, so they get redirected correctly after the privacy notice
     applicationFormData.setApplicationCreated(false);
 
     // always make a new client Details session object when clicking the register new client button
+    session.removeAttribute(CREATE_CLIENT_ADDRESS_FLOW);
     model.addAttribute(CLIENT_FLOW_FORM_DATA, new ClientFlowFormData(ACTION_CREATE));
 
     return "redirect:/application/agreement";

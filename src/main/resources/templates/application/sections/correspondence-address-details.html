@@ -35,6 +35,17 @@
                                                                        label=#{address.preferred},
                                                                        items=${caseAddressOptions},
                                                                        itemValue='code', itemLabel='description')}"/>
+          <p class="govuk-error-message" th:if="${addressLookupUnavailable}"
+             th:text="#{application.generalDetails.correspondenceAddress.lookupUnavailable}"></p>
+          <th:block th:if="*{preferredAddress == 'CASE'}">
+            <div class="govuk-form-group">
+              <govuk:button id="find-address-button"
+                            name="action"
+                            classes="govuk-button--secondary"
+                            value="find_address"
+                            th:text="#{address.find}"/>
+            </div>
+          </th:block>
           <th:block th:replace="~{partials/forms :: autocompleteSelect(field='country', label=#{address.country},
                                                                        items=${countries}, itemValue='code',
                                                                        itemLabel='description')}"/>
@@ -44,12 +55,6 @@
           <th:block th:replace="~{partials/forms :: textInput('postcode',
             #{address.postcode},
             'govuk-input--width-20')}"/>
-          <div class="govuk-form-group">
-            <button type="submit" name="action" id='find-address-button'
-                    value="find_address" class="govuk-button govuk-button--secondary"
-                    data-module="govuk-button"
-                    th:text="#{address.find}"/>
-          </div>
           <th:block th:replace="~{partials/forms :: textInput('careOf',
             #{address.careOf},
             'govuk-input--width-20')}"/>
