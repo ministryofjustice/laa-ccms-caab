@@ -170,7 +170,8 @@
               </table>
           </div>
       </div>
-      <div th:if="${isAmendment}" class="govuk-button-group">
+      <div th:if="${isAmendment}" sec:authorize="hasAuthority(@roles.amendCase)"
+           class="govuk-button-group">
         <govuk:button classes="govuk-button--warning"
                       th:href="@{/case/amendment/abandon}"
                       th:id="abandon-amendment-link"
