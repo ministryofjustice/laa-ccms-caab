@@ -4,6 +4,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_COS
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FINANCIAL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_LAND;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTHER_ASSET;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_ORGANISATION;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualLiablePartyFlow;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentOtherDetailsFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -230,6 +232,60 @@ public class CaseOutcomeService {
     caabApiClient
         .createAwardLiableParty(outcome.getId(), award.getAwardType(), awardId, loginId, opponent)
         .block();
+  }
+
+  /**
+   * Creates an organisation, either shared from the organisation search or newly entered, and links
+   * it to the award through the atomic outcome/award endpoint.
+   *
+   * @param caseReference the case reference number
+   * @param providerId the provider owning the case
+   * @param awardPath the award type's URL path segment
+   * @param awardId the award receiving the new party
+   * @param loginId the user performing the update
+   * @param organisation the validated organisation details
+   */
+  public void createOrganisationLiableParty(
+      final String caseReference,
+      final Integer providerId,
+      final String awardPath,
+      final Integer awardId,
+      final String loginId,
+      final OrganisationOpponentFormData organisation) {
+    final CaseOutcomeDetail outcome = requireCaseOutcome(caseReference, providerId);
+    final BaseAwardDetail award = requireAward(outcome, awardTypeForPath(awardPath), awardId);
+    final OpponentDetail opponent = opponentMapper.toOrganisationOpponent(organisation);
+    opponent.setType(OPPONENT_TYPE_ORGANISATION);
+    caabApiClient
+        .createAwardLiableParty(outcome.getId(), award.getAwardType(), awardId, loginId, opponent)
+        .block();
+  }
+
+  /**
+   * Checks whether a shared organisation is already linked to the award.
+   *
+   * @param caseReference the case reference number
+   * @param providerId the provider owning the case
+   * @param awardPath the award type's URL path segment
+   * @param awardId the award to check
+   * @param partyId the shared organisation's EBS party id
+   * @return true when a shared organisation with the party id is already linked to the award
+   */
+  public boolean hasSharedOrganisationLiableParty(
+      final String caseReference,
+      final Integer providerId,
+      final String awardPath,
+      final Integer awardId,
+      final String partyId) {
+    if (!StringUtils.hasText(partyId)) {
+      return false;
+    }
+    return getAwardLiableParties(caseReference, providerId, awardPath, awardId).stream()
+        .filter(opponent -> OPPONENT_TYPE_ORGANISATION.equalsIgnoreCase(opponent.getType()))
+        .filter(opponent -> Boolean.TRUE.equals(opponent.getSharedInd()))
+        .anyMatch(
+            opponent ->
+                partyId.equals(opponent.getPartyId()) || partyId.equals(opponent.getEbsId()));
   }
 
   /** Deletes only the selected award, without replacing the case outcome aggregate. */

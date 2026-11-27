@@ -139,6 +139,9 @@ class LiablePartiesTemplateRenderTest {
         .contains(
             "If an individual or organisation is not in the list, you could add a new individual or organisation to the case")
         .contains("Add Organisation")
+        .containsPattern(
+            "href=\"/case/outcome-and-awards/land/\\d+/liable-parties/organisation/search\"")
+        .doesNotContain("id=\"addOrganisationButton\" disabled")
         .contains("Add Individual")
         .contains(">Select</th>")
         .contains("aria-label=\"Select Ms Jane Smith\"")

@@ -92,7 +92,10 @@ class LiablePartyTemplateRenderTest {
                     new IndividualOpponentFormService(lookup),
                     new IndividualOpponentValidator(),
                     new IndividualOpponentOtherDetailsValidator(),
-                    lookup),
+                    lookup,
+                    null,
+                    null,
+                    null),
                 new OpponentsSectionController(
                     null,
                     null,
