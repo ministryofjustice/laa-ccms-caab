@@ -105,6 +105,9 @@ public class SessionConstants {
   /** Session attribute used to keep track of the application. */
   public static final String APPLICATION = "caseApplication";
 
+  /** The application of the means reassessment under way, held only while that journey is. */
+  public static final String MEANS_REASSESSMENT_APPLICATION = "meansReassessmentApplication";
+
   /** Session attribute used to keep track of the application details for submission. */
   public static final String APPLICATION_DETAILS = "applicationDetails";
 

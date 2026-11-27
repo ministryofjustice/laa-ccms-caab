@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -15,6 +16,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -28,11 +30,13 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.MEANS_REASSESSMENT_APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildAssessmentDetail;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
+import jakarta.servlet.ServletException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -40,6 +44,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -52,16 +57,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.format.support.FormattingConversionService;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
@@ -70,6 +79,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.opa.context.ContextToken;
 import uk.gov.laa.ccms.caab.opa.util.SecurityUtils;
+import uk.gov.laa.ccms.caab.security.RefusedActionSession;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.BillingService;
@@ -120,7 +130,18 @@ public class AssessmentControllerTest {
         standaloneSetup(assessmentController).setConversionService(conversionService).build();
   }
 
-  private static final UserDetail userDetails = buildUserDetail();
+  /** Holds VC and AC, which a means or merits assessment of an amendment needs. */
+  private static final UserDetail userDetails =
+      buildUserDetail()
+          .functions(List.of(UserRole.VIEW_CASE_DETAILS.getCode(), UserRole.AMEND_CASE.getCode()));
+
+  /** Holds what /case/billing/bill requires, so the bill interview is reachable. */
+  private static final UserDetail billUser =
+      buildUserDetail().functions(List.of("VC", "CB", FunctionConstants.ADD_UPDATE_BILL));
+
+  /** Holds what /case/billing/poa requires. */
+  private static final UserDetail poaUser =
+      buildUserDetail().functions(List.of("VC", "CB", FunctionConstants.ADD_UPDATE_POA));
 
   private static final ActiveCase activeCase =
       ActiveCase.builder().caseReferenceNumber("testCaseReferenceNumber").build();
@@ -336,6 +357,7 @@ public class AssessmentControllerTest {
                 .param("invoked-from", "CCMS_MNA05")
                 .sessionAttr(USER_DETAILS, userDetails)
                 .sessionAttr(APPLICATION, application)
+                .sessionAttr(MEANS_REASSESSMENT_APPLICATION, application)
                 .sessionAttr(CASE, ebsCase)
                 .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk());
@@ -405,6 +427,94 @@ public class AssessmentControllerTest {
   }
 
   @Test
+  @DisplayName("An amendment the case overview left in the session is not a reassessment")
+  void assessmentGet_caseOverviewAmendmentIsNotAReassessment() {
+    final ApplicationDetail amendment =
+        buildApplicationDetail(1, true, new Date()).caseReferenceNumber("CASE123").amendment(true);
+
+    final Exception exception =
+        assertThrows(
+            ServletException.class,
+            () ->
+                mockMvc.perform(
+                    get("/amendments/assessments")
+                        .param("assessment", "means")
+                        .param("invoked-from", "CCMS_MNA05")
+                        .sessionAttr(
+                            USER_DETAILS,
+                            buildUserDetail()
+                                .functions(List.of(UserRole.VIEW_CASE_DETAILS.getCode())))
+                        .sessionAttr(APPLICATION, amendment)
+                        .sessionAttr(CASE, new ApplicationDetail().caseReferenceNumber("CASE123"))
+                        .sessionAttr(ACTIVE_CASE, activeCase)));
+
+    assertInstanceOf(AccessDeniedException.class, exception.getCause());
+    verify(assessmentService, never())
+        .startAssessment(any(), any(), any(), any(), anyBoolean(), any());
+  }
+
+  @Test
+  @DisplayName("A persisted application cannot be assessed as a means reassessment")
+  void assessmentGet_claimedReassessmentWithoutOneOpenIsRefused() {
+    final Exception exception =
+        assertThrows(
+            ServletException.class,
+            () ->
+                mockMvc.perform(
+                    get("/amendments/assessments")
+                        .param("assessment", "means")
+                        .param("invoked-from", "CCMS_MNA05")
+                        .sessionAttr(USER_DETAILS, userDetails)
+                        .sessionAttr(APPLICATION_ID, "applicationId")
+                        .sessionAttr(ACTIVE_CASE, activeCase)));
+
+    assertInstanceOf(AccessDeniedException.class, exception.getCause());
+    verify(assessmentService, never())
+        .startAssessment(any(), any(), any(), any(), anyBoolean(), any());
+  }
+
+  @Test
+  @DisplayName("A held means reassessment is run as one whatever the request's invoked-from")
+  void assessmentGet_heldReassessmentIgnoresTheRequestedInvokedFrom() throws Exception {
+    final ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+    application.setCaseReferenceNumber("CASE123");
+    application.setApplicationType(new ApplicationType().id("EMER").displayValue("Emergency"));
+    when(contextSecurityUtil.createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            eq("CCMS_MNA05"),
+            anyString(),
+            anyString()))
+        .thenReturn("contextToken");
+    when(clientService.getClient(anyString())).thenReturn(Mono.just(new ClientDetail()));
+    final AssessmentDetail assessmentDetail = buildAssessmentDetail(new Date());
+    assessmentDetail.setId(1L);
+    when(assessmentService.getAssessments(any(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessmentDetail)));
+
+    mockMvc
+        .perform(
+            get("/amendments/assessments")
+                .param("assessment", "means")
+                .param("invoked-from", "summary")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(APPLICATION, application)
+                .sessionAttr(MEANS_REASSESSMENT_APPLICATION, application)
+                .sessionAttr(CASE, new ApplicationDetail().caseReferenceNumber("CASE123"))
+                .sessionAttr(ACTIVE_CASE, activeCase))
+        .andExpect(status().isOk());
+
+    final ArgumentCaptor<ApplicationDetail> captor =
+        ArgumentCaptor.forClass(ApplicationDetail.class);
+    verify(assessmentService)
+        .startAssessment(captor.capture(), any(), any(), any(), eq(true), isNull());
+    assertEquals("SUB", captor.getValue().getApplicationType().getId());
+  }
+
+  @Test
   public void assessmentGet_meansReassessment_rejectsStaleSessionApplication() {
     // A session application left over from a different case must not be used.
     final ApplicationDetail application =
@@ -417,6 +527,7 @@ public class AssessmentControllerTest {
             .param("invoked-from", "CCMS_MNA05")
             .sessionAttr(USER_DETAILS, userDetails)
             .sessionAttr(APPLICATION, application)
+            .sessionAttr(MEANS_REASSESSMENT_APPLICATION, application)
             .sessionAttr(CASE, ebsCase)
             .sessionAttr(ACTIVE_CASE, activeCase);
 
@@ -482,7 +593,7 @@ public class AssessmentControllerTest {
             get("/application/assessments")
                 .param("assessment", "billing")
                 .param("invoked-from", "CCMS_CB03")
-                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(USER_DETAILS, billUser)
                 .sessionAttr(CASE, ebsCase)
                 .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk())
@@ -542,7 +653,7 @@ public class AssessmentControllerTest {
             get("/application/assessments")
                 .param("assessment", "poa")
                 .param("invoked-from", "CCMS_POA01")
-                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(USER_DETAILS, poaUser)
                 .sessionAttr(CASE, ebsCase)
                 .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk())
@@ -586,6 +697,48 @@ public class AssessmentControllerTest {
     assertEquals(
         "User is not authorised to run the POA assessment for this case",
         exception.getCause().getMessage());
+  }
+
+  @Test
+  public void assessmentGet_billing_rejectedWhenTheUserDoesNotHoldTheBillFunction()
+      throws Exception {
+    // The case supports billing, but this user does not hold it. The interview sits under
+    // /application, which carries no user-function rule, so without this check a user with only
+    // VC could start it.
+    final ApplicationDetail ebsCase =
+        buildApplicationDetail(1, true, new Date())
+            .caseReferenceNumber("CASE123")
+            .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_BILL));
+
+    final MockHttpServletRequestBuilder request =
+        get("/application/assessments")
+            .param("assessment", "billing")
+            .param("invoked-from", "CCMS_CB03")
+            .sessionAttr(USER_DETAILS, buildUserDetail().functions(List.of("VC")))
+            .sessionAttr(CASE, ebsCase)
+            .sessionAttr(ACTIVE_CASE, activeCase);
+
+    assertRefusedLikeTheRouteRules(request);
+  }
+
+  @Test
+  public void assessmentGet_poa_rejectedWhenTheUserDoesNotHoldCaseBills() throws Exception {
+    final ApplicationDetail ebsCase =
+        buildApplicationDetail(1, true, new Date())
+            .caseReferenceNumber("CASE123")
+            .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_POA));
+
+    final MockHttpServletRequestBuilder request =
+        get("/application/assessments")
+            .param("assessment", "poa")
+            .param("invoked-from", "CCMS_POA01")
+            .sessionAttr(
+                USER_DETAILS,
+                buildUserDetail().functions(List.of("VC", FunctionConstants.ADD_UPDATE_POA)))
+            .sessionAttr(CASE, ebsCase)
+            .sessionAttr(ACTIVE_CASE, activeCase);
+
+    assertRefusedLikeTheRouteRules(request);
   }
 
   @Test
@@ -938,6 +1091,71 @@ public class AssessmentControllerTest {
     return session;
   }
 
+  @ParameterizedTest
+  @CsvSource({
+    "3, , VC CB",
+    "4, , VC CB " + FunctionConstants.ADD_UPDATE_BILL,
+    "1, CCMS_MNA05, YCA",
+    "2, , YCA",
+    "2, , VC"
+  })
+  @DisplayName("The answers page rechecks the functions the interview needed")
+  void assessmentConfirmRechecksFunctions(
+      final long rulebaseId, final String invokedFrom, final String functions) {
+    final ContextToken contextToken = new ContextToken();
+    contextToken.setRulebaseId(rulebaseId);
+    contextToken.setInvokedForm(invokedFrom);
+    contextToken.setCaseId("testCaseReferenceNumber");
+    when(contextSecurityUtil.createContextToken(anyString())).thenReturn(contextToken);
+
+    final Exception exception =
+        assertThrows(
+            ServletException.class,
+            () ->
+                mockMvc.perform(
+                    get("/application/assessments/confirm")
+                        .param("val", "token")
+                        .sessionAttr(
+                            USER_DETAILS,
+                            buildUserDetail().functions(List.of(functions.split(" "))))
+                        .sessionAttr(ACTIVE_CASE, activeCase)));
+
+    assertInstanceOf(AccessDeniedException.class, exception.getCause());
+    verifyNoInteractions(assessmentService);
+  }
+
+  @Test
+  @DisplayName("The open draft's answers page needs no VC")
+  void assessmentConfirmAllowsOpenDraftWithoutViewCase() throws Exception {
+    final ContextToken contextToken = new ContextToken();
+    contextToken.setRulebaseId(1L);
+    contextToken.setProviderId("providerId");
+    contextToken.setCaseId("draftReference");
+    when(contextSecurityUtil.createContextToken(anyString())).thenReturn(contextToken);
+    when(lookupService.getAssessmentSummaryAttributes(anyString()))
+        .thenReturn(Mono.just(new AssessmentSummaryEntityLookupDetail()));
+    when(assessmentService.getAssessments(anyList(), anyString(), anyString()))
+        .thenReturn(
+            Mono.just(
+                new AssessmentDetails()
+                    .addContentItem(buildAssessmentDetail(Date.from(Instant.now())))));
+    when(assessmentService.getAssessmentSummaryToDisplay(any(), any(), any()))
+        .thenReturn(new ArrayList<>());
+
+    this.mockMvc
+        .perform(
+            get("/application/assessments/confirm")
+                .param("val", "token")
+                .sessionAttr(USER_DETAILS, buildUserDetail().functions(List.of("YCA")))
+                .sessionAttr(
+                    ACTIVE_CASE,
+                    ActiveCase.builder()
+                        .caseReferenceNumber("draftReference")
+                        .draftApplication(true)
+                        .build()))
+        .andExpect(status().isOk());
+  }
+
   @Test
   public void assessmentConfirm_throwsExceptionWhenAssessmentDetailsNotFound() {
     final String token = "someToken";
@@ -1142,5 +1360,131 @@ public class AssessmentControllerTest {
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals("Failed to retrieve assessment details", exception.getCause().getMessage());
+  }
+
+  @Test
+  public void assessmentGet_amendmentMeans_refusedWithoutViewCaseDetails() throws Exception {
+    when(applicationService.getApplication(anyString()))
+        .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date()).amendment(true)));
+
+    assertRefusedLikeTheRouteRules(
+        get("/application/assessments")
+            .param("assessment", "means")
+            .param("invoked-from", "summary")
+            .sessionAttr(USER_DETAILS, buildUserDetail().functions(List.of()))
+            .sessionAttr(APPLICATION_ID, "applicationId"));
+  }
+
+  @Test
+  @DisplayName("An amendment's assessment is part of Amend Case, so it needs AC")
+  void assessmentGet_amendmentRefusedWithoutAmendCase() {
+    when(applicationService.getApplication(anyString()))
+        .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date()).amendment(true)));
+
+    final Exception exception =
+        assertThrows(
+            ServletException.class,
+            () ->
+                mockMvc.perform(
+                    get("/amendments/assessments")
+                        .param("assessment", "merits")
+                        .param("invoked-from", "CCMS_AC01")
+                        .sessionAttr(
+                            USER_DETAILS,
+                            buildUserDetail()
+                                .functions(List.of(UserRole.VIEW_CASE_DETAILS.getCode())))
+                        .sessionAttr(APPLICATION_ID, "applicationId")
+                        .sessionAttr(ACTIVE_CASE, activeCase)));
+
+    assertInstanceOf(AccessDeniedException.class, exception.getCause());
+    verify(assessmentService, never())
+        .startAssessment(any(), any(), any(), any(), anyBoolean(), any());
+  }
+
+  @Test
+  public void assessmentGet_meansReassessment_refusedWithoutViewCaseDetails() throws Exception {
+    assertRefusedLikeTheRouteRules(
+        get("/application/assessments")
+            .param("assessment", "means")
+            .param("invoked-from", "CCMS_MNA05")
+            .sessionAttr(USER_DETAILS, buildUserDetail().functions(List.of()))
+            .sessionAttr(APPLICATION_ID, "applicationId"));
+  }
+
+  @Test
+  public void assessmentGet_retainedReassessmentSession_cannotSkipTheCheckByChangingInvokedFrom()
+      throws Exception {
+    // VC was refreshed away while the reassessment's session was kept. Asking for the same
+    // assessment under another invoked-from must not turn the check off.
+    final ApplicationDetail liveCase = buildApplicationDetail(1, false, new Date());
+    liveCase.setCaseReferenceNumber("CASE123");
+    when(applicationService.getApplication(anyString())).thenReturn(Mono.just(liveCase));
+
+    assertRefusedLikeTheRouteRules(
+        get("/application/assessments")
+            .param("assessment", "means")
+            .param("invoked-from", "summary")
+            .sessionAttr(USER_DETAILS, buildUserDetail().functions(List.of()))
+            .sessionAttr(APPLICATION_ID, "applicationId")
+            .sessionAttr(ACTIVE_CASE, ActiveCase.builder().caseReferenceNumber("CASE123").build()));
+
+    verify(assessmentService, never())
+        .startAssessment(any(), any(), any(), any(), anyBoolean(), any());
+  }
+
+  @Test
+  public void assessmentGet_openDraft_needsNoViewCaseDetails() throws Exception {
+    final ApplicationDetail draft = buildApplicationDetail(1, false, new Date());
+    draft.setCaseReferenceNumber("DRAFT123");
+    when(applicationService.getApplication(anyString())).thenReturn(Mono.just(draft));
+    when(contextSecurityUtil.createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()))
+        .thenReturn("contextToken");
+    when(clientService.getClient(anyString())).thenReturn(Mono.just(new ClientDetail()));
+    final AssessmentDetail assessmentDetail = buildAssessmentDetail(new Date());
+    assessmentDetail.setId(1L);
+    when(assessmentService.getAssessments(any(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessmentDetail)));
+    when(messageSource.getMessage(anyString(), any(), any(Locale.class)))
+        .thenReturn("returnLinkText");
+
+    mockMvc
+        .perform(
+            get("/application/assessments")
+                .param("assessment", "means")
+                .param("invoked-from", "summary")
+                .sessionAttr(USER_DETAILS, buildUserDetail().functions(List.of()))
+                .sessionAttr(APPLICATION_ID, "applicationId")
+                .sessionAttr(
+                    ACTIVE_CASE,
+                    ActiveCase.builder()
+                        .draftApplication(true)
+                        .caseReferenceNumber("DRAFT123")
+                        .build()))
+        .andExpect(status().isOk());
+  }
+
+  /** The refusal is handled as the route rules handle one: back to a page, with the message. */
+  private void assertRefusedLikeTheRouteRules(final MockHttpServletRequestBuilder request)
+      throws Exception {
+    final FormattingConversionService conversionService = new FormattingConversionService();
+    conversionService.addConverter(String.class, CaseContext.class, CaseContext::fromPathValue);
+    final MockMvc withExceptionAdvice =
+        standaloneSetup(assessmentController)
+            .setConversionService(conversionService)
+            .setControllerAdvice(new GlobalExceptionHandler())
+            .build();
+
+    final MvcResult result = withExceptionAdvice.perform(request).andReturn();
+
+    assertEquals("/home", result.getResponse().getRedirectedUrl());
+    assertTrue(RefusedActionSession.consumeNotAuthorised(result.getRequest().getSession()));
   }
 }

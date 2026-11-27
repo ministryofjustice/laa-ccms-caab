@@ -11,6 +11,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 import static uk.gov.laa.ccms.caab.util.FileUtil.getFileExtension;
 
+import jakarta.servlet.http.HttpSession;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -20,6 +21,7 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -74,6 +76,21 @@ public class EvidenceSectionController {
   private final EvidenceMapper evidenceMapper;
 
   private static final String CASE_CONTEXT = "caseContext";
+
+  /**
+   * The evidence pages act on the active case, so its kind must match the route: an amendment's
+   * evidence under /amendments, a draft's under /application.
+   */
+  @ModelAttribute
+  public void requireRouteMatchesActiveCase(
+      @PathVariable(value = CASE_CONTEXT, required = false) final CaseContext context,
+      final HttpSession session) {
+    if (context != null
+        && session.getAttribute(ACTIVE_CASE) instanceof ActiveCase activeCase
+        && context.isAmendment() != activeCase.isAmendment()) {
+      throw new AccessDeniedException("The active case does not belong to this route");
+    }
+  }
 
   /**
    * Handles the GET request for the evidence upload screen.
@@ -134,13 +151,8 @@ public class EvidenceSectionController {
       @PathVariable(CASE_CONTEXT) CaseContext context,
       final Model model) {
 
-    // Initialise the form data object.
     final EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
-    evidenceUploadFormData.setApplicationOrOutcomeId(String.valueOf(activeCase.getApplicationId()));
-    evidenceUploadFormData.setCaseReferenceNumber(activeCase.getCaseReferenceNumber());
-    evidenceUploadFormData.setProviderId(activeCase.getProviderId());
-    evidenceUploadFormData.setDocumentSender(userDetail.getLoginId());
-    evidenceUploadFormData.setCcmsModule(resolveCcmsModule(context));
+    bindToActiveCase(evidenceUploadFormData, activeCase, userDetail, context);
 
     model.addAttribute(EVIDENCE_UPLOAD_FORM_DATA, evidenceUploadFormData);
     model.addAttribute(CASE_CONTEXT, context);
@@ -163,13 +175,17 @@ public class EvidenceSectionController {
   public String uploadEvidenceDocument(
       @SessionAttribute(EVIDENCE_REQUIRED) final List<EvidenceRequired> evidenceRequired,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
+      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @ModelAttribute(EVIDENCE_UPLOAD_FORM_DATA)
           final EvidenceUploadFormData evidenceUploadFormData,
       final BindingResult bindingResult,
       @PathVariable(CASE_CONTEXT) CaseContext context,
       Model model) {
 
-    evidenceUploadFormData.setCcmsModule(resolveCcmsModule(context));
+    // The document is filed against the open case, whatever the request or a kept form says.
+    bindToActiveCase(evidenceUploadFormData, activeCase, userDetail, context);
+
+    // Validate the evidence form data
     evidenceUploadValidator.validate(evidenceUploadFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {
@@ -375,5 +391,17 @@ public class EvidenceSectionController {
     model.addAttribute(
         "validExtensions", getCommaDelimitedString(evidenceUploadValidator.getValidExtensions()));
     model.addAttribute("maxFileSize", evidenceUploadValidator.getMaxFileSize());
+  }
+
+  private void bindToActiveCase(
+      final EvidenceUploadFormData evidenceUploadFormData,
+      final ActiveCase activeCase,
+      final UserDetail userDetail,
+      final CaseContext context) {
+    evidenceUploadFormData.setApplicationOrOutcomeId(String.valueOf(activeCase.getApplicationId()));
+    evidenceUploadFormData.setCaseReferenceNumber(activeCase.getCaseReferenceNumber());
+    evidenceUploadFormData.setProviderId(activeCase.getProviderId());
+    evidenceUploadFormData.setDocumentSender(userDetail.getLoginId());
+    evidenceUploadFormData.setCcmsModule(resolveCcmsModule(context));
   }
 }

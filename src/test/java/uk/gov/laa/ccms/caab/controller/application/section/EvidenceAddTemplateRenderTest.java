@@ -127,7 +127,12 @@ class EvidenceAddTemplateRenderTest {
   private String render(String caseContext, List<EvidenceRequired> evidenceRequired)
       throws Exception {
     final ActiveCase activeCase =
-        ActiveCase.builder().applicationId(1).caseReferenceNumber("CASE-1").providerId(2).build();
+        ActiveCase.builder()
+            .applicationId(1)
+            .caseReferenceNumber("CASE-1")
+            .providerId(2)
+            .amendment("amendments".equals(caseContext))
+            .build();
 
     return mockMvc
         .perform(

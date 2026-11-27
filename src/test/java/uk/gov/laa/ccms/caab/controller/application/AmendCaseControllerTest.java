@@ -24,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import reactor.core.publisher.Mono;
@@ -131,13 +132,17 @@ class AmendCaseControllerTest {
           .thenReturn(Mono.just(Collections.emptyList()));
       when(evidenceMapper.toEvidenceRequiredList(any(), any())).thenReturn(Collections.emptyList());
 
+      // Left by a draft opened before returning to the amendment.
+      final ActiveCase retained =
+          ActiveCase.builder().caseReferenceNumber("DRAFT-CASE").draftApplication(true).build();
+      final MockHttpSession session = new MockHttpSession();
       assertThat(
               mockMvc.perform(
                   get("/amendments/summary")
+                      .session(session)
                       .sessionAttr(APPLICATION_SUMMARY, tdsApplication)
                       .sessionAttr(CASE, activeCase)
-                      .sessionAttr(
-                          ACTIVE_CASE, ActiveCase.builder().caseReferenceNumber("123").build())
+                      .sessionAttr(ACTIVE_CASE, retained)
                       .sessionAttr(USER_DETAILS, userDetail)))
           .hasStatusOk()
           .hasViewName("application/amendment-summary")
@@ -153,6 +158,13 @@ class AmendCaseControllerTest {
                           .getAvailableFunctions()
                           .contains(FunctionConstants.MEANS_ASSESSMENT_LEGAL_AMENDMENT)),
               eq(userDetail));
+
+      // The active case is rebuilt from the amendment, not the draft left before it.
+      final ActiveCase rebuilt = (ActiveCase) session.getAttribute(ACTIVE_CASE);
+      assertThat(rebuilt.getCaseReferenceNumber()).isEqualTo("123");
+      assertThat(rebuilt.getApplicationId()).isEqualTo(123);
+      assertThat(rebuilt.isAmendment()).isTrue();
+      assertThat(rebuilt.isDraftApplication()).isFalse();
 
       // The required evidence list is loaded so the upload screen can be reached directly
       // from the amend case summary.

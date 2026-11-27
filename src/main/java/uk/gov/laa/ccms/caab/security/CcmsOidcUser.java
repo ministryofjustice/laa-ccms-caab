@@ -46,6 +46,16 @@ public class CcmsOidcUser implements OidcUser {
   }
 
   /**
+   * The same user with a different set of authorities, such as after their functions are reloaded.
+   *
+   * @param authorities the authorities granted to the user.
+   * @return the user with the given authorities.
+   */
+  public CcmsOidcUser withAuthorities(final Collection<? extends GrantedAuthority> authorities) {
+    return new CcmsOidcUser(delegate, ccmsLoginId, authorities);
+  }
+
+  /**
    * The CCMS username this EntraID identity resolved to.
    *
    * @return the CCMS username.
