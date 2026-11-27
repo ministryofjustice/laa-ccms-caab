@@ -5,6 +5,31 @@
 target/
 # local config file
 .env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+# Secret and credential files
+*secret*.yml
+*secret*.yaml
+*secret*.json
+*secret*.properties
+*secret*.toml
+*secret*.ini
+*credential*.yml
+*credential*.yaml
+*credential*.json
+*credential*.properties
+*credential*.toml
+*credential*.ini
+secrets*.gradle
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+id_ed25519
 
 # Log file
 *.log
