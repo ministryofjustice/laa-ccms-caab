@@ -132,9 +132,11 @@ public interface LiablePartiesDisplayMapper {
       final OpponentDetail opponent, @Context final LiablePartiesMappingContext context) {
     if (OpponentUtil.isOrganisation(opponent)) {
       if (awardPartyEditable(opponent)) {
-        return opponent.getOrganisationName();
+        return OpponentUtil.hasMeaningfulText(opponent.getOrganisationName())
+            ? opponent.getOrganisationName()
+            : opponent.getContactNameRole();
       }
-      return StringUtils.hasText(opponent.getContactNameRole())
+      return OpponentUtil.hasMeaningfulText(opponent.getContactNameRole())
           ? opponent.getContactNameRole()
           : opponent.getOrganisationName();
     }

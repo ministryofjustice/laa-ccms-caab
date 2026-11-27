@@ -823,12 +823,18 @@ public class AwardController {
     }
 
     final String awardKey = partyListAwardKey(ebsCase, awardPath, awardId);
-    final List<OpponentDetail> toCreate =
-        selected.stream()
-            .filter(PartyListCandidate::requiresCreation)
-            .map(PartyListCandidate::opponent)
-            .toList();
-    final List<String> claimedEbsIds = toCreate.stream().map(OpponentDetail::getEbsId).toList();
+    // Every selected candidate carries, at most, an application-scoped CAAB id, which cannot be
+    // used to link directly to a case-outcome-scoped opponent, so all of them are submitted
+    // through the create-or-reuse endpoint; the API reuses an existing outcome opponent with a
+    // matching EBS id rather than creating a duplicate.
+    final List<OpponentDetail> toSubmit =
+        selected.stream().map(PartyListCandidate::opponent).toList();
+    if (toSubmit.stream().anyMatch(opponent -> !StringUtils.hasText(opponent.getEbsId()))) {
+      model.addAttribute(
+          "partyListErrorMessage", "case.partyListScreen.unresolvedSelectionErrorMessage");
+      return renderPartyList(candidates, awardPath, awardId, model);
+    }
+    final List<String> claimedEbsIds = toSubmit.stream().map(OpponentDetail::getEbsId).toList();
     if (!claimCreatedEbsIds(session, awardKey, claimedEbsIds)) {
       model.addAttribute(
           "partyListErrorMessage", "case.partyListScreen.unresolvedSelectionErrorMessage");
@@ -841,11 +847,7 @@ public class AwardController {
           user.getProvider().getId().intValue(),
           awardPath,
           awardId,
-          selected.stream()
-              .filter(candidate -> !candidate.requiresCreation())
-              .map(candidate -> candidate.opponent().getId())
-              .toList(),
-          toCreate,
+          toSubmit,
           user.getLoginId(),
           created -> createdEbsIds.add(created.getEbsId()));
     } catch (final RuntimeException ex) {

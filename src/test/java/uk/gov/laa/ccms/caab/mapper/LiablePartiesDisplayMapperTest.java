@@ -150,6 +150,24 @@ class LiablePartiesDisplayMapperTest {
 
   @ParameterizedTest
   @NullAndEmptySource
+  @ValueSource(strings = {"   "})
+  void editableUnnamedOrganisationsFallBackToContactName(String organisationName) {
+    final var organisation =
+        person()
+            .type("Organisation")
+            .ebsId("AWARD123")
+            .organisationName(organisationName)
+            .contactNameRole("Jo Bloggs, Manager");
+
+    final var result =
+        mapper.toLiablePartiesDisplay(linkedAward(), List.of(organisation), context());
+
+    assertThat(result.parties().getFirst().name()).isEqualTo("Jo Bloggs, Manager");
+    assertThat(result.parties().getFirst().editable()).isTrue();
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
   @ValueSource(strings = {"123", "AWAR", "directory123"})
   void nonEditableOrganisationsUseContactNameInsteadOfOrganisationName(String ebsId) {
     final var organisation =
@@ -177,6 +195,23 @@ class LiablePartiesDisplayMapperTest {
         mapper.toLiablePartiesDisplay(linkedAward(), List.of(organisation), context());
 
     assertThat(result.parties().getFirst().name()).isEqualTo("Acme Ltd");
+    assertThat(result.parties().getFirst().editable()).isFalse();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"Not Available", "not available", " Not Available "})
+  void nonEditableOrganisationsTreatTheEbsNotAvailablePlaceholderAsNoContactName(
+      String contactName) {
+    final var organisation =
+        person()
+            .type("Organisation")
+            .organisationName("London Borough of Croydon")
+            .contactNameRole(contactName);
+
+    final var result =
+        mapper.toLiablePartiesDisplay(linkedAward(), List.of(organisation), context());
+
+    assertThat(result.parties().getFirst().name()).isEqualTo("London Borough of Croydon");
     assertThat(result.parties().getFirst().editable()).isFalse();
   }
 

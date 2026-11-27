@@ -362,54 +362,57 @@ public class CaseOutcomeService {
   }
 
   /**
-   * Links opponents to an award as liable or interested parties, one at a time. Existing opponents
-   * are linked by id, which the API treats as a no-op if already linked; opponents without a CAAB
-   * id are created and linked in one step. The callback is invoked as soon as each creation
-   * succeeds, so earlier creations are still reported if a later link fails.
+   * Links opponents to an award as liable or interested parties, one at a time, via the
+   * create-or-reuse endpoint. Candidates sourced from the party list carry, at most, an
+   * application-scoped CAAB id, which cannot be used to link directly to a different,
+   * case-outcome-scoped opponent record, so every opponent is submitted with its CAAB id cleared;
+   * the API reuses an existing outcome opponent with a matching EBS id rather than creating a
+   * duplicate. The callback is invoked as soon as each one succeeds, so earlier successes are still
+   * reported if a later one fails.
    *
    * @param caseReferenceNumber the case reference number
    * @param providerId the provider id
    * @param awardPath the award type's URL path segment
    * @param awardId the award to link the parties to
-   * @param existingOpponentIds the ids of existing opponents to link
-   * @param newOpponents the opponents without a CAAB id to create and link
+   * @param opponents the case/application opponents selected to add
    * @param loginId the login id of the user performing the update
-   * @param onNewOpponentCreated invoked with each new opponent once created and linked
+   * @param onOpponentLinked invoked with each opponent once created or reused and linked
    */
   public void addLiableParties(
       final String caseReferenceNumber,
       final Integer providerId,
       final String awardPath,
       final Integer awardId,
-      final List<Integer> existingOpponentIds,
-      final List<OpponentDetail> newOpponents,
+      final List<OpponentDetail> opponents,
       final String loginId,
-      final Consumer<OpponentDetail> onNewOpponentCreated) {
-    final List<Integer> opponentIds =
-        Optional.ofNullable(existingOpponentIds).orElse(List.of()).stream()
-            .filter(Objects::nonNull)
-            .distinct()
-            .toList();
-    final List<OpponentDetail> opponents =
-        Optional.ofNullable(newOpponents).orElse(List.of()).stream()
-            .filter(Objects::nonNull)
-            .toList();
-    if (opponentIds.isEmpty() && opponents.isEmpty()) {
+      final Consumer<OpponentDetail> onOpponentLinked) {
+    final List<OpponentDetail> selected =
+        Optional.ofNullable(opponents).orElse(List.of()).stream().filter(Objects::nonNull).toList();
+    if (selected.isEmpty()) {
       return;
     }
     final Integer caseOutcomeId = requireCaseOutcome(caseReferenceNumber, providerId).getId();
     final String awardType = awardTypeForPath(awardPath);
-    for (final Integer opponentId : opponentIds) {
+    for (final OpponentDetail opponent : selected) {
       caabApiClient
-          .addAwardLiableParty(caseOutcomeId, awardType, awardId, opponentId, loginId)
+          .createAwardLiableParty(
+              caseOutcomeId, awardType, awardId, loginId, copyOpponentForAwardLink(opponent))
           .block();
+      onOpponentLinked.accept(opponent);
     }
-    for (final OpponentDetail opponent : opponents) {
-      caabApiClient
-          .createAwardLiableParty(caseOutcomeId, awardType, awardId, loginId, opponent)
-          .block();
-      onNewOpponentCreated.accept(opponent);
-    }
+  }
+
+  /**
+   * Clears the CAAB id before an opponent is submitted to the create-or-reuse endpoint. The id on a
+   * party-list candidate is application-scoped, not case-outcome-scoped, so it must never be sent
+   * as-is; the source opponent is left untouched since it may still be referenced elsewhere in the
+   * session.
+   */
+  private OpponentDetail copyOpponentForAwardLink(final OpponentDetail source) {
+    final OpponentDetail copy = new OpponentDetail();
+    BeanUtils.copyProperties(source, copy);
+    copy.setId(null);
+    return copy;
   }
 
   /**

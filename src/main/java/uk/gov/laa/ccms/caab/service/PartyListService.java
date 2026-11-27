@@ -54,17 +54,7 @@ public class PartyListService {
    * @param opponent the case opponent
    * @param alreadyAdded whether the opponent is already linked to the award
    */
-  public record PartyListCandidate(String key, OpponentDetail opponent, boolean alreadyAdded) {
-
-    /**
-     * Checks whether the opponent has no CAAB id, so must be created before it can be linked.
-     *
-     * @return true if the opponent must be created
-     */
-    public boolean requiresCreation() {
-      return opponent.getId() == null;
-    }
-  }
+  public record PartyListCandidate(String key, OpponentDetail opponent, boolean alreadyAdded) {}
 
   /**
    * Lists every case opponent that has an identity it can be linked or created by.
@@ -77,8 +67,9 @@ public class PartyListService {
    * @param providerId the provider owning the case
    * @param awardPath the award type's URL path segment
    * @param awardId the award parties are being added to
-   * @param createdEbsIds EBS ids of opponents already created and linked to this award; needed
-   *     because the CAAB API replaces a created opponent's EBS id with a synthetic one
+   * @param createdEbsIds EBS ids of opponents created and linked to this award earlier in the same
+   *     session, closing the small window before the CAAB API's own record of the link (keyed on
+   *     the opponent's real EBS id) is visible to a subsequent request, e.g. a rapid double-submit
    * @return the candidates, in case opponent order, without duplicates
    * @throws CaabApplicationException if a persisted draft cannot be reloaded
    */
@@ -162,8 +153,9 @@ public class PartyListService {
   }
 
   /**
-   * Finds the selected opponents that must be created but would fail the validation applied on the
-   * dedicated add screens. Opponents with a CAAB id are linked as they are, so are not checked.
+   * Finds the selected opponents that would fail the validation applied on the dedicated add
+   * screens. Every selected opponent is submitted through the create-or-reuse endpoint, so all
+   * candidates are checked, not just those without a CAAB id.
    *
    * @param selected the selected candidates
    * @return the keys of the candidates that cannot be created
@@ -171,7 +163,6 @@ public class PartyListService {
    */
   public Set<String> findInvalid(final List<PartyListCandidate> selected) {
     return selected.stream()
-        .filter(PartyListCandidate::requiresCreation)
         .filter(candidate -> !isValid(candidate.opponent()))
         .map(PartyListCandidate::key)
         .collect(Collectors.toSet());
@@ -201,7 +192,7 @@ public class PartyListService {
   private static String partyName(
       final OpponentDetail opponent, final List<CommonLookupValueDetail> titles) {
     final String name = OpponentUtil.getPartyName(opponent, titles);
-    return OpponentUtil.isOrganisation(opponent) && !StringUtils.hasText(name)
+    return OpponentUtil.isOrganisation(opponent) && !OpponentUtil.hasMeaningfulText(name)
         ? opponent.getContactNameRole()
         : name;
   }

@@ -461,16 +461,11 @@ class CaseOutcomeLiablePartiesTest {
   class AddLiablePartiesTests {
 
     @Test
-    void doesNothingWhenNoOpponentIdsSupplied() {
-      service.addLiableParties(
-          "300000001", 123, "land", 7, List.of(), List.of(), "login", opponent -> {});
+    void doesNothingWhenNoOpponentsSupplied() {
+      service.addLiableParties("300000001", 123, "land", 7, List.of(), "login", opponent -> {});
       verifyNoInteractions(caabApiClient);
 
-      service.addLiableParties(
-          "300000001", 123, "land", 7, null, List.of(), "login", opponent -> {});
-      verifyNoInteractions(caabApiClient);
-
-      service.addLiableParties("300000001", 123, "land", 7, null, null, "login", opponent -> {});
+      service.addLiableParties("300000001", 123, "land", 7, null, "login", opponent -> {});
       verifyNoInteractions(caabApiClient);
     }
 
@@ -482,33 +477,56 @@ class CaseOutcomeLiablePartiesTest {
           .thenReturn(Mono.empty());
 
       service.addLiableParties(
-          "300000001", 123, "land", 7, List.of(), List.of(newOpponent), "login", opponent -> {});
+          "300000001", 123, "land", 7, List.of(newOpponent), "login", opponent -> {});
 
       verify(caabApiClient).createAwardLiableParty(42, "LAND", 7, "login", newOpponent);
       verifyNoMoreInteractions(caabApiClient);
     }
 
     @Test
-    void linksExistingOpponentsAndCreatesNewOpponentsInTheSameCall() {
+    void clearsTheCaabIdBeforeSubmittingAnExistingCandidateSoItIsNeverTreatedAsALinkRequest() {
+      // The candidate's id is application-scoped, not case-outcome-scoped, so it must never be
+      // sent to the create-or-reuse endpoint, which rejects any non-null id.
       stubOutcome(outcome());
-      final OpponentDetail newOpponent = new OpponentDetail().ebsId("61700985").type("INDIVIDUAL");
-      when(caabApiClient.addAwardLiableParty(42, "LAND", 7, 11, "login")).thenReturn(Mono.empty());
-      when(caabApiClient.createAwardLiableParty(42, "LAND", 7, "login", newOpponent))
+      final OpponentDetail candidate =
+          new OpponentDetail().id(11).ebsId("EBS-1").type("INDIVIDUAL");
+      final OpponentDetail expectedSubmission =
+          new OpponentDetail().ebsId("EBS-1").type("INDIVIDUAL");
+      when(caabApiClient.createAwardLiableParty(42, "LAND", 7, "login", expectedSubmission))
           .thenReturn(Mono.empty());
 
-      final List<OpponentDetail> created = new java.util.ArrayList<>();
+      service.addLiableParties(
+          "300000001", 123, "land", 7, List.of(candidate), "login", opponent -> {});
+
+      verify(caabApiClient).createAwardLiableParty(42, "LAND", 7, "login", expectedSubmission);
+      verifyNoMoreInteractions(caabApiClient);
+      // The original candidate, as held elsewhere in the session, is left untouched.
+      assertThat(candidate.getId()).isEqualTo(11);
+    }
+
+    @Test
+    void submitsEveryCandidateOneAtATimeAndInvokesTheCallbackWithTheOriginal() {
+      stubOutcome(outcome());
+      final OpponentDetail existing = new OpponentDetail().id(11).ebsId("EBS-1").type("INDIVIDUAL");
+      final OpponentDetail brandNew = new OpponentDetail().ebsId("61700985").type("INDIVIDUAL");
+      when(caabApiClient.createAwardLiableParty(
+              eq(42), eq("LAND"), eq(7), eq("login"), any(OpponentDetail.class)))
+          .thenReturn(Mono.empty());
+
+      final List<OpponentDetail> linked = new java.util.ArrayList<>();
 
       service.addLiableParties(
-          "300000001", 123, "land", 7, List.of(11), List.of(newOpponent), "login", created::add);
+          "300000001", 123, "land", 7, List.of(existing, brandNew), "login", linked::add);
 
-      assertThat(created).containsExactly(newOpponent);
-      verify(caabApiClient).addAwardLiableParty(42, "LAND", 7, 11, "login");
-      verify(caabApiClient).createAwardLiableParty(42, "LAND", 7, "login", newOpponent);
+      assertThat(linked).containsExactly(existing, brandNew);
+      verify(caabApiClient, org.mockito.Mockito.times(2))
+          .createAwardLiableParty(
+              eq(42), eq("LAND"), eq(7), eq("login"), any(OpponentDetail.class));
       verifyNoMoreInteractions(caabApiClient);
     }
 
     @Test
-    void newOpponentCreationFailurePropagates() {
+    void opponentSubmissionFailurePropagates() {
       stubOutcome(outcome());
       final OpponentDetail newOpponent = new OpponentDetail().ebsId("61700985").type("INDIVIDUAL");
       final CaabApiClientException failure = new CaabApiClientException("502 Bad Gateway");
@@ -518,24 +536,18 @@ class CaseOutcomeLiablePartiesTest {
       assertThatThrownBy(
               () ->
                   service.addLiableParties(
-                      "300000001",
-                      123,
-                      "land",
-                      7,
-                      List.of(),
-                      List.of(newOpponent),
-                      "login",
-                      opponent -> {}))
+                      "300000001", 123, "land", 7, List.of(newOpponent), "login", opponent -> {}))
           .isSameAs(failure);
     }
 
     @Test
     void missingCaseOutcomeSurfacesAnError() {
       doReturn(Optional.empty()).when(service).getCaseOutcome("300000001", 123);
+      final OpponentDetail opponent = new OpponentDetail().id(11).ebsId("EBS-1");
       assertThatThrownBy(
               () ->
                   service.addLiableParties(
-                      "300000001", 123, "land", 7, List.of(11), List.of(), "login", opponent -> {}))
+                      "300000001", 123, "land", 7, List.of(opponent), "login", o -> {}))
           .isInstanceOf(IllegalStateException.class)
           .hasMessageContaining("No case outcome exists");
       verifyNoInteractions(caabApiClient);
@@ -544,161 +556,64 @@ class CaseOutcomeLiablePartiesTest {
     @Test
     void rejectsUnsupportedAwardPath() {
       stubOutcome(outcome());
+      final OpponentDetail opponent = new OpponentDetail().id(11).ebsId("EBS-1");
       assertThatThrownBy(
               () ->
                   service.addLiableParties(
-                      "300000001",
-                      123,
-                      "unsupported",
-                      7,
-                      List.of(11),
-                      List.of(),
-                      "login",
-                      opponent -> {}))
+                      "300000001", 123, "unsupported", 7, List.of(opponent), "login", o -> {}))
           .isInstanceOf(CaabApplicationException.class)
           .hasMessageContaining("Unsupported award path");
       verifyNoInteractions(caabApiClient);
     }
 
-    @Test
-    void costAwardLinksEachDistinctOpponentViaTheLiablePartiesEndpoint() {
+    @ParameterizedTest
+    @ValueSource(strings = {"cost-award", "financial-award", "land", "asset"})
+    void eachAwardTypeSubmitsItsSelectedOpponentsViaTheCreateEndpoint(String path) {
       stubOutcome(outcome());
-      when(caabApiClient.addAwardLiableParty(eq(42), eq("COST"), eq(7), any(), eq("login")))
+      final String awardType =
+          switch (path) {
+            case "cost-award" -> "COST";
+            case "financial-award" -> "DAMAGE";
+            case "land" -> "LAND";
+            default -> "ASSET";
+          };
+      final OpponentDetail first = new OpponentDetail().id(11).ebsId("EBS-1");
+      final OpponentDetail second = new OpponentDetail().id(22).ebsId("EBS-2");
+      when(caabApiClient.createAwardLiableParty(
+              eq(42), eq(awardType), eq(7), eq("login"), any(OpponentDetail.class)))
           .thenReturn(Mono.empty());
 
-      // Opponent 11 is repeated in the request, alongside a new opponent 22, to prove
-      // de-duplication of the ids sent to the API.
       service.addLiableParties(
-          "300000001",
-          123,
-          "cost-award",
-          7,
-          List.of(11, 11, 22),
-          List.of(),
-          "login",
-          opponent -> {});
+          "300000001", 123, path, 7, List.of(first, second), "login", opponent -> {});
 
-      verify(caabApiClient).addAwardLiableParty(42, "COST", 7, 11, "login");
-      verify(caabApiClient).addAwardLiableParty(42, "COST", 7, 22, "login");
+      verify(caabApiClient)
+          .createAwardLiableParty(42, awardType, 7, "login", new OpponentDetail().ebsId("EBS-1"));
+      verify(caabApiClient)
+          .createAwardLiableParty(42, awardType, 7, "login", new OpponentDetail().ebsId("EBS-2"));
       verifyNoMoreInteractions(caabApiClient);
     }
 
-    @Test
-    void costAwardLinkFailurePropagates() {
+    @ParameterizedTest
+    @ValueSource(strings = {"cost-award", "financial-award", "land", "asset"})
+    void eachAwardTypeSubmissionFailurePropagates(String path) {
       stubOutcome(outcome());
+      final String awardType =
+          switch (path) {
+            case "cost-award" -> "COST";
+            case "financial-award" -> "DAMAGE";
+            case "land" -> "LAND";
+            default -> "ASSET";
+          };
+      final OpponentDetail opponent = new OpponentDetail().id(11).ebsId("EBS-1");
       final CaabApiClientException failure = new CaabApiClientException("502 Bad Gateway");
-      when(caabApiClient.addAwardLiableParty(42, "COST", 7, 11, "login"))
+      when(caabApiClient.createAwardLiableParty(
+              eq(42), eq(awardType), eq(7), eq("login"), any(OpponentDetail.class)))
           .thenReturn(Mono.error(failure));
+
       assertThatThrownBy(
               () ->
                   service.addLiableParties(
-                      "300000001",
-                      123,
-                      "cost-award",
-                      7,
-                      List.of(11),
-                      List.of(),
-                      "login",
-                      opponent -> {}))
-          .isSameAs(failure);
-    }
-
-    @Test
-    void financialAwardLinksEachDistinctOpponentViaTheLiablePartiesEndpoint() {
-      stubOutcome(outcome());
-      when(caabApiClient.addAwardLiableParty(eq(42), eq("DAMAGE"), eq(7), any(), eq("login")))
-          .thenReturn(Mono.empty());
-
-      service.addLiableParties(
-          "300000001",
-          123,
-          "financial-award",
-          7,
-          List.of(11, 22),
-          List.of(),
-          "login",
-          opponent -> {});
-
-      verify(caabApiClient).addAwardLiableParty(42, "DAMAGE", 7, 11, "login");
-      verify(caabApiClient).addAwardLiableParty(42, "DAMAGE", 7, 22, "login");
-    }
-
-    @Test
-    void financialAwardLinkFailurePropagates() {
-      stubOutcome(outcome());
-      final CaabApiClientException failure = new CaabApiClientException("502 Bad Gateway");
-      when(caabApiClient.addAwardLiableParty(42, "DAMAGE", 7, 11, "login"))
-          .thenReturn(Mono.error(failure));
-      assertThatThrownBy(
-              () ->
-                  service.addLiableParties(
-                      "300000001",
-                      123,
-                      "financial-award",
-                      7,
-                      List.of(11),
-                      List.of(),
-                      "login",
-                      opponent -> {}))
-          .isSameAs(failure);
-    }
-
-    @Test
-    void landAwardLinksEachDistinctOpponentViaTheLiablePartiesEndpoint() {
-      stubOutcome(outcome());
-      when(caabApiClient.addAwardLiableParty(eq(42), eq("LAND"), eq(7), any(), eq("login")))
-          .thenReturn(Mono.empty());
-
-      service.addLiableParties(
-          "300000001", 123, "land", 7, List.of(11, 22), List.of(), "login", opponent -> {});
-
-      verify(caabApiClient).addAwardLiableParty(42, "LAND", 7, 11, "login");
-      verify(caabApiClient).addAwardLiableParty(42, "LAND", 7, 22, "login");
-    }
-
-    @Test
-    void landAwardLinkFailurePropagates() {
-      stubOutcome(outcome());
-      final CaabApiClientException failure = new CaabApiClientException("502 Bad Gateway");
-      when(caabApiClient.addAwardLiableParty(42, "LAND", 7, 11, "login"))
-          .thenReturn(Mono.error(failure));
-      assertThatThrownBy(
-              () ->
-                  service.addLiableParties(
-                      "300000001", 123, "land", 7, List.of(11), List.of(), "login", opponent -> {}))
-          .isSameAs(failure);
-    }
-
-    @Test
-    void otherAssetAwardLinksEachDistinctOpponentViaTheLiablePartiesEndpoint() {
-      stubOutcome(outcome());
-      when(caabApiClient.addAwardLiableParty(eq(42), eq("ASSET"), eq(7), any(), eq("login")))
-          .thenReturn(Mono.empty());
-
-      service.addLiableParties(
-          "300000001", 123, "asset", 7, List.of(11, 22), List.of(), "login", opponent -> {});
-
-      verify(caabApiClient).addAwardLiableParty(42, "ASSET", 7, 11, "login");
-      verify(caabApiClient).addAwardLiableParty(42, "ASSET", 7, 22, "login");
-    }
-
-    @Test
-    void otherAssetAwardLinkFailurePropagates() {
-      stubOutcome(outcome());
-      final CaabApiClientException failure = new CaabApiClientException("502 Bad Gateway");
-      when(caabApiClient.addAwardLiableParty(42, "ASSET", 7, 11, "login"))
-          .thenReturn(Mono.error(failure));
-      assertThatThrownBy(
-              () ->
-                  service.addLiableParties(
-                      "300000001",
-                      123,
-                      "asset",
-                      7,
-                      List.of(11),
-                      List.of(),
-                      "login",
-                      opponent -> {}))
+                      "300000001", 123, path, 7, List.of(opponent), "login", o -> {}))
           .isSameAs(failure);
     }
   }

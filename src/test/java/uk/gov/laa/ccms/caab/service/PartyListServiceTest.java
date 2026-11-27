@@ -221,11 +221,13 @@ class PartyListServiceTest {
   }
 
   @Test
-  void validatesOnlyOpponentsThatMustBeCreated() {
+  void validatesCandidatesEvenWhenTheyAlreadyHaveACaabId() {
     final OpponentDetail existing = new OpponentDetail().id(1).type("Unknown");
 
+    // Every selected candidate is submitted through the create-or-reuse endpoint, so a CAAB id
+    // no longer exempts a candidate from validation: an unrecognised type is reported as invalid.
     assertThat(service.findInvalid(List.of(new PartyListCandidate("id-1", existing, false))))
-        .isEmpty();
+        .containsExactly("id-1");
     verifyNoInteractions(
         individualOpponentFormService, individualOpponentValidator, organisationOpponentValidator);
   }
