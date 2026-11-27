@@ -36,6 +36,11 @@ public class EvidenceMapperTest {
     EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
     evidenceUploadFormData.setCcmsModule(CcmsModule.AMENDMENT);
 
+    assertEquals(
+        "",
+        evidenceMapper.toEvidenceDocumentDetail(evidenceUploadFormData).getEvidenceDescriptions());
+
+    evidenceUploadFormData.setEvidenceTypes(null);
     EvidenceDocumentDetail result = evidenceMapper.toEvidenceDocumentDetail(evidenceUploadFormData);
 
     assertEquals("", result.getEvidenceDescriptions());

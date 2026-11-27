@@ -84,7 +84,7 @@ public interface CommonMapper {
   }
 
   default String toCaretSeparatedString(List<String> items) {
-    return String.join("^", items);
+    return items == null ? "" : String.join("^", items);
   }
 
   default List<String> toListFromDelimitedString(final String items, final String delimiter) {
