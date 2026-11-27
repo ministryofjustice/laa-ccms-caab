@@ -30,6 +30,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.MEANS_REASSESSMENT_APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildAssessmentDetail;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
@@ -356,6 +357,7 @@ public class AssessmentControllerTest {
                 .param("invoked-from", "CCMS_MNA05")
                 .sessionAttr(USER_DETAILS, userDetails)
                 .sessionAttr(APPLICATION, application)
+                .sessionAttr(MEANS_REASSESSMENT_APPLICATION, application)
                 .sessionAttr(CASE, ebsCase)
                 .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk());
@@ -425,6 +427,33 @@ public class AssessmentControllerTest {
   }
 
   @Test
+  @DisplayName("An amendment the case overview left in the session is not a reassessment")
+  void assessmentGet_caseOverviewAmendmentIsNotAReassessment() {
+    final ApplicationDetail amendment =
+        buildApplicationDetail(1, true, new Date()).caseReferenceNumber("CASE123").amendment(true);
+
+    final Exception exception =
+        assertThrows(
+            ServletException.class,
+            () ->
+                mockMvc.perform(
+                    get("/amendments/assessments")
+                        .param("assessment", "means")
+                        .param("invoked-from", "CCMS_MNA05")
+                        .sessionAttr(
+                            USER_DETAILS,
+                            buildUserDetail()
+                                .functions(List.of(UserRole.VIEW_CASE_DETAILS.getCode())))
+                        .sessionAttr(APPLICATION, amendment)
+                        .sessionAttr(CASE, new ApplicationDetail().caseReferenceNumber("CASE123"))
+                        .sessionAttr(ACTIVE_CASE, activeCase)));
+
+    assertInstanceOf(AccessDeniedException.class, exception.getCause());
+    verify(assessmentService, never())
+        .startAssessment(any(), any(), any(), any(), anyBoolean(), any());
+  }
+
+  @Test
   @DisplayName("A persisted application cannot be assessed as a means reassessment")
   void assessmentGet_claimedReassessmentWithoutOneOpenIsRefused() {
     final Exception exception =
@@ -473,6 +502,7 @@ public class AssessmentControllerTest {
                 .param("invoked-from", "summary")
                 .sessionAttr(USER_DETAILS, userDetails)
                 .sessionAttr(APPLICATION, application)
+                .sessionAttr(MEANS_REASSESSMENT_APPLICATION, application)
                 .sessionAttr(CASE, new ApplicationDetail().caseReferenceNumber("CASE123"))
                 .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk());
@@ -497,6 +527,7 @@ public class AssessmentControllerTest {
             .param("invoked-from", "CCMS_MNA05")
             .sessionAttr(USER_DETAILS, userDetails)
             .sessionAttr(APPLICATION, application)
+            .sessionAttr(MEANS_REASSESSMENT_APPLICATION, application)
             .sessionAttr(CASE, ebsCase)
             .sessionAttr(ACTIVE_CASE, activeCase);
 
@@ -1065,7 +1096,8 @@ public class AssessmentControllerTest {
     "3, , VC CB",
     "4, , VC CB " + FunctionConstants.ADD_UPDATE_BILL,
     "1, CCMS_MNA05, YCA",
-    "2, , YCA"
+    "2, , YCA",
+    "2, , VC"
   })
   @DisplayName("The answers page rechecks the functions the interview needed")
   void assessmentConfirmRechecksFunctions(

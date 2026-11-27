@@ -8,6 +8,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.MEANS_REASSESSMENT_APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_QUICK_EDIT_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
@@ -203,6 +204,7 @@ public class MeansReassessmentController {
     session.removeAttribute(APPLICATION_ID);
     session.removeAttribute(APPLICATION_SUMMARY);
     session.setAttribute(APPLICATION, amendment);
+    session.setAttribute(MEANS_REASSESSMENT_APPLICATION, amendment);
     session.setAttribute(ACTIVE_CASE, activeCase);
   }
 
@@ -272,6 +274,7 @@ public class MeansReassessmentController {
     session.removeAttribute(APPLICATION_SUMMARY);
     session.removeAttribute(APPLICATION_ID);
     session.removeAttribute(APPLICATION);
+    session.removeAttribute(MEANS_REASSESSMENT_APPLICATION);
     session.removeAttribute(ACTIVE_CASE);
   }
 }

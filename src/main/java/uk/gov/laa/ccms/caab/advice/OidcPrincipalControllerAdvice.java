@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -115,8 +114,8 @@ public class OidcPrincipalControllerAdvice {
    */
   private static void endLogin(HttpSession session) {
     SecurityContextHolder.clearContext();
-    session.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-    session.removeAttribute("user");
+    // The whole session goes, so the next login cannot inherit the open case or application.
+    session.invalidate();
   }
 
   /**

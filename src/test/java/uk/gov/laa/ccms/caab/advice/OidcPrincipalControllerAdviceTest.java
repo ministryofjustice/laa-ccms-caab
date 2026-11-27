@@ -318,9 +318,7 @@ class OidcPrincipalControllerAdviceTest {
             () -> advice.addOidcPrincipalToModel(authentication, model, session, request));
 
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
-        verify(session)
-            .removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-        verify(session).removeAttribute("user");
+        verify(session).invalidate();
       } finally {
         SecurityContextHolder.clearContext();
       }
@@ -344,9 +342,7 @@ class OidcPrincipalControllerAdviceTest {
             () -> advice.addOidcPrincipalToModel(authentication, model, session, request));
 
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
-        verify(session)
-            .removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-        verify(session).removeAttribute("user");
+        verify(session).invalidate();
       } finally {
         SecurityContextHolder.clearContext();
       }

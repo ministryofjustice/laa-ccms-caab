@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.MEANS_REASSESSMENT_APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDetail;
 
@@ -500,13 +501,15 @@ public class AssessmentController {
   }
 
   /**
-   * Whether the session holds a means reassessment: its application is kept in memory under {@code
-   * APPLICATION}, with no persisted {@code APPLICATION_ID}, as {@code MeansReassessmentController}
-   * leaves it.
+   * Whether the session holds a means reassessment: the application its journey put in the session,
+   * still the session's application and with no persisted {@code APPLICATION_ID}. The case overview
+   * also keeps an amendment in {@code APPLICATION}, so that alone is not enough.
    */
   private static boolean holdsReassessment(final HttpSession session) {
+    final Object application = session.getAttribute(APPLICATION);
     return session.getAttribute(APPLICATION_ID) == null
-        && session.getAttribute(APPLICATION) instanceof ApplicationDetail;
+        && application instanceof ApplicationDetail
+        && application == session.getAttribute(MEANS_REASSESSMENT_APPLICATION);
   }
 
   /**
@@ -579,12 +582,20 @@ public class AssessmentController {
       requireBillingFunctions(assessmentRulebase, user);
       return;
     }
-    final boolean openDraft =
-        !MEANS_REASSESSMENT_INVOKED_FROM.equals(contextToken.getInvokedForm())
-            && isOpenDraftOf(session, contextToken.getCaseId());
+    final boolean reassessment =
+        MEANS_REASSESSMENT_INVOKED_FROM.equals(contextToken.getInvokedForm());
+    final boolean openDraft = !reassessment && isOpenDraftOf(session, contextToken.getCaseId());
     if (!openDraft && !holdsViewCaseDetails(user)) {
       throw new AccessDeniedException(
           "User does not hold the functions needed to view this assessment");
+    }
+    // Anything else on an open case is an amendment's assessment, part of Amend Case.
+    if (!openDraft
+        && !reassessment
+        && !Optional.ofNullable(user.getFunctions())
+            .orElseGet(List::of)
+            .contains(UserRole.AMEND_CASE.getCode())) {
+      throw new AccessDeniedException("An amendment's assessment needs the amend case function");
     }
   }
 
