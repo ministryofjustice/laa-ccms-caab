@@ -97,6 +97,8 @@ UPPERCASE_ENVIRONMENT_IDENTIFIER_RE = re.compile(
     r"^[A-Z][A-Z0-9_]*(?:TOKEN|SECRET|KEY|PASSWORD)$"
 )
 
+ALLOW_MARKER_RE = re.compile(r"check-secrets\s*:\s*allow\b")
+
 CODE_EXPRESSION_RES = [
     re.compile(r"^[A-Za-z_$][A-Za-z0-9_$.]*\s*\(", re.IGNORECASE),
     re.compile(r"^[A-Za-z_$][A-Za-z0-9_$.]*\s*\[", re.IGNORECASE),
@@ -292,20 +294,26 @@ for raw_file in changed_files.stdout.split(b"\0"):
     if known_token_found:
         continue
 
-    for match in CREDENTIAL_ASSIGNMENT_RE.finditer(text):
-        unquoted_value = match.groups()[3] is not None
-        value = next(
-            (group for group in match.groups()[1:] if group is not None),
-            "",
-        ).strip()
-        if len(value) < 8:
+    for line in text.splitlines():
+        # The marker only exempts credential-like assignments. Strong secret
+        # detectors and secret filenames are evaluated before this loop.
+        if ALLOW_MARKER_RE.search(line):
             continue
-        if unquoted_value and is_code_expression(value):
-            continue
-        if not is_placeholder_value(value, file):
-            print(f"pre-commit: blocked credential-like content in {file}")
-            blocked = True
-            break
+
+        for match in CREDENTIAL_ASSIGNMENT_RE.finditer(line):
+            unquoted_value = match.groups()[3] is not None
+            value = next(
+                (group for group in match.groups()[1:] if group is not None),
+                "",
+            ).strip()
+            if len(value) < 8:
+                continue
+            if unquoted_value and is_code_expression(value):
+                continue
+            if not is_placeholder_value(value, file):
+                print(f"pre-commit: blocked credential-like content in {file}")
+                blocked = True
+                break
 
 if blocked:
     print("pre-commit: remove the staged secret, then commit again.")
