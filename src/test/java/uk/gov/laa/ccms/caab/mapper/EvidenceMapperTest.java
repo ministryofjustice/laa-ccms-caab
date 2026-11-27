@@ -32,6 +32,16 @@ public class EvidenceMapperTest {
   @InjectMocks EvidenceMapper evidenceMapper = new EvidenceMapperImpl();
 
   @Test
+  void toEvidenceDocumentDetailAcceptsNoEvidenceTypes() {
+    EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
+    evidenceUploadFormData.setCcmsModule(CcmsModule.AMENDMENT);
+
+    EvidenceDocumentDetail result = evidenceMapper.toEvidenceDocumentDetail(evidenceUploadFormData);
+
+    assertEquals("", result.getEvidenceDescriptions());
+  }
+
+  @Test
   void testEvidenceUploadFormData_toEvidenceDocumentDetail() throws IOException {
     EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
     evidenceUploadFormData.setApplicationOrOutcomeId("123");

@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.bean.evidence;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,7 +16,7 @@ import uk.gov.laa.ccms.caab.constants.CcmsModule;
 public class EvidenceUploadFormData extends FileUploadFormData implements Serializable {
 
   /** The evidence types covered by the uploaded file. */
-  private List<String> evidenceTypes;
+  private List<String> evidenceTypes = new ArrayList<>();
 
   /** The ebs registered id for this document. */
   private String registeredDocumentId;

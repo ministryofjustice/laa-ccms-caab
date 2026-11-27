@@ -169,7 +169,7 @@ public class EvidenceSectionController {
       @PathVariable(CASE_CONTEXT) CaseContext context,
       Model model) {
 
-    // Validate the evidence form data
+    evidenceUploadFormData.setCcmsModule(resolveCcmsModule(context));
     evidenceUploadValidator.validate(evidenceUploadFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {
