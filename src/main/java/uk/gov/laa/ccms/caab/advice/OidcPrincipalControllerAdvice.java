@@ -16,6 +16,7 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
 import uk.gov.laa.ccms.caab.controller.HomeController;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.security.ProviderContext;
 import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.security.UserFunctionAuthorities;
 import uk.gov.laa.ccms.caab.service.UserService;
@@ -91,6 +92,7 @@ public class OidcPrincipalControllerAdvice {
       model.addAttribute("userAttributes", oidcUser.getClaims());
 
       session.setAttribute("user", user);
+      ProviderContext.setFromUser(user);
     }
   }
 
@@ -113,6 +115,7 @@ public class OidcPrincipalControllerAdvice {
    * them against, and the next request logs the user in again.
    */
   private static void endLogin(HttpSession session) {
+    ProviderContext.clear();
     SecurityContextHolder.clearContext();
     // The whole session goes, so the next login cannot inherit the open case or application.
     session.invalidate();

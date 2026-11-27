@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -33,6 +34,7 @@ import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.caab.security.ProviderContext;
 import uk.gov.laa.ccms.caab.util.EvidenceUtil;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupValueDetail;
@@ -91,7 +93,36 @@ public class EvidenceService {
    * @return EvidenceDocumentDetail for the supplied id.
    */
   public Mono<EvidenceDocumentDetail> getEvidenceDocument(final Integer evidenceDocumentId) {
-    return caabApiClient.getEvidenceDocument(evidenceDocumentId);
+    final String threadProviderId = ProviderContext.getProviderId();
+    final Mono<EvidenceDocumentDetail> documentMono =
+        caabApiClient.getEvidenceDocument(evidenceDocumentId);
+    return Mono.deferContextual(
+        contextView -> {
+          final String resolved = ProviderContext.resolveProviderId(contextView);
+          final String activeProviderId = resolved != null ? resolved : threadProviderId;
+          return documentMono.handle(
+              (document, sink) -> {
+                final String ownerId =
+                    document.getProviderId() != null ? document.getProviderId().trim() : null;
+                if (activeProviderId != null) {
+                  if (ownerId == null || ownerId.isEmpty()) {
+                    sink.error(
+                        new AccessDeniedException(
+                            "Evidence document %s does not contain an active provider owner"
+                                .formatted(evidenceDocumentId)));
+                    return;
+                  }
+                  if (!activeProviderId.equals(ownerId)) {
+                    sink.error(
+                        new AccessDeniedException(
+                            "Evidence document %s does not belong to active provider"
+                                .formatted(evidenceDocumentId)));
+                    return;
+                  }
+                }
+                sink.next(document);
+              });
+        });
   }
 
   /**

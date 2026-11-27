@@ -73,6 +73,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
@@ -131,6 +132,7 @@ import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
+import uk.gov.laa.ccms.caab.security.ProviderContext;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CaseDetail;
@@ -1743,6 +1745,57 @@ class ApplicationServiceTest {
     StepVerifier.create(applicationDetailMono)
         .expectNextMatches(applicationDetail -> applicationDetail == mockApplicationDetail)
         .verifyComplete();
+  }
+
+  @Test
+  void getApplication_rejectsCrossProviderRecordWhenProviderContextActive() {
+    final String applicationId = "12345";
+    final ApplicationDetail otherProviderApplication =
+        new ApplicationDetail().providerDetails(buildApplicationProviderDetails(99999));
+    when(caabApiClient.getApplication(applicationId))
+        .thenReturn(Mono.just(otherProviderApplication));
+
+    ProviderContext.setProviderId("12345");
+    try {
+      StepVerifier.create(applicationService.getApplication(applicationId))
+          .expectError(AccessDeniedException.class)
+          .verify();
+    } finally {
+      ProviderContext.clear();
+    }
+  }
+
+  @Test
+  void getApplication_rejectsRecordWithMissingProviderWhenProviderContextActive() {
+    final String applicationId = "12345";
+    final ApplicationDetail unownedApplication = new ApplicationDetail();
+    when(caabApiClient.getApplication(applicationId)).thenReturn(Mono.just(unownedApplication));
+
+    ProviderContext.setProviderId("12345");
+    try {
+      StepVerifier.create(applicationService.getApplication(applicationId))
+          .expectError(AccessDeniedException.class)
+          .verify();
+    } finally {
+      ProviderContext.clear();
+    }
+  }
+
+  @Test
+  void getApplication_allowsMatchingProviderRecordWhenProviderContextActive() {
+    final String applicationId = "12345";
+    final ApplicationDetail ownApplication =
+        new ApplicationDetail().providerDetails(buildApplicationProviderDetails(12345));
+    when(caabApiClient.getApplication(applicationId)).thenReturn(Mono.just(ownApplication));
+
+    ProviderContext.setProviderId("12345");
+    try {
+      StepVerifier.create(applicationService.getApplication(applicationId))
+          .expectNext(ownApplication)
+          .verifyComplete();
+    } finally {
+      ProviderContext.clear();
+    }
   }
 
   @Test

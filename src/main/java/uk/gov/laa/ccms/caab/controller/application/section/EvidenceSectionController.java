@@ -182,8 +182,21 @@ public class EvidenceSectionController {
       @PathVariable(CASE_CONTEXT) CaseContext context,
       Model model) {
 
+    final Integer userProviderId =
+        userDetail.getProvider() != null ? userDetail.getProvider().getId() : null;
+    if (userProviderId == null) {
+      throw new AccessDeniedException("Current provider could not be established");
+    }
+    if (activeCase.getProviderId() == null) {
+      throw new AccessDeniedException("Active case does not contain a provider");
+    }
+    if (!userProviderId.equals(activeCase.getProviderId())) {
+      throw new AccessDeniedException("Active case does not belong to current provider");
+    }
+
     // The document is filed against the open case, whatever the request or a kept form says.
     bindToActiveCase(evidenceUploadFormData, activeCase, userDetail, context);
+    evidenceUploadFormData.setRegisteredDocumentId(null);
 
     // Validate the evidence form data
     evidenceUploadValidator.validate(evidenceUploadFormData, bindingResult);
