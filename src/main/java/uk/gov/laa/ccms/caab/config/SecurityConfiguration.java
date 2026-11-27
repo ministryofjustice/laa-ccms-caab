@@ -202,17 +202,31 @@ public class SecurityConfiguration {
         .requestMatchers(
             "/application/validate", "/application/submit/summary", "/application/declaration")
         .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
-        // An amendment is made to an open case, so every amendment route needs VC.
+        // An amendment is made to an open case, so every amendment route needs VC. The pages
+        // reached from the amendment summary are the Amend Case flow, so they also need AC; the
+        // quick edits and submission pages under /amendments are opened by other actions.
         .requestMatchers("/amendments/proceedings/add/**")
-        .access(caseAction(UserRole.ADD_PROCEEDING))
+        .access(caseAction(UserRole.AMEND_CASE, UserRole.ADD_PROCEEDING))
         .requestMatchers("/amendments/proceedings/*/remove")
-        .access(caseAction(UserRole.DELETE_PROCEEDING))
+        .access(caseAction(UserRole.AMEND_CASE, UserRole.DELETE_PROCEEDING))
         .requestMatchers("/amendments/proceedings/*/summary", "/amendments/proceedings/edit/**")
-        .access(caseAction(UserRole.VIEW_PROCEEDING))
+        .access(caseAction(UserRole.AMEND_CASE, UserRole.VIEW_PROCEEDING))
         .requestMatchers("/amendments/proceedings/scope-limitations/**")
         .access(
             AuthorizationManagers.allOf(
-                caseAction(), anyFunction(UserRole.ADD_PROCEEDING, UserRole.VIEW_PROCEEDING)))
+                caseAction(UserRole.AMEND_CASE),
+                anyFunction(UserRole.ADD_PROCEEDING, UserRole.VIEW_PROCEEDING)))
+        .requestMatchers(
+            "/amendments/proceedings/**",
+            "/amendments/proceedings-and-costs",
+            "/amendments/case-costs",
+            "/amendments/prior-authorities/**",
+            "/amendments/sections/opponents/**",
+            "/amendments/sections/linked-cases/**",
+            "/amendments/sections/evidence",
+            "/amendments/evidence/**",
+            "/amendments/assessments/*/remove")
+        .access(caseAction(UserRole.AMEND_CASE))
         // Submitting an amended client is the end of the amend client flow, which needs CD.
         .requestMatchers(HttpMethod.POST, "/amendments/sections/client/details/summary")
         .access(caseAction(UserRole.VIEW_CLIENT_DETAILS, UserRole.SUBMIT_UPDATE_CLIENT))

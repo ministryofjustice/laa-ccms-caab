@@ -220,6 +220,17 @@ public class AssessmentController {
           "User does not hold the functions needed to assess an open case");
     }
 
+    // An amendment's assessment is part of the Amend Case flow, so it also needs AC. The means
+    // reassessment shares this URL but is opened by its own action.
+    if (!assessmentRulebase.isFinancialAssessment()
+        && Boolean.TRUE.equals(application.getAmendment())
+        && !reassessment
+        && !Optional.ofNullable(user.getFunctions())
+            .orElseGet(List::of)
+            .contains(UserRole.AMEND_CASE.getCode())) {
+      throw new AccessDeniedException("An amendment's assessment needs the amend case function");
+    }
+
     // The TDS draft application does not carry a computed default cost limitation, which the OPA
     // prepop maps into DEFAULT_COST_LIMITATION and the merits rulebase needs to resolve its
     // completion goal (ASSESS_COMPLETE). Compute it here before building the prepop.

@@ -129,9 +129,10 @@ public class AssessmentControllerTest {
         standaloneSetup(assessmentController).setConversionService(conversionService).build();
   }
 
-  /** Holds VC, which a means or merits assessment of an amendment or reassessment needs. */
+  /** Holds VC and AC, which a means or merits assessment of an amendment needs. */
   private static final UserDetail userDetails =
-      buildUserDetail().functions(List.of(UserRole.VIEW_CASE_DETAILS.getCode()));
+      buildUserDetail()
+          .functions(List.of(UserRole.VIEW_CASE_DETAILS.getCode(), UserRole.AMEND_CASE.getCode()));
 
   /** Holds what /case/billing/bill requires, so the bill interview is reachable. */
   private static final UserDetail billUser =
@@ -1340,6 +1341,32 @@ public class AssessmentControllerTest {
             .param("invoked-from", "summary")
             .sessionAttr(USER_DETAILS, buildUserDetail().functions(List.of()))
             .sessionAttr(APPLICATION_ID, "applicationId"));
+  }
+
+  @Test
+  @DisplayName("An amendment's assessment is part of Amend Case, so it needs AC")
+  void assessmentGet_amendmentRefusedWithoutAmendCase() {
+    when(applicationService.getApplication(anyString()))
+        .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date()).amendment(true)));
+
+    final Exception exception =
+        assertThrows(
+            ServletException.class,
+            () ->
+                mockMvc.perform(
+                    get("/amendments/assessments")
+                        .param("assessment", "merits")
+                        .param("invoked-from", "CCMS_AC01")
+                        .sessionAttr(
+                            USER_DETAILS,
+                            buildUserDetail()
+                                .functions(List.of(UserRole.VIEW_CASE_DETAILS.getCode())))
+                        .sessionAttr(APPLICATION_ID, "applicationId")
+                        .sessionAttr(ACTIVE_CASE, activeCase)));
+
+    assertInstanceOf(AccessDeniedException.class, exception.getCause());
+    verify(assessmentService, never())
+        .startAssessment(any(), any(), any(), any(), anyBoolean(), any());
   }
 
   @Test

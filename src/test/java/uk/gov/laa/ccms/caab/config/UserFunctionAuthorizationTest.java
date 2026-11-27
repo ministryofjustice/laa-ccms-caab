@@ -116,29 +116,34 @@ class UserFunctionAuthorizationTest {
             "GET",
             "/amendments/proceedings/add/matter-type",
             UserRole.ADD_PROCEEDING,
-            UserRole.VIEW_CASE_DETAILS),
+            UserRole.VIEW_CASE_DETAILS,
+            UserRole.AMEND_CASE),
         route(
             "POST",
             "/amendments/proceedings/add/confirm",
             UserRole.ADD_PROCEEDING,
-            UserRole.VIEW_CASE_DETAILS),
+            UserRole.VIEW_CASE_DETAILS,
+            UserRole.AMEND_CASE),
         route("GET", "/application/proceedings/12/remove", UserRole.DELETE_PROCEEDING),
         route(
             "POST",
             "/amendments/proceedings/12/remove",
             UserRole.DELETE_PROCEEDING,
-            UserRole.VIEW_CASE_DETAILS),
+            UserRole.VIEW_CASE_DETAILS,
+            UserRole.AMEND_CASE),
         route("GET", "/application/proceedings/12/summary", UserRole.VIEW_PROCEEDING),
         route(
             "GET",
             "/amendments/proceedings/12/summary",
             UserRole.VIEW_PROCEEDING,
-            UserRole.VIEW_CASE_DETAILS),
+            UserRole.VIEW_CASE_DETAILS,
+            UserRole.AMEND_CASE),
         route(
             "POST",
             "/amendments/proceedings/edit/confirm",
             UserRole.VIEW_PROCEEDING,
-            UserRole.VIEW_CASE_DETAILS),
+            UserRole.VIEW_CASE_DETAILS,
+            UserRole.AMEND_CASE),
         route(
             "GET",
             "/case/details/proceeding/0",
@@ -315,15 +320,24 @@ class UserFunctionAuthorizationTest {
             "/case/outcome-and-awards/asset",
             UserRole.RECORD_OUTCOME,
             UserRole.VIEW_CASE_DETAILS),
-        route("GET", "/amendments/sections/opponents", UserRole.VIEW_CASE_DETAILS),
+        route(
+            "GET",
+            "/amendments/sections/opponents",
+            UserRole.VIEW_CASE_DETAILS,
+            UserRole.AMEND_CASE),
         route("POST", "/allocate-cost-limit/review", UserRole.VIEW_CASE_DETAILS),
         route("POST", "/means-reassessment/declaration", UserRole.VIEW_CASE_DETAILS),
-        route("POST", "/amendments/assessments/1/remove", UserRole.VIEW_CASE_DETAILS),
+        route(
+            "POST",
+            "/amendments/assessments/1/remove",
+            UserRole.VIEW_CASE_DETAILS,
+            UserRole.AMEND_CASE),
         route(
             "POST",
             "/amendments/proceedings/scope-limitations/confirm",
             UserRole.ADD_PROCEEDING,
-            UserRole.VIEW_CASE_DETAILS),
+            UserRole.VIEW_CASE_DETAILS,
+            UserRole.AMEND_CASE),
         route(
             "POST", "/notifications/7", UserRole.SUBMIT_NOTIFICATION, UserRole.VIEW_NOTIFICATIONS),
         route(
@@ -356,9 +370,32 @@ class UserFunctionAuthorizationTest {
             "POST",
             "/amendments/proceedings/scope-limitations/1/remove",
             UserRole.VIEW_PROCEEDING,
-            UserRole.VIEW_CASE_DETAILS),
+            UserRole.VIEW_CASE_DETAILS,
+            UserRole.AMEND_CASE),
         route("GET", "/application/2/view", UserRole.VIEW_CASES_AND_APPLICATIONS),
         route("GET", "/application/2/view", UserRole.VIEW_CASE_DETAILS),
+        route(
+            "GET",
+            "/amendments/proceedings-and-costs",
+            UserRole.AMEND_CASE,
+            UserRole.VIEW_CASE_DETAILS),
+        route("POST", "/amendments/case-costs", UserRole.AMEND_CASE, UserRole.VIEW_CASE_DETAILS),
+        route(
+            "GET",
+            "/amendments/prior-authorities/add/type",
+            UserRole.AMEND_CASE,
+            UserRole.VIEW_CASE_DETAILS),
+        route(
+            "GET",
+            "/amendments/sections/linked-cases",
+            UserRole.AMEND_CASE,
+            UserRole.VIEW_CASE_DETAILS),
+        route(
+            "GET",
+            "/amendments/sections/evidence",
+            UserRole.AMEND_CASE,
+            UserRole.VIEW_CASE_DETAILS),
+        route("POST", "/amendments/evidence/add", UserRole.AMEND_CASE, UserRole.VIEW_CASE_DETAILS),
         route("GET", "/case/details", UserRole.VIEW_CASE_DETAILS));
   }
 
