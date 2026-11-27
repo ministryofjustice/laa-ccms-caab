@@ -67,7 +67,7 @@
                             class="govuk-service-navigation__item"
                             th:classappend="${pageCategory == 'cases'} ? 'govuk-service-navigation__item--active'">
                             <a class="govuk-service-navigation__link"
-                               th:href="@{/application/search}"
+                               th:href="@{/application/search(reset=true)}"
                                th:attr="aria-current=${pageCategory == 'cases' ? 'true' : null}">
                                 <strong class="govuk-service-navigation__active-fallback">Cases and
                                     applications</strong>

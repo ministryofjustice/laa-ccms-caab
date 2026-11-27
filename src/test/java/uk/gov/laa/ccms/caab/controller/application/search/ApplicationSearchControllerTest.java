@@ -28,6 +28,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
@@ -111,6 +112,52 @@ public class ApplicationSearchControllerTest {
           .containsEntry("feeEarners", feeEarners)
           .containsEntry("offices", user.getProvider().getOffices())
           .containsEntry("statuses", caseStatuses.getContent());
+    }
+
+    @Test
+    @DisplayName("A search started afresh does not inherit the last search")
+    public void getApplicationSearchResetsCriteria() throws Exception {
+      CaseSearchCriteria previous = new CaseSearchCriteria();
+      previous.setCaseReference("300001");
+      MockHttpSession session = new MockHttpSession();
+      session.setAttribute(CASE_SEARCH_CRITERIA, previous);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/application/search")
+                      .param("reset", "true")
+                      .session(session)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/application/search");
+
+      assertThat((CaseSearchCriteria) session.getAttribute(CASE_SEARCH_CRITERIA))
+          .isNotSameAs(previous)
+          .extracting(CaseSearchCriteria::getCaseReference)
+          .isNull();
+    }
+
+    @Test
+    @DisplayName("Returning to the form keeps the criteria, so the back link can refine them")
+    public void getApplicationSearchKeepsCriteriaWithoutReset() throws Exception {
+      CaseSearchCriteria previous = new CaseSearchCriteria();
+      previous.setCaseReference("300001");
+      MockHttpSession session = new MockHttpSession();
+      session.setAttribute(CASE_SEARCH_CRITERIA, previous);
+
+      ProviderDetail providerDetail = new ProviderDetail();
+      when(providerService.getProvider(user.getProvider().getId()))
+          .thenReturn(Mono.just(providerDetail));
+      when(providerService.getAllFeeEarners(providerDetail)).thenReturn(List.of());
+      when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(new CaseStatusLookupDetail()));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/application/search").session(session).sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/application-search");
+
+      assertThat(session.getAttribute(CASE_SEARCH_CRITERIA)).isSameAs(previous);
     }
 
     @Test

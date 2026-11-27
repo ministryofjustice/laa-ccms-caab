@@ -3,7 +3,10 @@ package uk.gov.laa.ccms.caab.controller.application;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -53,7 +56,8 @@ public class StartApplicationController {
   public String startNewApplication(
       Model model,
       @SessionAttribute(value = CASE, required = false) final ApplicationDetail caseDetail,
-      @PathVariable("caseContext") final CaseContext caseContext) {
+      @PathVariable("caseContext") final CaseContext caseContext,
+      final HttpSession session) {
     log.info("Starting application");
 
     final ApplicationFormData applicationFormData = getApplicationDetails();
@@ -69,6 +73,12 @@ public class StartApplicationController {
       }
       return "redirect:/amendments/application-type";
     }
+
+    // Applications only. The searches in this journey keep their criteria in the session, so a new
+    // application must not open them filled in from the one before. An amendment runs no search of
+    // its own, and clearing these would lose the case search that found the case being amended.
+    session.removeAttribute(CLIENT_SEARCH_CRITERIA);
+    session.removeAttribute(CASE_SEARCH_CRITERIA);
 
     return "redirect:/application/office";
   }

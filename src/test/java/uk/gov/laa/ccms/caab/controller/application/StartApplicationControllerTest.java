@@ -6,6 +6,8 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SECTIONS_BACK_URL;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +19,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 
@@ -56,6 +60,38 @@ class StartApplicationControllerTest {
         .request()
         .sessionAttributes()
         .containsEntry(APPLICATION_SECTIONS_BACK_URL, "searchUrl");
+  }
+
+  @Test
+  @DisplayName("GET: /application/new starts the journey's searches empty")
+  void shouldClearSearchCriteriaForNewApplication() {
+    CaseSearchCriteria caseCriteria = new CaseSearchCriteria();
+    caseCriteria.setCaseReference("300001");
+    ClientSearchCriteria clientCriteria = new ClientSearchCriteria();
+    clientCriteria.setSurname("WALL");
+
+    assertThat(
+            mockMvc.perform(
+                get("/application/new")
+                    .sessionAttr(CASE_SEARCH_CRITERIA, caseCriteria)
+                    .sessionAttr(CLIENT_SEARCH_CRITERIA, clientCriteria)))
+        .request()
+        .sessionAttributes()
+        .doesNotContainKey(CASE_SEARCH_CRITERIA)
+        .doesNotContainKey(CLIENT_SEARCH_CRITERIA);
+  }
+
+  @Test
+  @DisplayName("GET: /amendments/new keeps the case search that found the case")
+  void shouldKeepSearchCriteriaForNewAmendment() {
+    CaseSearchCriteria caseCriteria = new CaseSearchCriteria();
+    caseCriteria.setCaseReference("300001");
+
+    assertThat(
+            mockMvc.perform(get("/amendments/new").sessionAttr(CASE_SEARCH_CRITERIA, caseCriteria)))
+        .request()
+        .sessionAttributes()
+        .containsEntry(CASE_SEARCH_CRITERIA, caseCriteria);
   }
 
   @Test
