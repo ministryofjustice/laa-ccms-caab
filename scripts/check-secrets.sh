@@ -293,13 +293,14 @@ for raw_file in changed_files.stdout.split(b"\0"):
         continue
 
     for match in CREDENTIAL_ASSIGNMENT_RE.finditer(text):
+        unquoted_value = match.groups()[3] is not None
         value = next(
             (group for group in match.groups()[1:] if group is not None),
             "",
         ).strip()
         if len(value) < 8:
             continue
-        if is_code_expression(value):
+        if unquoted_value and is_code_expression(value):
             continue
         if not is_placeholder_value(value, file):
             print(f"pre-commit: blocked credential-like content in {file}")
