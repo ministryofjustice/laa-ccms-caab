@@ -1,14 +1,14 @@
 package uk.gov.laa.ccms.caab.controller.client;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
@@ -108,28 +109,74 @@ class ClientConfirmationControllerTest {
   }
 
   @Test
-  void testClientConfirmedClientMismatch() {
-    String wrongReference = "wrongReference";
+  void testClientConfirmedClientMismatchReturnsToConfirmation() throws Exception {
     ApplicationFormData applicationFormData = buildApplicationDetails();
     ClientDetail clientInformation = buildClientInformation();
     UserDetail user = buildUser();
 
-    Exception exception = null;
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                post("/application/client/confirmed")
+                    .param("confirmedClientReference", "67791402")
+                    .sessionAttr(APPLICATION_FORM_DATA, applicationFormData)
+                    .sessionAttr("clientInformation", clientInformation)
+                    .sessionAttr(USER_DETAILS, user))
+            .andReturn();
 
-    try {
-      this.mockMvc.perform(
-          post("/application/client/confirmed")
-              .param("confirmedClientReference", wrongReference)
-              .sessionAttr(APPLICATION_FORM_DATA, applicationFormData)
-              .sessionAttr("clientInformation", clientInformation)
-              .sessionAttr(USER_DETAILS, user));
-    } catch (Exception e) {
-      exception = e;
-    }
+    this.mockMvc
+        .perform(asyncDispatch(result))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/67791402/confirm"));
 
-    assertNotNull(exception);
-    assertInstanceOf(RuntimeException.class, exception.getCause());
-    assertEquals("Client information does not match", exception.getCause().getMessage());
+    verifyNoInteractions(applicationService);
+  }
+
+  @Test
+  void testClientConfirmedRejectsAReferenceUnfitForARedirect() throws Exception {
+    ApplicationFormData applicationFormData = buildApplicationDetails();
+    ClientDetail clientInformation = buildClientInformation();
+    UserDetail user = buildUser();
+
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                post("/application/client/confirmed")
+                    .param("confirmedClientReference", "//evil.example.com/x")
+                    .sessionAttr(APPLICATION_FORM_DATA, applicationFormData)
+                    .sessionAttr("clientInformation", clientInformation)
+                    .sessionAttr(USER_DETAILS, user))
+            .andReturn();
+
+    this.mockMvc
+        .perform(asyncDispatch(result))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/search"));
+
+    verifyNoInteractions(applicationService);
+  }
+
+  @Test
+  void testClientConfirmedWithoutAReferenceDoesNotFail() throws Exception {
+    ApplicationFormData applicationFormData = buildApplicationDetails();
+    ClientDetail clientInformation = buildClientInformation();
+    UserDetail user = buildUser();
+
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                post("/application/client/confirmed")
+                    .sessionAttr(APPLICATION_FORM_DATA, applicationFormData)
+                    .sessionAttr("clientInformation", clientInformation)
+                    .sessionAttr(USER_DETAILS, user))
+            .andReturn();
+
+    this.mockMvc
+        .perform(asyncDispatch(result))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/search"));
+
+    verifyNoInteractions(applicationService);
   }
 
   private UserDetail buildUser() {
