@@ -97,6 +97,11 @@ UPPERCASE_ENVIRONMENT_IDENTIFIER_RE = re.compile(
     r"^[A-Z][A-Z0-9_]*(?:TOKEN|SECRET|KEY|PASSWORD)$"
 )
 
+CODE_EXPRESSION_RES = [
+    re.compile(r"^[A-Za-z_$][A-Za-z0-9_$.]*\s*\(", re.IGNORECASE),
+    re.compile(r"^[A-Za-z_$][A-Za-z0-9_$.]*\s*\[", re.IGNORECASE),
+]
+
 
 def matching_outer_brace(value):
     if not value.startswith("${"):
@@ -145,9 +150,26 @@ def environment_placeholder_only(value):
     return environment_placeholder_only(fallback)
 
 
+def is_code_expression(value):
+    value = value.strip().strip("\"'")
+    return any(pattern.match(value) for pattern in CODE_EXPRESSION_RES)
+
+
+def is_localization_label(value, path):
+    normalized = path.replace("\\", "/").lower()
+    name = normalized.rsplit("/", 1)[-1]
+    if not (name == "messages.properties" or (
+        name.startswith("messages") and name.endswith(".properties")
+    )):
+        return False
+    return value.strip().lower() in {"password", "password reminder"}
+
+
 def is_placeholder_value(value, path):
     value = value.strip().strip("\"'")
     if environment_placeholder_only(value):
+        return True
+    if is_localization_label(value, path):
         return True
 
     lower = value.lower()
@@ -235,11 +257,25 @@ for raw_file in changed_files.stdout.split(b"\0"):
         print(f"pre-commit: blocked secret file: {file}")
         blocked = True
 
-    staged_blob = git_output("cat-file", "blob", f":{file}")
-    if staged_blob.returncode != 0:
-        continue
+    staged_diff = git_output(
+        "diff",
+        "--cached",
+        "--unified=0",
+        "--diff-filter=ACMRT",
+        "--no-ext-diff",
+        "--no-color",
+        "--",
+        file,
+    )
+    if staged_diff.returncode != 0:
+        print("pre-commit: unable to inspect the staged diff.")
+        sys.exit(1)
 
-    text = staged_blob.stdout.decode("utf-8", errors="replace")
+    text = "\n".join(
+        line[1:]
+        for line in staged_diff.stdout.decode("utf-8", errors="replace").splitlines()
+        if line.startswith("+") and not line.startswith("+++")
+    )
 
     if PRIVATE_KEY_RE.search(text):
         print(f"pre-commit: blocked private key content in {file}")
@@ -262,6 +298,8 @@ for raw_file in changed_files.stdout.split(b"\0"):
             "",
         ).strip()
         if len(value) < 8:
+            continue
+        if is_code_expression(value):
             continue
         if not is_placeholder_value(value, file):
             print(f"pre-commit: blocked credential-like content in {file}")

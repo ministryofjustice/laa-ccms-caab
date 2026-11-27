@@ -45,6 +45,54 @@ assert_allowed() {
   fi
 }
 
+assert_added_line_allowed() {
+  local name=$1
+  local file=$2
+  local baseline=$3
+  local added=$4
+  local repo="$tmp_root/$name"
+
+  mkdir -p "$repo"
+  git -C "$repo" init -q
+  git -C "$repo" config user.email "test@example.com"
+  git -C "$repo" config user.name "Secret Test"
+  mkdir -p "$(dirname "$repo/$file")"
+  printf '%s\n' "$baseline" > "$repo/$file"
+  git -C "$repo" add -- "$file"
+  git -C "$repo" commit -qm "baseline"
+  printf '%s\n%s' "$baseline" "$added" > "$repo/$file"
+  git -C "$repo" add -- "$file"
+
+  if ! (cd "$repo" && bash "$checker") >/dev/null 2>&1; then
+    echo "FAIL: $name was blocked"
+    failures=$((failures + 1))
+  fi
+}
+
+assert_added_line_blocked() {
+  local name=$1
+  local file=$2
+  local baseline=$3
+  local added=$4
+  local repo="$tmp_root/$name"
+
+  mkdir -p "$repo"
+  git -C "$repo" init -q
+  git -C "$repo" config user.email "test@example.com"
+  git -C "$repo" config user.name "Secret Test"
+  mkdir -p "$(dirname "$repo/$file")"
+  printf '%s\n' "$baseline" > "$repo/$file"
+  git -C "$repo" add -- "$file"
+  git -C "$repo" commit -qm "baseline"
+  printf '%s\n%s' "$baseline" "$added" > "$repo/$file"
+  git -C "$repo" add -- "$file"
+
+  if (cd "$repo" && bash "$checker") >/dev/null 2>&1; then
+    echo "FAIL: $name was allowed"
+    failures=$((failures + 1))
+  fi
+}
+
 awsKeyFixture="AKIA""IOSFODNN7EXAMPLE"
 privateKeyFixture="-----BEGIN "$'RSA '"PRIVATE KEY-----"$'\n'"test-data"$'\n'"-----END RSA PRIVATE KEY-----"
 genericFixture="api""-key: ""abcdefghijklmnop1234"
@@ -68,6 +116,11 @@ testPasswordFixture="pass""word = \"password\""
 syntheticTokenFixture="access""-token: synthetic-invoice-token"
 localSecretFixture="client""-secret: secret"
 localUuidFixture="access""-token: d594f93f-e767-4b88-a9e9-2913441edfba"
+gradleCodeExpressionFixture="pass""word = System.getenv(\"GITHUB_TOKEN\")?.trim()"
+messageLabelFixture="contact.pass""word=pass""word"
+unchangedSecretFixture="pass""word: aB7cD9eF2gH4jK6m"
+unrelatedAddedLine='changed=true'
+newCredentialAddedLine="pass""word: aB7cD9eF2gH4jK6m"
 
 assert_blocked "application-secret" "application-secret.yml" "spring: test"
 assert_blocked "credential-in-other-name" "config.txt" "$awsKeyFixture"
@@ -96,6 +149,10 @@ assert_allowed "test-password-fixture" "src/test/resources/application.yml" "$te
 assert_allowed "synthetic-integration-token" "src/integrationTest/java/ExampleTest.java" "$syntheticTokenFixture"
 assert_allowed "local-secret-fallback" "src/main/resources/application-local.yml" "$localSecretFixture"
 assert_allowed "local-uuid-token" "src/main/resources/application-local.yml" "$localUuidFixture"
+assert_allowed "gradle-code-expression" "build.gradle" "$gradleCodeExpressionFixture"
+assert_allowed "message-password-label" "src/main/resources/messages.properties" "$messageLabelFixture"
+assert_added_line_allowed "unchanged-secret-line" "config.txt" "$unchangedSecretFixture" "$unrelatedAddedLine"
+assert_added_line_blocked "new-secret-added-line" "config.txt" "contact.email=Email" "$newCredentialAddedLine"
 
 type_change_repo="$tmp_root/type-change"
 mkdir -p "$type_change_repo"
