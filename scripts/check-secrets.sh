@@ -104,6 +104,37 @@ CODE_EXPRESSION_RES = [
     re.compile(r"^[A-Za-z_$][A-Za-z0-9_$.]*\s*\[", re.IGNORECASE),
 ]
 
+CODE_FILE_SUFFIXES = (
+    ".java",
+    ".gradle",
+    ".gradle.kts",
+    ".groovy",
+    ".kt",
+    ".kts",
+    ".js",
+    ".jsx",
+    ".mjs",
+    ".cjs",
+    ".ts",
+    ".tsx",
+    ".c",
+    ".h",
+    ".cc",
+    ".cpp",
+    ".cxx",
+    ".cs",
+    ".go",
+    ".rs",
+    ".py",
+    ".rb",
+    ".php",
+    ".swift",
+    ".scala",
+    ".sh",
+    ".bash",
+    ".zsh",
+)
+
 
 def matching_outer_brace(value):
     if not value.startswith("${"):
@@ -152,7 +183,14 @@ def environment_placeholder_only(value):
     return environment_placeholder_only(fallback)
 
 
-def is_code_expression(value):
+def is_code_file(path):
+    normalized = path.replace("\\", "/").lower()
+    return normalized.endswith(CODE_FILE_SUFFIXES)
+
+
+def is_code_expression(value, path):
+    if not is_code_file(path):
+        return False
     value = value.strip().strip("\"'")
     return any(pattern.match(value) for pattern in CODE_EXPRESSION_RES)
 
@@ -262,6 +300,8 @@ for raw_file in changed_files.stdout.split(b"\0"):
     staged_diff = git_output(
         "diff",
         "--cached",
+        "--text",
+        "--no-textconv",
         "--unified=0",
         "--diff-filter=ACMRT",
         "--no-ext-diff",
@@ -308,7 +348,7 @@ for raw_file in changed_files.stdout.split(b"\0"):
             ).strip()
             if len(value) < 8:
                 continue
-            if unquoted_value and is_code_expression(value):
+            if unquoted_value and is_code_expression(value, file):
                 continue
             if not is_placeholder_value(value, file):
                 print(f"pre-commit: blocked credential-like content in {file}")
