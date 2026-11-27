@@ -29,7 +29,10 @@ public class InitialApplicationBuilder {
   private final ApplicationDetail application;
 
   public InitialApplicationBuilder() {
-    this.application = new ApplicationDetail().providerDetails(new ApplicationProviderDetails());
+    this.application =
+        new ApplicationDetail()
+            .providerDetails(new ApplicationProviderDetails())
+            .leadProceedingChanged(false);
   }
 
   public InitialApplicationBuilder(final ApplicationDetail application) {

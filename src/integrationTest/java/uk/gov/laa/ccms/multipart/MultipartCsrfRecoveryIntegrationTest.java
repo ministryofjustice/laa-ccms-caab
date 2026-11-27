@@ -19,7 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.security.saml2.autoconfigure.Saml2RelyingPartyAutoConfiguration;
+import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -43,6 +43,10 @@ import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 
 @SpringBootTest(
     classes = MultipartCsrfRecoveryIntegrationTest.TestApplication.class,
+    properties = {
+      "spring.config.import=file:src/main/resources/application.yml",
+      "server.servlet.session.cookie.secure=false"
+    },
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class MultipartCsrfRecoveryIntegrationTest {
 
@@ -100,11 +104,32 @@ class MultipartCsrfRecoveryIntegrationTest {
       assertEquals("validation.error.maxFileSize", form.body());
       assertEquals(
           "no-error", client.send(redirected, HttpResponse.BodyHandlers.ofString()).body());
+
+      HttpResponse<String> oversizedRequest =
+          client.send(
+              multipartRequest(baseUrl + UPLOAD_PATH, csrfToken, 7 * MIB, 6 * MIB),
+              HttpResponse.BodyHandlers.ofString());
+      assertEquals(302, oversizedRequest.statusCode());
+      URI requestRedirect =
+          URI.create(oversizedRequest.headers().firstValue("Location").orElseThrow());
+      assertEquals(contextPath + UPLOAD_PATH, requestRedirect.getPath());
+      HttpRequest requestForm = HttpRequest.newBuilder(requestRedirect).GET().build();
+      assertEquals(
+          "validation.error.maxFileSize",
+          client.send(requestForm, HttpResponse.BodyHandlers.ofString()).body());
+      assertEquals(
+          "no-error", client.send(requestForm, HttpResponse.BodyHandlers.ofString()).body());
+      assertEquals(1, uploadController.uploadCalls.get());
     }
   }
 
   private static HttpRequest multipartRequest(String url, String csrfToken, int fileSize)
       throws IOException {
+    return multipartRequest(url, csrfToken, fileSize, 0);
+  }
+
+  private static HttpRequest multipartRequest(
+      String url, String csrfToken, int fileSize, int secondFileSize) throws IOException {
     ByteArrayOutputStream body = new ByteArrayOutputStream(fileSize + 512);
     body.write(
         ("--"
@@ -114,6 +139,16 @@ class MultipartCsrfRecoveryIntegrationTest {
             .getBytes(StandardCharsets.US_ASCII));
     body.write(new byte[fileSize]);
     body.write("\r\n".getBytes(StandardCharsets.US_ASCII));
+    if (secondFileSize > 0) {
+      body.write(
+          ("--"
+                  + BOUNDARY
+                  + "\r\nContent-Disposition: form-data; name=\"file2\"; filename=\"second.pdf\"\r\n"
+                  + "Content-Type: application/pdf\r\n\r\n")
+              .getBytes(StandardCharsets.US_ASCII));
+      body.write(new byte[secondFileSize]);
+      body.write("\r\n".getBytes(StandardCharsets.US_ASCII));
+    }
     body.write(
         ("--"
                 + BOUNDARY
@@ -130,7 +165,7 @@ class MultipartCsrfRecoveryIntegrationTest {
   }
 
   @SpringBootConfiguration
-  @EnableAutoConfiguration(exclude = Saml2RelyingPartyAutoConfiguration.class)
+  @EnableAutoConfiguration(exclude = OAuth2ClientAutoConfiguration.class)
   @EnableWebSecurity
   @Import({UploadSizeErrorFilter.class, UploadController.class})
   static class TestApplication {

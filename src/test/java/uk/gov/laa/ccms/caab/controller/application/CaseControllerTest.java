@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -12,9 +13,13 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
@@ -28,7 +33,6 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_CRITERIA;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -55,6 +59,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -117,6 +122,7 @@ import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.service.OutcomeSubmissionService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
@@ -131,6 +137,7 @@ class CaseControllerTest {
   @Mock private ApplicationService applicationService;
   @Mock private LookupService lookupService;
   @Mock private CaseOutcomeService caseOutcomeService;
+  @Mock private OutcomeSubmissionService submissionService;
   @Mock private ProceedingOutcomeValidator proceedingOutcomeValidator;
   @Mock private PreCertificateAndLegalHelpCostsValidator preCertificateAndLegalHelpCostsValidator;
   @Mock private ProviderRequestDocumentUploadValidator providerRequestDocumentUploadValidator;
@@ -149,8 +156,6 @@ class CaseControllerTest {
   private String returnUrl;
 
   private static final String SEARCH_URL = "SEARCH_URL";
-  private static final String PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_SESSION_KEY_PREFIX =
-      PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA + ":";
 
   @BeforeEach
   void setUp() {
@@ -193,6 +198,125 @@ class CaseControllerTest {
     lenient()
         .when(lookupService.getDocumentTypeDescription(anyString()))
         .thenReturn(Mono.just("Document description"));
+  }
+
+  @Nested
+  class OutcomeSubmission {
+    private MockMvc mvc;
+    private MockHttpSession session;
+    private ApplicationDetail currentCase;
+    private CaseOutcomeDetail draft;
+
+    @BeforeEach
+    void setup() {
+      mvc = MockMvcBuilders.standaloneSetup(caseController).build();
+      doCallRealMethod().when(submissionService).requireSubmissionPermission(any(), any());
+      user.setFunctions(List.of("POD", "SUBOUT"));
+      currentCase =
+          new ApplicationDetail().caseReferenceNumber("case").availableFunctions(List.of("POD"));
+      draft = new CaseOutcomeDetail().id(42);
+      session = new MockHttpSession();
+      session.setAttribute(CASE, currentCase);
+      session.setAttribute(USER_DETAILS, user);
+    }
+
+    @Test
+    void initialSubmitRoutesEligibleCaseWithoutUnnecessaryWrites() throws Exception {
+      when(submissionService.prepareSubmission(currentCase, user)).thenReturn(draft);
+      when(submissionService.canDischarge(currentCase, user, draft)).thenReturn(true);
+      mvc.perform(post("/case/outcome-and-awards/submit").session(session))
+          .andExpect(redirectedUrl("/case/outcome-and-awards/discharge"));
+      verify(submissionService, never()).hasChanges(any(), any());
+      verify(submissionService, never()).clearDischarge(any(), any());
+      verify(submissionService).requireSubmissionPermission(currentCase, user);
+      verify(submissionService).prepareSubmission(currentCase, user);
+      verify(submissionService).canDischarge(currentCase, user, draft);
+      verify(submissionService).awardErrors(draft);
+      verifyNoMoreInteractions(submissionService);
+    }
+
+    @Test
+    void nonDischargeSubmitRequiresChangesAndClearsDischargeBeforeSummary() throws Exception {
+      when(submissionService.prepareSubmission(currentCase, user)).thenReturn(draft);
+      when(submissionService.hasChanges(currentCase, draft)).thenReturn(true);
+      mvc.perform(post("/case/outcome-and-awards/submit").session(session))
+          .andExpect(redirectedUrl("/case/outcome-and-awards/summary"));
+      verify(submissionService).clearDischarge(draft, user.getLoginId());
+    }
+
+    @Test
+    void unchangedOutcomeReturnsAnErrorWithoutWrites() throws Exception {
+      when(submissionService.prepareSubmission(currentCase, user)).thenReturn(draft);
+      mvc.perform(post("/case/outcome-and-awards/submit").session(session))
+          .andExpect(redirectedUrl("/case/outcome-and-awards"))
+          .andExpect(flash().attributeExists("outcomeSubmissionErrors"));
+      verify(submissionService, never()).clearDischarge(any(), any());
+    }
+
+    @Test
+    void initialSubmitUsesPersistedCostsAndIgnoresObsoleteSessionEdits() throws Exception {
+      when(submissionService.prepareSubmission(currentCase, user)).thenReturn(draft);
+      when(submissionService.canDischarge(currentCase, user, draft)).thenReturn(true);
+      draft.preCertificateCosts(new BigDecimal("12.50"));
+      session.setAttribute(
+          "preCertificateAndLegalHelpCostsFormData:case", "Obsolete session edits");
+      mvc.perform(post("/case/outcome-and-awards/submit").session(session))
+          .andExpect(redirectedUrl("/case/outcome-and-awards/discharge"));
+      assertThat(draft.getPreCertificateCosts().get()).isEqualByComparingTo("12.50");
+      verify(submissionService, never()).clearDischarge(any(), any());
+    }
+
+    @Test
+    void noRemainingAwardPartiesBlockRoutingAndSaving() throws Exception {
+      when(submissionService.prepareSubmission(currentCase, user)).thenReturn(draft);
+      when(submissionService.awardErrors(draft))
+          .thenReturn(List.of("case.outcomeSubmission.costParties"));
+      mvc.perform(post("/case/outcome-and-awards/submit").session(session))
+          .andExpect(redirectedUrl("/case/outcome-and-awards"))
+          .andExpect(flash().attributeExists("outcomeSubmissionErrors"));
+      verify(submissionService, never()).clearDischarge(any(), any());
+      verify(submissionService, never()).hasChanges(any(), any());
+    }
+
+    @Test
+    void failedDischargeClearIsReportedAndDoesNotAdvance() throws Exception {
+      when(submissionService.prepareSubmission(currentCase, user)).thenReturn(draft);
+      when(submissionService.hasChanges(currentCase, draft)).thenReturn(true);
+      doThrow(new CaabApiClientException("save failed", HttpStatus.BAD_REQUEST))
+          .when(submissionService)
+          .clearDischarge(draft, user.getLoginId());
+      mvc.perform(post("/case/outcome-and-awards/submit").session(session))
+          .andExpect(redirectedUrl("/case/outcome-and-awards"))
+          .andExpect(flash().attributeExists("outcomeSubmissionErrors"));
+    }
+
+    @Test
+    void failedCleanupIsReportedAndDoesNotAdvance() throws Exception {
+      when(submissionService.prepareSubmission(currentCase, user))
+          .thenThrow(
+              new CaabApiClientException("cleanup failed", HttpStatus.INTERNAL_SERVER_ERROR));
+      mvc.perform(post("/case/outcome-and-awards/submit").session(session))
+          .andExpect(redirectedUrl("/case/outcome-and-awards"))
+          .andExpect(flash().attributeExists("outcomeSubmissionErrors"));
+      verify(submissionService, never()).awardErrors(any());
+      verify(submissionService, never()).clearDischarge(any(), any());
+    }
+
+    @Test
+    void submissionPermissionIsRequiredBeforeLoadingOrCleaningDraft() throws Exception {
+      user.setFunctions(List.of("POD"));
+      mvc.perform(post("/case/outcome-and-awards/submit").session(session))
+          .andExpect(status().isForbidden());
+      verify(submissionService, never()).prepareSubmission(any(), any());
+    }
+
+    @Test
+    void caseMustPermitEditingEvenWhenUserCanSubmit() throws Exception {
+      currentCase.setAvailableFunctions(List.of("VO"));
+      mvc.perform(post("/case/outcome-and-awards/submit").session(session))
+          .andExpect(status().isForbidden());
+      verify(submissionService, never()).prepareSubmission(any(), any());
+    }
   }
 
   private ThymeleafViewResolver thymeleafViewResolver() {
@@ -1368,23 +1492,19 @@ class CaseControllerTest {
     @DisplayName("Pre-certificate and legal help costs page loads with existing saved values")
     public void preCertificateAndLegalHelpCostsPageLoadsWithSavedValues() {
       final String selectedCaseRef = "8";
-      final PreCertificateAndLegalHelpCostsFormData savedFormData =
-          new PreCertificateAndLegalHelpCostsFormData();
-      savedFormData.setPreCertificateCosts("12.50");
-      savedFormData.setLegalHelpCosts("7.25");
-      savedFormData.setOfficeCode("1A234B");
-      savedFormData.setUniqueFileNumber("010124/001");
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null)
+              .availableFunctions(List.of("PO"));
+      when(caseOutcomeService.getCaseOutcome(
+              selectedCaseRef, user.getProvider().getId().intValue()))
+          .thenReturn(Optional.of(savedCostsOutcome()));
 
       assertThat(
               mockMvc.perform(
                   get("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
                       .sessionAttr(USER_DETAILS, user)
                       .sessionAttr(CASE, ebsCase)
-                      .sessionAttr(
-                          preCertificateAndLegalHelpCostsSessionKey(selectedCaseRef),
-                          savedFormData)))
+                      .sessionAttr("preCertificateAndLegalHelpCostsFormData:8", "Obsolete edits")))
           .hasStatusOk()
           .hasViewName("application/pre-certificate-and-legal-help-costs")
           .model()
@@ -1400,12 +1520,53 @@ class CaseControllerTest {
               });
     }
 
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(
+        strings = {"local", "ebs", "none", "omitted", "null-wrapper"})
+    void nullCostsLoadAsZeroRatherThanBlank(String source) {
+      final var costs =
+          "omitted".equals(source)
+              ? new CaseOutcomeDetail()
+              : new CaseOutcomeDetail().preCertificateCosts(null).legalCosts(null);
+      if ("null-wrapper".equals(source)) {
+        costs.setPreCertificateCosts(null);
+        costs.setLegalCosts(null);
+        costs.setOfficeCode(null);
+        costs.setUniqueFileNo(null);
+      }
+      final boolean local = List.of("local", "omitted", "null-wrapper").contains(source);
+      final var baseline = local ? savedCostsOutcome() : costs;
+      final var ebsCase =
+          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null)
+              .availableFunctions(List.of("PO"))
+              .caseOutcome("none".equals(source) ? null : baseline);
+      when(caseOutcomeService.getCaseOutcome("8", user.getProvider().getId().intValue()))
+          .thenReturn(local ? Optional.of(costs) : Optional.empty());
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "preCertificateAndLegalHelpCosts",
+              value -> {
+                final var form = (PreCertificateAndLegalHelpCostsFormData) value;
+                assertThat(form.getPreCertificateCosts()).isEqualTo("0.00");
+                assertThat(form.getLegalHelpCosts()).isEqualTo("0.00");
+                assertThat(form.getOfficeCode()).isNull();
+                assertThat(form.getUniqueFileNumber()).isNull();
+              });
+    }
+
     @Test
     @DisplayName("Pre-certificate and legal help costs post returns form when validation fails")
     public void preCertificateAndLegalHelpCostsPostReturnsFormWhenValidationFails() {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null)
+              .availableFunctions(List.of("PO"));
 
       org.mockito.Mockito.doAnswer(
               invocation -> {
@@ -1427,14 +1588,18 @@ class CaseControllerTest {
                       .param("uniqueFileNumber", "010124/001")))
           .hasStatusOk()
           .hasViewName("application/pre-certificate-and-legal-help-costs");
+      verify(caseOutcomeService, never())
+          .updatePreCertificateAndLegalHelpCosts(any(), any(), any(), any());
     }
 
-    @Test
-    @DisplayName("Pre-certificate and legal help costs post stores values and redirects")
-    public void preCertificateAndLegalHelpCostsPostStoresValuesAndRedirects() {
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"PO", "POD"})
+    @DisplayName("Pre-certificate and legal help costs post saves to backend and redirects")
+    public void preCertificateAndLegalHelpCostsPostSavesAndRedirects(String function) {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null)
+              .availableFunctions(List.of(function));
       doNothing().when(preCertificateAndLegalHelpCostsValidator).validate(any(), any());
 
       assertThat(
@@ -1453,39 +1618,33 @@ class CaseControllerTest {
                   assertThat(response)
                       .request()
                       .sessionAttributes()
-                      .hasEntrySatisfying(
-                          preCertificateAndLegalHelpCostsSessionKey(selectedCaseRef),
-                          value -> {
-                            PreCertificateAndLegalHelpCostsFormData formData =
-                                (PreCertificateAndLegalHelpCostsFormData) value;
-                            assertThat(formData.getPreCertificateCosts()).isEqualTo("12.50");
-                            assertThat(formData.getLegalHelpCosts()).isEqualTo("7.25");
-                            assertThat(formData.getOfficeCode()).isEqualTo("1A234B");
-                            assertThat(formData.getUniqueFileNumber()).isEqualTo("010124/001");
-                          }));
+                      .doesNotContainKey("preCertificateAndLegalHelpCostsFormData:8"));
+      final var captor = ArgumentCaptor.forClass(PreCertificateAndLegalHelpCostsFormData.class);
+      verify(caseOutcomeService)
+          .updatePreCertificateAndLegalHelpCosts(
+              eq(selectedCaseRef), eq(user.getProvider().getId().intValue()),
+              captor.capture(), eq(user.getLoginId()));
+      assertThat(captor.getValue().getPreCertificateCosts()).isEqualTo("12.50");
+      assertThat(captor.getValue().getLegalHelpCosts()).isEqualTo("7.25");
+      assertThat(captor.getValue().getOfficeCode()).isEqualTo("1A234B");
+      assertThat(captor.getValue().getUniqueFileNumber()).isEqualTo("010124/001");
     }
 
     @Test
     @DisplayName("Outcome and awards shows saved pre-certificate and legal help costs")
     public void outcomeAndAwardsShowsSavedPreCertificateAndLegalHelpCosts() {
       final String selectedCaseRef = "8";
-      final PreCertificateAndLegalHelpCostsFormData savedFormData =
-          new PreCertificateAndLegalHelpCostsFormData();
-      savedFormData.setPreCertificateCosts("12.50");
-      savedFormData.setLegalHelpCosts("7.25");
-      savedFormData.setOfficeCode("1A234B");
-      savedFormData.setUniqueFileNumber("010124/001");
       ApplicationDetail ebsCase =
           getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      when(caseOutcomeService.getCaseOutcome(
+              selectedCaseRef, user.getProvider().getId().intValue()))
+          .thenReturn(Optional.of(savedCostsOutcome()));
 
       assertThat(
               mockMvc.perform(
                   get("/case/outcome-and-awards")
                       .sessionAttr(USER_DETAILS, user)
-                      .sessionAttr(CASE, ebsCase)
-                      .sessionAttr(
-                          preCertificateAndLegalHelpCostsSessionKey(selectedCaseRef),
-                          savedFormData)))
+                      .sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/outcome-and-awards")
           .model()
@@ -1502,25 +1661,17 @@ class CaseControllerTest {
     }
 
     @Test
-    @DisplayName("Outcome and awards does not use costs saved for another case reference")
-    public void outcomeAndAwardsDoesNotUseCostsSavedForAnotherCase() {
-      final String selectedCaseRef = "8";
-      final String otherCaseRef = "9";
-      final PreCertificateAndLegalHelpCostsFormData savedFormData =
-          new PreCertificateAndLegalHelpCostsFormData();
-      savedFormData.setPreCertificateCosts("12.50");
-      savedFormData.setLegalHelpCosts("7.25");
+    @DisplayName("Outcome and awards ignores obsolete costs held in session")
+    public void outcomeAndAwardsIgnoresObsoleteSessionCosts() {
       ApplicationDetail ebsCase =
-          getEbsCase(otherCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase("9", 1, "ref", "client", "smith", "clientRef", false, null, null);
 
       assertThat(
               mockMvc.perform(
                   get("/case/outcome-and-awards")
                       .sessionAttr(USER_DETAILS, user)
                       .sessionAttr(CASE, ebsCase)
-                      .sessionAttr(
-                          preCertificateAndLegalHelpCostsSessionKey(selectedCaseRef),
-                          savedFormData)))
+                      .sessionAttr("preCertificateAndLegalHelpCostsFormData:9", "Obsolete edits")))
           .hasStatusOk()
           .hasViewName("application/outcome-and-awards")
           .model()
@@ -1529,11 +1680,166 @@ class CaseControllerTest {
               value -> {
                 PreCertificateAndLegalHelpCostsFormData formData =
                     (PreCertificateAndLegalHelpCostsFormData) value;
-                assertThat(formData.getPreCertificateCosts()).isNull();
-                assertThat(formData.getLegalHelpCosts()).isNull();
+                assertThat(formData.getPreCertificateCosts()).isEqualTo("0.00");
+                assertThat(formData.getLegalHelpCosts()).isEqualTo("0.00");
                 assertThat(formData.getOfficeCode()).isNull();
                 assertThat(formData.getUniqueFileNumber()).isNull();
               });
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"api", "missing"})
+    void preCertificateAndLegalHelpCostsSaveFailureRetainsFormAndReportsError(String failure) {
+      final ApplicationDetail ebsCase =
+          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null)
+              .availableFunctions(List.of("PO"));
+      final RuntimeException exception =
+          "api".equals(failure)
+              ? new CaabApiClientException("Save failed")
+              : new IllegalStateException("No outcome");
+      doThrow(exception)
+          .when(caseOutcomeService)
+          .updatePreCertificateAndLegalHelpCosts(any(), any(), any(), any());
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .param("preCertificateCosts", "12.50")
+                      .param("legalHelpCosts", "7.25")
+                      .param("officeCode", "1A234B")
+                      .param("uniqueFileNumber", "010124/001")))
+          .hasStatusOk()
+          .hasViewName("application/pre-certificate-and-legal-help-costs")
+          .model()
+          .hasEntrySatisfying(
+              "preCertificateAndLegalHelpCosts",
+              value -> {
+                final var form = (PreCertificateAndLegalHelpCostsFormData) value;
+                assertThat(form.getPreCertificateCosts()).isEqualTo("12.50");
+                assertThat(form.getLegalHelpCosts()).isEqualTo("7.25");
+                assertThat(form.getOfficeCode()).isEqualTo("1A234B");
+                assertThat(form.getUniqueFileNumber()).isEqualTo("010124/001");
+              })
+          .hasEntrySatisfying(
+              "org.springframework.validation.BindingResult.preCertificateAndLegalHelpCosts",
+              value ->
+                  assertThat(
+                          ((org.springframework.validation.BindingResult) value)
+                              .getGlobalError()
+                              .getCode())
+                      .isEqualTo("preCertificateAndLegalHelpCosts.save.failed"));
+    }
+
+    @Test
+    void costsRowRequiresALocalOrEbsOutcome() {
+      final var ebsCase =
+          new ApplicationDetail().caseReferenceNumber("8").availableFunctions(List.of("VO"));
+      when(caseOutcomeService.getCaseOutcome("8", user.getProvider().getId().intValue()))
+          .thenReturn(Optional.empty());
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .model()
+          .containsEntry("costsOutcomeAvailable", false);
+
+      ebsCase.setCaseOutcome(savedCostsOutcome());
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .model()
+          .containsEntry("costsOutcomeAvailable", true);
+
+      ebsCase.setCaseOutcome(null);
+      when(caseOutcomeService.getCaseOutcome("8", user.getProvider().getId().intValue()))
+          .thenReturn(Optional.of(savedCostsOutcome()));
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .model()
+          .containsEntry("costsOutcomeAvailable", true);
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"VO", "none", "missing", "ebs-only"})
+    void readOnlyCostsCannotBeEditedOrSaved(String source) {
+      final var ebsCase =
+          new ApplicationDetail()
+              .caseReferenceNumber("8")
+              .availableFunctions(
+                  "missing".equals(source)
+                      ? null
+                      : "none".equals(source) ? List.of() : List.of("VO"))
+              .caseOutcome(savedCostsOutcome());
+      lenient()
+          .when(caseOutcomeService.getCaseOutcome("8", user.getProvider().getId().intValue()))
+          .thenReturn(
+              "ebs-only".equals(source) ? Optional.empty() : Optional.of(savedCostsOutcome()));
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .param("preCertificateCosts", "999")))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+      verify(caseOutcomeService, never())
+          .updatePreCertificateAndLegalHelpCosts(any(), any(), any(), any());
+      verify(preCertificateAndLegalHelpCostsValidator, never()).validate(any(), any());
+    }
+
+    @Test
+    void costsCannotBeSavedWhenCaseBecomesReadOnlyAfterFormLoad() {
+      final var ebsCase =
+          new ApplicationDetail().caseReferenceNumber("8").availableFunctions(List.of("PO"));
+      when(caseOutcomeService.getCaseOutcome("8", user.getProvider().getId().intValue()))
+          .thenReturn(Optional.of(savedCostsOutcome()));
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/pre-certificate-and-legal-help-costs");
+
+      ebsCase.setAvailableFunctions(List.of("VO"));
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .param("preCertificateCosts", "999")))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+      verify(caseOutcomeService, never())
+          .updatePreCertificateAndLegalHelpCosts(any(), any(), any(), any());
+      verify(preCertificateAndLegalHelpCostsValidator, never()).validate(any(), any());
+    }
+
+    private CaseOutcomeDetail savedCostsOutcome() {
+      return new CaseOutcomeDetail()
+          .id(42)
+          .preCertificateCosts(new BigDecimal("12.50"))
+          .legalCosts(new BigDecimal("7.25"))
+          .officeCode("1A234B")
+          .uniqueFileNo("010124/001");
     }
 
     @Test
@@ -3926,10 +4232,6 @@ class CaseControllerTest {
         .failure()
         .hasCauseInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("TDS Application type must not be null");
-  }
-
-  private String preCertificateAndLegalHelpCostsSessionKey(final String caseReferenceNumber) {
-    return PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_SESSION_KEY_PREFIX + caseReferenceNumber;
   }
 
   private ApplicationDetail getEbsCase(

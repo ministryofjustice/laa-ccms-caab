@@ -110,8 +110,8 @@ import uk.gov.laa.ccms.data.model.TimeRelatedAward;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /** Mapper class to convert a EbsApi Case into a CAAB ApplicationDetail. */
-@Mapper(componentModel = "spring")
-public interface EbsApplicationMapper extends NullableBooleanMapper {
+@Mapper(componentModel = "spring", uses = NullableMapper.class)
+public interface EbsApplicationMapper {
 
   ApplicationDetails toApplicationDetails(Page<BaseApplicationDetail> applicationPage);
 
@@ -171,7 +171,7 @@ public interface EbsApplicationMapper extends NullableBooleanMapper {
   @Mapping(target = "meansAssessmentAmended", ignore = true)
   @Mapping(target = "undertakingAmount", ignore = true)
   @Mapping(target = "undertakingMaximumAmount", ignore = true)
-  @Mapping(target = "leadProceedingChanged", ignore = true)
+  @Mapping(target = "leadProceedingChanged", constant = "false")
   @Mapping(target = "editProceedingsAndCostsAllowed", ignore = true)
   @Mapping(target = "costLimit", ignore = true)
   @Mapping(target = "award", ignore = true)

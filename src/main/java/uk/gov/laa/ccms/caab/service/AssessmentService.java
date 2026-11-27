@@ -38,14 +38,18 @@ import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getAssessmentMappingId;
 import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getRequestedScopeForAssessmentInput;
 
 import java.math.BigDecimal;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -125,6 +129,15 @@ public class AssessmentService {
 
   private static final DateTimeFormatter ASSESSMENT_DATE_FORMATTER =
       DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
+  // Prepopulated global inputs that were previously sent empty or with a different value from old
+  // PUI, so prepops persisted before that was corrected must be refreshed when reused.
+  private static final Set<String> REFRESHED_GLOBAL_INPUTS =
+      Set.of(
+          AssessmentAttribute.COST_LIMIT_CHANGED_FLAG.name(),
+          AssessmentAttribute.LEAD_PROCEEDING_CHANGED.name(),
+          AssessmentAttribute.NEW_APPL_OR_AMENDMENT.name(),
+          AssessmentAttribute.POST_CODE.name());
 
   private final AssessmentApiClient assessmentApiClient;
   private final CaabApiClient caabApiClient;
@@ -1012,6 +1025,163 @@ public class AssessmentService {
   }
 
   /**
+   * Removes every linked-case instance from a merits session, leaving the empty LINKED_CASES entity
+   * and its global link in place. CAAB cannot seed LINKED_CASE_OWNER, and an instance without it
+   * leaves ASSESS_COMPLETE unresolved, so - as in old PUI - no linked cases are sent. This also
+   * clears instances from prepops persisted before the mapper stopped emitting them.
+   *
+   * @param assessment the merits assessment to clean
+   */
+  void removeLinkedCaseInstances(final AssessmentDetail assessment) {
+    final List<String> linkedCaseNames =
+        getAssessmentEntitiesForEntityType(assessment, LINKED_CASE).stream()
+            .map(AssessmentEntityDetail::getName)
+            .toList();
+
+    deleteEntityAndRelationship(
+        assessment, LINKED_CASE, AssessmentRelationship.LINKED_CASE, linkedCaseNames);
+  }
+
+  /**
+   * Brings a persisted (reused) means or merits prepop up to date with the inputs CAAB used to map
+   * differently from old PUI, without rebuilding it - the prepop also holds the provider's answers.
+   * The values are refreshed in place, keeping attribute ids, and for merits any linked-case
+   * instance is removed.
+   *
+   * <p>The checkpoint is left alone: it is the only copy of answers given since the last submit,
+   * and nothing records whether it is newer than that submit. It is released instead straight after
+   * a submit that did not complete - see {@link #clearCheckpointAfterIncompleteSubmit}.
+   *
+   * @param prepopAssessment the persisted prepop assessment, updated in place
+   * @param assessmentRulebase the rulebase being started
+   * @param context the mapping context the fresh values are mapped from
+   */
+  void refreshPersistedPrepop(
+      final AssessmentDetail prepopAssessment,
+      final AssessmentRulebase assessmentRulebase,
+      final AssessmentMappingContext context) {
+    final AssessmentEntityTypeDetail globalEntityType =
+        getAssessmentEntityType(prepopAssessment, GLOBAL);
+    final AssessmentEntityDetail globalEntity =
+        globalEntityType == null
+            ? null
+            : getAssessmentEntity(globalEntityType, prepopAssessment.getCaseReferenceNumber());
+    if (globalEntity != null) {
+      refreshGlobalInputs(globalEntity, context);
+    }
+    if (AssessmentRulebase.MERITS == assessmentRulebase) {
+      removeLinkedCaseInstances(prepopAssessment);
+    }
+  }
+
+  private void refreshGlobalInputs(
+      final AssessmentEntityDetail globalEntity, final AssessmentMappingContext context) {
+    for (final AssessmentAttributeDetail fresh : assessmentMapper.globalToAttributeList(context)) {
+      if (!REFRESHED_GLOBAL_INPUTS.contains(fresh.getName())) {
+        continue;
+      }
+
+      globalEntity.getAttributes().stream()
+          .filter(attribute -> fresh.getName().equals(attribute.getName()))
+          .findFirst()
+          .ifPresentOrElse(
+              existing -> existing.setValue(fresh.getValue()),
+              () -> globalEntity.getAttributes().add(fresh));
+    }
+  }
+
+  /**
+   * Releases the prepop checkpoint straight after a means or merits submit that left the assessment
+   * INCOMPLETE ("In progress"). The connector has just written every answer into the prepop, so
+   * nothing newer exists in the checkpoint and dropping it loses nothing. Resuming from it would
+   * otherwise restore any stale prepopulated input into the interview on every reopen; without it
+   * the next start loads the saved answers with refreshed inputs. A COMPLETE submit keeps its
+   * checkpoint so the interview can still be viewed.
+   *
+   * <p>Call it only for a confirmation of the interview launch currently recorded for the case:
+   * every start builds a new working assessment that is INCOMPLETE until submitted, so an old
+   * confirmation reloaded after the interview was reopened would otherwise release a checkpoint
+   * holding answers given since. AssessmentController checks this with the launch id, which stays
+   * recorded until a newer launch replaces it, so the release repeats for each confirmation of the
+   * current launch, including a resubmit of the same interview or a reload of its confirmation.
+   *
+   * <p>The launch id is held in the HTTP session, while the prepop is shared, so the delete is also
+   * made conditional on the checkpoint being the one read here: assessment-api deletes it only if
+   * its interview data still has the same checksum. A checkpoint rewritten by a newer launch of the
+   * same case, in this session or another, is therefore kept. Only the checkpoint row is deleted,
+   * so answers saved concurrently into the prepop are never overwritten.
+   *
+   * @param assessmentRulebase the rulebase that was submitted
+   * @param submittedAssessment the assessment as saved by the submit
+   * @param loginId the login id recorded against the update
+   */
+  public void clearCheckpointAfterIncompleteSubmit(
+      final AssessmentRulebase assessmentRulebase,
+      final AssessmentDetail submittedAssessment,
+      final String loginId) {
+    if (assessmentRulebase.isFinancialAssessment()
+        || !INCOMPLETE.getStatus().equalsIgnoreCase(submittedAssessment.getStatus())) {
+      return;
+    }
+
+    final AssessmentDetail prepopAssessment =
+        Optional.ofNullable(
+                getAssessments(
+                        List.of(assessmentRulebase.getPrePopAssessmentName()),
+                        submittedAssessment.getProviderId(),
+                        submittedAssessment.getCaseReferenceNumber())
+                    .block())
+            .map(AssessmentDetails::getContent)
+            .map(content -> getMostRecentAssessmentDetail(content))
+            .orElse(null);
+
+    if (prepopAssessment == null
+        || prepopAssessment.getCheckpoint() == null
+        || prepopAssessment.getCheckpoint().getInterviewData() == null) {
+      return;
+    }
+
+    final boolean released =
+        Boolean.TRUE.equals(
+            assessmentApiClient
+                .deleteAssessmentCheckpoint(
+                    prepopAssessment.getId(),
+                    checkpointChecksum(prepopAssessment.getCheckpoint().getInterviewData()),
+                    loginId)
+                .block());
+
+    if (released) {
+      log.info(
+          "Released checkpoint for {} [{}]: the submit left it INCOMPLETE and saved its answers",
+          prepopAssessment.getName(),
+          prepopAssessment.getCaseReferenceNumber());
+    } else {
+      log.info(
+          "Kept checkpoint for {} [{}]: it changed or was released after it was read",
+          prepopAssessment.getName(),
+          prepopAssessment.getCaseReferenceNumber());
+    }
+  }
+
+  /**
+   * Returns the checksum assessment-api compares a conditional checkpoint delete against: the
+   * SHA-256, as hex, of the stored interview data, which the API returns base64 encoded.
+   *
+   * @param base64InterviewData the checkpoint's interview data as returned by assessment-api
+   * @return the checksum
+   */
+  static String checkpointChecksum(final String base64InterviewData) {
+    try {
+      return HexFormat.of()
+          .formatHex(
+              MessageDigest.getInstance("SHA-256")
+                  .digest(Base64.getDecoder().decode(base64InterviewData)));
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException("SHA-256 is not available", e);
+    }
+  }
+
+  /**
    * Deletes redundant opponents from the assessment that are not present in the application.
    *
    * @param assessment the assessment details
@@ -1493,8 +1663,12 @@ public class AssessmentService {
       // first creation only (edits persist on re-entry), EBS-sourced values on every start. The
       // merge only fills gaps - an attribute already holding a value is left alone - so a later
       // start tops up blanks rather than refreshing. The working assessment gets both.
-      final List<CaseAssessmentDetail> ebsAssessmentData =
+      final List<CaseAssessmentDetail> fetchedEbsData =
           fetchEbsAssessmentData(referenceId, assessmentRulebase);
+      final List<CaseAssessmentDetail> ebsAssessmentData =
+          !assessmentRulebase.isFinancialAssessment() && !isReassessment
+              ? withoutNonReusableAttributes(fetchedEbsData, assessmentRulebase)
+              : fetchedEbsData;
       if (createdNewPrepopAssessment) {
         mergeEbsAssessmentData(prepopAssessment, ebsAssessmentData, true);
       }
@@ -1506,6 +1680,14 @@ public class AssessmentService {
     mergeCopiedAssessmentData(prepopAssessment, copiedAnswers);
     mergeCopiedAssessmentData(assessment, copiedAnswers);
 
+    if (!createdNewPrepopAssessment && !assessmentRulebase.isFinancialAssessment()) {
+      refreshPersistedPrepop(prepopAssessment, assessmentRulebase, assessmentContext);
+    }
+    if (AssessmentRulebase.MERITS == assessmentRulebase) {
+      removeLinkedCaseInstances(prepopAssessment);
+      removeLinkedCaseInstances(assessment);
+    }
+
     // An amend-case assessment must not reuse the answers the rulebase marks "Do Not Reuse"
     // (merits)
     // / "Short Term Reuse" (means) - the evidence families among them. Old PUI's amend-case path
@@ -1513,9 +1695,13 @@ public class AssessmentService {
     // standalone means reassessment (StartOpaReassessment) applies no such strip - it reuses the
     // prior EBS data - so the strip is skipped here for the reassessment journey, otherwise the
     // EBS-seeded means inputs would be removed and the means goal (CLIENT_PROV_LA) could not
-    // resolve.
+    // resolve. An existing prepop holds this amendment's own saved answers, which the next start
+    // loads once its checkpoint is released, so only the inherited EBS rows (filtered above) and
+    // a freshly built prepop are stripped.
     if (prepopulateFromEbs && !assessmentRulebase.isFinancialAssessment() && !isReassessment) {
-      removeNonReusableAttributes(prepopAssessment, assessmentRulebase);
+      if (createdNewPrepopAssessment) {
+        removeNonReusableAttributes(prepopAssessment, assessmentRulebase);
+      }
       removeNonReusableAttributes(assessment, assessmentRulebase);
     }
 
@@ -1632,6 +1818,15 @@ public class AssessmentService {
                     entity.getAttributes().stream()
                         .filter(attribute -> !nonReusableAttributes.contains(attribute.getName()))
                         .collect(Collectors.toCollection(ArrayList::new))));
+  }
+
+  private static List<CaseAssessmentDetail> withoutNonReusableAttributes(
+      final List<CaseAssessmentDetail> rows, final AssessmentRulebase assessmentRulebase) {
+    final Set<String> nonReusableAttributes =
+        AssessmentReuseUtil.getNonReusableAttributes(assessmentRulebase);
+    return rows.stream()
+        .filter(row -> !nonReusableAttributes.contains(row.getAttributeName()))
+        .toList();
   }
 
   void prepopulateAssessmentFromEbs(

@@ -11,6 +11,7 @@ import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildProceeding;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildClientDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -31,6 +32,8 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CostLimitDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -165,7 +168,8 @@ class AssessmentMapperTest {
   }
 
   @Test
-  void toAssessmentEntityTypeList_buildsLinkedCaseEntityAndRelationship() {
+  @DisplayName("The merits prepop sends LINKED_CASES and its link empty, even with linked cases")
+  void toAssessmentEntityTypeList_meritsAssessment_sendsNoLinkedCaseInstances() {
     final LinkedCaseDetail linkedCase = new LinkedCaseDetail();
     linkedCase.setLscCaseReference("LINK-1");
     context.getApplication().setLinkedCases(List.of(linkedCase));
@@ -173,19 +177,13 @@ class AssessmentMapperTest {
     final List<AssessmentEntityTypeDetail> result =
         assessmentMapper.toAssessmentEntityTypeList(context);
 
-    // the LINKED_CASES entity type carries an instance per linked case, keyed by its case reference
     final AssessmentEntityTypeDetail linkedCaseType =
         result.stream()
             .filter(entityType -> "LINKED_CASES".equals(entityType.getName()))
             .findFirst()
             .orElseThrow();
-    assertEquals(1, linkedCaseType.getEntities().size());
-    final AssessmentEntityDetail linkedCaseEntity = linkedCaseType.getEntities().get(0);
-    assertEquals("LINK-1", linkedCaseEntity.getName());
-    assertContainsAttribute(
-        linkedCaseEntity.getAttributes(), AssessmentAttribute.LINKED_CASE_ID, "LINK-1");
+    assertTrue(linkedCaseType.getEntities().isEmpty());
 
-    // the global entity declares the linkedcases containment relationship to it
     final AssessmentEntityDetail globalEntity =
         result.stream()
             .filter(entityType -> "global".equals(entityType.getName()))
@@ -198,34 +196,7 @@ class AssessmentMapperTest {
             .filter(relationship -> "linkedcases".equals(relationship.getName()))
             .findFirst()
             .orElseThrow();
-    assertEquals(1, linkedCaseRelationship.getRelationshipTargets().size());
-    assertEquals(
-        "LINK-1", linkedCaseRelationship.getRelationshipTargets().get(0).getTargetEntityId());
-  }
-
-  @Test
-  void linkedCaseWithoutLscRef_usesNumericIdForLinkedCaseIdValue() {
-    // LINKED_CASE_ID is numeric in the rulebase, so with no LSC reference its value falls back to
-    // the bare numeric id, not the "LC_<id>" instance identifier.
-    final LinkedCaseDetail linkedCase = new LinkedCaseDetail();
-    linkedCase.setId(42);
-    context.getApplication().setLinkedCases(List.of(linkedCase));
-
-    final List<AssessmentEntityTypeDetail> result =
-        assessmentMapper.toAssessmentEntityTypeList(context);
-
-    final AssessmentEntityDetail linkedCaseEntity =
-        result.stream()
-            .filter(entityType -> "LINKED_CASES".equals(entityType.getName()))
-            .findFirst()
-            .orElseThrow()
-            .getEntities()
-            .get(0);
-    // Entity instance name keeps the "LC_<id>" identifier.
-    assertEquals("LC_42", linkedCaseEntity.getName());
-    // But the numeric LINKED_CASE_ID attribute value is the bare id, not "LC_42".
-    assertContainsAttribute(
-        linkedCaseEntity.getAttributes(), AssessmentAttribute.LINKED_CASE_ID, "42");
+    assertTrue(linkedCaseRelationship.getRelationshipTargets().isEmpty());
   }
 
   @Test
@@ -296,6 +267,121 @@ class AssessmentMapperTest {
   }
 
   @Test
+  @DisplayName("COST_LIMIT_CHANGED_FLAG is true on an application requesting above the default")
+  void costLimitChangedFlag_application_requestedAboveDefault_isTrue() {
+    final ApplicationDetail application = context.getApplication();
+    application.setAmendment(false);
+    application.setCostLimit(null);
+    application.setCosts(
+        new CostStructureDetail()
+            .defaultCostLimitation(new BigDecimal("1350.00"))
+            .requestedCostLimitation(new BigDecimal("5000.00")));
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.COST_LIMIT_CHANGED_FLAG, "true");
+  }
+
+  @Test
+  @DisplayName("COST_LIMIT_CHANGED_FLAG is false on an application requesting the default limit")
+  void costLimitChangedFlag_application_requestedEqualsDefault_isFalse() {
+    final ApplicationDetail application = context.getApplication();
+    application.setAmendment(false);
+    application.setCostLimit(null);
+    application.setCosts(
+        new CostStructureDetail()
+            .defaultCostLimitation(new BigDecimal("1350.00"))
+            .requestedCostLimitation(new BigDecimal("1350")));
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.COST_LIMIT_CHANGED_FLAG, "false");
+  }
+
+  @Test
+  @DisplayName("COST_LIMIT_CHANGED_FLAG is false on an application with no costs")
+  void costLimitChangedFlag_application_noCosts_isFalse() {
+    final ApplicationDetail application = context.getApplication();
+    application.setAmendment(false);
+    application.setCostLimit(null);
+    application.setCosts(null);
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.COST_LIMIT_CHANGED_FLAG, "false");
+  }
+
+  @Test
+  @DisplayName("COST_LIMIT_CHANGED_FLAG is false on an amendment with no recorded change")
+  void costLimitChangedFlag_amendment_noRecordedChange_isFalse() {
+    final ApplicationDetail application = context.getApplication();
+    application.setAmendment(true);
+    application.setCostLimit(new CostLimitDetail());
+    application.setCosts(
+        new CostStructureDetail()
+            .defaultCostLimitation(new BigDecimal("1350.00"))
+            .requestedCostLimitation(new BigDecimal("5000.00")));
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.COST_LIMIT_CHANGED_FLAG, "false");
+  }
+
+  @Test
+  @DisplayName("POST_CODE is 'No Fixed Abode' for a client with no fixed abode")
+  void postCode_noFixedAbode_isNoFixedAbodeText() {
+    context.getClient().setNoFixedAbode(true);
+    context.getClient().getAddress().setPostalCode(null);
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.POST_CODE, "No Fixed Abode");
+  }
+
+  @Test
+  @DisplayName("POST_CODE is empty for a client with neither an address nor no fixed abode")
+  void postCode_noAddress_isNull() {
+    context.getClient().setNoFixedAbode(null);
+    context.getClient().setAddress(null);
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.POST_CODE, null);
+  }
+
+  @Test
+  @DisplayName("LEAD_PROCEEDING_CHANGED is false when the application has never recorded a change")
+  void leadProceedingChanged_unset_isFalse() {
+    context.getApplication().setLeadProceedingChanged(null);
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.LEAD_PROCEEDING_CHANGED, "false");
+  }
+
+  @Test
+  @DisplayName("NEW_APPL_OR_AMENDMENT is APPLICATION for an amendment to a submitted application")
+  void newApplOrAmendment_amendmentToSubmittedApplication_isApplication() {
+    context.getApplication().setAmendment(true);
+    context.getApplication().setSubmitted(true);
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.NEW_APPL_OR_AMENDMENT, "APPLICATION");
+  }
+
+  @Test
+  @DisplayName("NEW_APPL_OR_AMENDMENT is AMENDMENT for an amendment to a case")
+  void newApplOrAmendment_amendmentToCase_isAmendment() {
+    context.getApplication().setAmendment(true);
+    context.getApplication().setSubmitted(null);
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertContainsAttribute(result, AssessmentAttribute.NEW_APPL_OR_AMENDMENT, "AMENDMENT");
+  }
+
+  @Test
   public void shouldReturnCorrectOpponentOpaInstanceMappingId() {
     final OpponentDetail opponent = new OpponentDetail().id(123);
     final String expectedOpaInstanceMappingId = "OPPONENT_123";
@@ -346,7 +432,7 @@ class AssessmentMapperTest {
     assertContainsAttribute(attributes, AssessmentAttribute.LAR_SCOPE_FLAG, "true");
     assertContainsAttribute(attributes, AssessmentAttribute.LEAD_PROCEEDING_CHANGED, "true");
     assertContainsAttribute(attributes, AssessmentAttribute.MARITIAL_STATUS, "status");
-    assertContainsAttribute(attributes, AssessmentAttribute.NEW_APPL_OR_AMENDMENT, "AMENDMENT");
+    assertContainsAttribute(attributes, AssessmentAttribute.NEW_APPL_OR_AMENDMENT, "APPLICATION");
     assertContainsAttribute(attributes, AssessmentAttribute.NI_NO, "nino");
     assertContainsAttribute(attributes, AssessmentAttribute.POA_OR_BILL_FLAG, "N/A");
     assertContainsAttribute(attributes, AssessmentAttribute.POST_CODE, "clientpc");

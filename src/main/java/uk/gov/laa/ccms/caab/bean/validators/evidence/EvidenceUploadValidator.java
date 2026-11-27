@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.validators.file.FileUploadValidator;
+import uk.gov.laa.ccms.caab.constants.CcmsModule;
 
 /** Validate the evidence document details provided by evidence upload flow. */
 @Component
@@ -50,8 +51,9 @@ public class EvidenceUploadValidator extends FileUploadValidator {
     validateDocumentType(evidenceUploadFormData, errors);
     validateDocumentDescription(evidenceUploadFormData, errors);
 
-    if (evidenceUploadFormData.getEvidenceTypes() == null
-        || evidenceUploadFormData.getEvidenceTypes().isEmpty()) {
+    if (evidenceUploadFormData.getCcmsModule() == CcmsModule.APPLICATION
+        && (evidenceUploadFormData.getEvidenceTypes() == null
+            || evidenceUploadFormData.getEvidenceTypes().isEmpty())) {
       errors.rejectValue("evidenceTypes", "required.evidenceTypes", EVIDENCE_TYPES_REQUIRED_ERROR);
     }
   }

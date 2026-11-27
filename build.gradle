@@ -1,5 +1,5 @@
 plugins {
-    id 'uk.gov.justice.service.laa.laa-spring-boot-gradle-plugin' version '4.0.0'
+    id 'uk.gov.justice.service.laa.laa-spring-boot-gradle-plugin' version '4.1.1'
     id 'com.diffplug.spotless' version '8.11.0'
 }
 
@@ -16,9 +16,6 @@ subprojects {
 repositories {
 
     mavenCentral()
-
-    // Latest version of saml requires this
-    maven { url = 'https://build.shibboleth.net/nexus/content/repositories/releases/' }
 
     // Define the common configuration block for GitHub repositories
     def githubRepoConfig = { repoUrl ->
@@ -57,54 +54,24 @@ configurations.configureEach {
             details.useVersion '3.6.1'
             details.because 'Snyk override (SNYK-JAVA-ORGCODEHAUSPLEXUS-15766699); checkstyle pins the vulnerable 3.3.0'
         }
-        // Jackson 2.x and 3.x are both on the classpath; the Spring Boot BOM pins each one patch
-        // behind. Bump databind with core to keep the pair in lockstep.
-        if (details.requested.group == 'com.fasterxml.jackson.core'
-                && details.requested.name in ['jackson-databind', 'jackson-core']) {
-            details.useVersion '2.21.8'
-            details.because 'Snyk override: upgrade Jackson 2.x to remediate current vulnerabilities'
-        }
-        if (details.requested.group == 'tools.jackson.core'
-                && details.requested.name in ['jackson-databind', 'jackson-core']) {
-            details.useVersion '3.1.8'
-            details.because 'Snyk override: upgrade Jackson 3.x to remediate current vulnerabilities'
-        }
-        // Keep this override narrow: touching every io.netty module can drag native SSL artifacts
-        // (tcnative) to incompatible coordinates. Reactor Netty also loads QUIC classes for HTTPS.
-        if (details.requested.group == 'io.netty'
-                && details.requested.name in ['netty-codec-http', 'netty-codec-http3',
-                                              'netty-codec-classes-quic', 'netty-codec-native-quic']) {
-            details.useVersion '4.2.18.Final'
-            details.because 'Snyk override for HTTP and QUIC vulnerabilities in 4.2.17.Final'
-        }
-        // Not managed by the Spring Boot BOM; pulled in transitively via the SAML/opensaml stack.
-        if (details.requested.group == 'org.bouncycastle') {
-            details.useVersion '1.86'
-            details.because 'Override to remediate vulnerability; not covered by the Spring Boot dependency BOM'
-        }
-        if (details.requested.group == 'org.hibernate.validator'
-                && details.requested.name == 'hibernate-validator') {
-            details.useVersion '9.1.5.Final'
-            details.because 'Remediate Expression Language Injection (SNYK-JAVA-ORGHIBERNATEVALIDATOR-20877468)'
-        }
         // Logback classic pulled in by Spring Boot starter logging
         if (details.requested.group == 'ch.qos.logback'
                 && details.requested.name in ['logback-classic', 'logback-core']) {
             details.useVersion '1.6.5'
             details.because 'Snyk override (SNYK-JAVA-CHQOSLOGBACK-20824362); directory traversal vulnerability in 1.6.3'
         }
-        // Guava reaches us through the SAML stack (shib-networking <- opensaml-saml-impl).
-        if (details.requested.group == 'com.google.guava'
-                && details.requested.name == 'guava') {
-            details.useVersion '33.7.2-jre'
-            details.because 'Snyk override (SNYK-JAVA-COMGOOGLEGUAVA-20825054); unthrottled resource allocation in 33.0.0-jre'
-        }
-        // Keep embedded Tomcat modules aligned on the patched release.
-        if (details.requested.group == 'org.apache.tomcat.embed') {
-            details.useVersion '11.0.27'
-            details.because 'Snyk override (CVE-2026-74048, CVE-2026-88041, CVE-2026-93446, CVE-2026-101296, CVE-2026-101356, CVE-2026-103119); fixed in 11.0.27'
+        // Reaches us via the OIDC stack: oauth2-oidc-sdk -> json-smart -> accessors-smart.
+        if (details.requested.group == 'org.ow2.asm'
+                && details.requested.name == 'asm') {
+            details.useVersion '9.11.1'
+            details.because 'Snyk override (SNYK-JAVA-ORGOW2ASM-21715439 and five related); 9.11 still carries an infinite-loop issue'
         }
     }
+}
+
+// The Dockerfile copies the boot jar from build/libs, so do not build a plain jar alongside it.
+tasks.named('jar') {
+    enabled = false
 }
 
 // Replaces application.yml @version@ with the project version
@@ -129,7 +96,7 @@ dependencies {
     // 0.1.3 carries GetInvoiceData, needed to copy a rejected bill.
     implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.1.3'
 
-    implementation 'uk.gov.laa.ccms.caab:caab-api:0.24.1'
+    implementation 'uk.gov.laa.ccms.caab:caab-api:0.26.0'
 
     implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.57'
 
@@ -141,6 +108,13 @@ dependencies {
 
     implementation 'org.apache.tika:tika-core:4.2.0'
 
+    // These were previously pulled in transitively via the SAML/opensaml stack; declared
+    // explicitly now that SAML has been replaced by OIDC (see EvidenceService, CspReportController,
+    // ConnectorApiClient and the various mapper context classes).
+    implementation 'com.google.guava:guava:33.8.0-jre'
+    implementation 'org.apache.commons:commons-lang3:3.22.0'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.23.0'
+
     // Starters
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -151,7 +125,7 @@ dependencies {
     implementation 'org.springframework.data:spring-data-commons'
 
 	// AWS S3 Integration
-	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.2.1')
+	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.2.2')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
 	implementation 'software.amazon.awssdk:sts'
@@ -162,10 +136,9 @@ dependencies {
 
     implementation 'io.swagger.core.v3:swagger-annotations:3.0.0'
 
-    //SAML security
-    implementation 'org.springframework.boot:spring-boot-starter-security-saml2'
+    //OIDC security (EntraID)
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
-    implementation 'org.springframework.security:spring-security-saml2-service-provider'
 
     implementation 'uk.gov.justice.service.laa:laa-spring-boot-starter-govuk-dialect'
 
@@ -185,7 +158,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-    testImplementation 'io.projectreactor:reactor-test:3.8.8'
+    testImplementation 'io.projectreactor:reactor-test:3.9.0'
 
     integrationTestImplementation 'org.wiremock:wiremock-standalone:3.13.2'
 

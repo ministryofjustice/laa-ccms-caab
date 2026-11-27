@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.application.section;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -163,6 +164,39 @@ class EvidenceSectionControllerTest {
         .andExpect(model().attribute(EVIDENCE_REQUIRED, evidenceRequired))
         .andExpect(model().attribute("evidenceTypes", documentTypesLookup.getContent()))
         .andExpect(view().name("application/evidence/evidence-add"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"application", "amendments"})
+  void postAddEvidenceTakesModuleFromRouteNotRequest(String caseContext) throws Exception {
+    EvidenceUploadFormData formData = buildEvidenceUploadFormData();
+    formData.setCcmsModule(expectedModule(caseContext) == APPLICATION ? AMENDMENT : APPLICATION);
+
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue("file", "required.file", "Please choose a file.");
+              return null;
+            })
+        .when(evidenceUploadValidator)
+        .validate(any(), any());
+    when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .thenReturn(Mono.just(new CommonLookupDetail()));
+
+    mockMvc
+        .perform(
+            post("/%s/evidence/add".formatted(caseContext))
+                .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
+                .sessionAttr(EVIDENCE_REQUIRED, List.of())
+                .sessionAttr(USER_DETAILS, user))
+        .andExpect(status().isOk());
+
+    verify(evidenceUploadValidator)
+        .validate(
+            argThat(
+                form ->
+                    ((EvidenceUploadFormData) form).getCcmsModule() == expectedModule(caseContext)),
+            any());
   }
 
   @ParameterizedTest

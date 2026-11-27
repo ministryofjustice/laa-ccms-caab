@@ -9,13 +9,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
@@ -23,14 +16,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.convert.ApplicationConversionService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.saml2.core.Saml2X509Credential;
-import org.springframework.security.saml2.provider.service.registration.InMemoryRelyingPartyRegistrationRepository;
-import org.springframework.security.saml2.provider.service.registration.RelyingPartyRegistration;
-import org.springframework.security.saml2.provider.service.registration.RelyingPartyRegistrationRepository;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
@@ -40,6 +36,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import uk.gov.laa.ccms.caab.bean.metric.PuiMetricService;
+import uk.gov.laa.ccms.caab.security.CcmsUserIdentityResolver;
 import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.service.UserService;
 
@@ -50,6 +47,7 @@ class SecurityEventsEndToEndTest {
   @Autowired private WebApplicationContext context;
   @MockitoBean private UserService userService;
   @MockitoBean private PuiMetricService puiMetricService;
+  @MockitoBean private CcmsUserIdentityResolver ccmsUserIdentityResolver;
 
   private final ListAppender<ILoggingEvent> appender = new ListAppender<>();
   private final Logger eventLogger = (Logger) LoggerFactory.getLogger(SecurityEventLogger.class);
@@ -71,6 +69,24 @@ class SecurityEventsEndToEndTest {
   }
 
   @Test
+  void securityHeadersDependOnTransport() throws Exception {
+    var secure =
+        mockMvc
+            .perform(get("/home").secure(true).with(user("jane").authorities()))
+            .andReturn()
+            .getResponse();
+    assertThat(secure.getHeader("Strict-Transport-Security"))
+        .isEqualTo("max-age=31536000 ; includeSubDomains");
+    assertThat(secure.getHeader("Referrer-Policy")).isEqualTo("strict-origin-when-cross-origin");
+    assertThat(secure.getHeader("Permissions-Policy"))
+        .isEqualTo("camera=(), microphone=(), geolocation=(), payment=(), usb=()");
+    assertThat(secure.getHeader("X-Frame-Options")).isEqualTo("SAMEORIGIN");
+    var insecure =
+        mockMvc.perform(get("/home").with(user("jane").authorities())).andReturn().getResponse();
+    assertThat(insecure.getHeader("Strict-Transport-Security")).isNull();
+  }
+
+  @Test
   void aRouteTheUserLacksTheFunctionForIsRefusedAndLoggedAsADenial() throws Exception {
     int status =
         mockMvc
@@ -86,41 +102,145 @@ class SecurityEventsEndToEndTest {
         .incrementSecurityEvents("AUTHORIZATION_DENIED", "DENIED");
   }
 
-  @Test
-  void aSamlResponseThatCannotBeReadIsLoggedAsAFailedSignIn() throws Exception {
-    MvcResult result =
-        mockMvc
-            .perform(post("/login/saml2/sso/idp").param("SAMLResponse", "not-a-saml-response"))
-            .andReturn();
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings = {"submit", "discharge"})
+  void outcomeSubmissionRoutesRequireSubmitOutcomeAndCsrf(String destination) throws Exception {
+    final String path = "/case/outcome-and-awards/" + destination;
+    final var csrf =
+        org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+            .csrf();
+    final var submitter =
+        user("jane")
+            .authorities(
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("SUBOUT"),
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("POD"));
+    mockMvc
+        .perform(post(path).with(user("jane").authorities()).with(csrf))
+        .andExpect(
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.status()
+                .isForbidden());
+    mockMvc
+        .perform(
+            post(path)
+                .with(submitter)
+                .with(
+                    org.springframework.security.test.web.servlet.request
+                        .SecurityMockMvcRequestPostProcessors.csrf()
+                        .useInvalidToken()))
+        .andExpect(
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.status()
+                .isForbidden());
+    // This harness has no controller: reaching 404 proves the security chain allowed the request.
+    mockMvc
+        .perform(post(path).with(submitter).with(csrf))
+        .andExpect(
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.status()
+                .isNotFound());
+  }
 
-    assertThat(result.getResponse().getStatus()).isEqualTo(302);
-    assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/login?error");
-    assertThat(eventTypes()).contains("AUTHENTICATION_FAILURE");
-    assertOnlyAnErrorCodeWasLogged("not-a-saml-response");
-    org.mockito.Mockito.verify(puiMetricService)
-        .incrementSecurityEvents("AUTHENTICATION_FAILURE", "FAILURE");
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "submit, SUBOUT, 404",
+    "submit, POD, 403",
+    "submit, VO, 403",
+    "submit, SUBOUT POD, 404",
+    "discharge, SUBOUT, 403",
+    "discharge, POD, 403",
+    "discharge, VO, 403",
+    "discharge, SUBOUT POD, 404"
+  })
+  void outcomeJourneyEnforcesLegacyPermissionsForGetAndPost(
+      String destination, String functions, int expectedStatus) throws Exception {
+    final var authorities =
+        java.util.Arrays.stream(functions.split(" "))
+            .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
+            .toList();
+    final String path = "/case/outcome-and-awards/" + destination;
+    for (final var request : List.of(get(path), post(path))) {
+      mockMvc
+          .perform(
+              request
+                  .with(user("jane").authorities(authorities))
+                  .with(
+                      org.springframework.security.test.web.servlet.request
+                          .SecurityMockMvcRequestPostProcessors.csrf()))
+          .andExpect(
+              org.springframework.test.web.servlet.result.MockMvcResultMatchers.status()
+                  .is(expectedStatus));
+    }
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "/notifications/234/attachments/567/download,ATT,false",
+    "/notifications/234/attachments/567/download,UPLOAD_EVIDENCE,true",
+    "/notifications/234/attachments/567/download,,true",
+    "/notifications/234/attachments/31/downloadDraft,UPLOAD_EVIDENCE,false",
+    "/notifications/234/attachments/31/downloadDraft,ATT,true",
+    "/notifications/234/attachments/31/downloadDraft,,true"
+  })
+  void theNotificationDownloadRoutesNeedTheirOwnFunction(
+      String path, String function, boolean refused) throws Exception {
+    var authorities =
+        function == null
+            ? new org.springframework.security.core.GrantedAuthority[0]
+            : new org.springframework.security.core.GrantedAuthority[] {
+              new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                  uk.gov.laa.ccms.caab.config.UserRole.valueOf(
+                          "ATT".equals(function) ? "VIEW_NOTIFICATION_ATTACHMENT" : function)
+                      .getCode())
+            };
+
+    int status =
+        mockMvc
+            .perform(get(path).with(user("jane").authorities(authorities)))
+            .andReturn()
+            .getResponse()
+            .getStatus();
+
+    if (refused) {
+      assertThat(status).isEqualTo(403);
+    } else {
+      assertThat(status).isNotEqualTo(403);
+    }
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(
+      strings = {
+        "/notifications/234/attachments/567/download",
+        "/notifications/234/attachments/31/downloadDraft"
+      })
+  void aHeadRequestToTheDownloadRoutesIsRefusedLikeAGetWithoutTheFunction(String path)
+      throws Exception {
+    int status =
+        mockMvc
+            .perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head(path)
+                    .with(user("jane").authorities()))
+            .andReturn()
+            .getResponse()
+            .getStatus();
+
+    assertThat(status).isEqualTo(403);
   }
 
   @Test
-  void aWellFormedButUnsignedSamlResponseIsLoggedAsAFailedSignIn() throws Exception {
-    String response =
-        "<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" ID=\"r1\""
-            + " Version=\"2.0\" IssueInstant=\"2026-01-01T00:00:00Z\""
-            + " Destination=\"http://localhost/login/saml2/sso/idp\"/>";
-
+  void aCallbackWithoutAnAuthorizationRequestIsLoggedAsAFailedSignIn() throws Exception {
     MvcResult result =
         mockMvc
             .perform(
-                post("/login/saml2/sso/idp")
-                    .param(
-                        "SAMLResponse",
-                        Base64.getEncoder()
-                            .encodeToString(response.getBytes(StandardCharsets.UTF_8))))
+                get("/login/oauth2/code/silas-identity")
+                    .param("code", "an-opaque-authorization-code")
+                    .param("state", "a-state-value"))
             .andReturn();
 
-    assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/login?error");
+    assertThat(result.getResponse().getStatus()).isEqualTo(302);
+    assertThat(result.getResponse().getRedirectedUrl()).endsWith("/authentication-error");
     assertThat(eventTypes()).contains("AUTHENTICATION_FAILURE");
-    assertOnlyAnErrorCodeWasLogged("samlp:Response");
+    assertOnlyAnErrorCodeWasLogged("an-opaque-authorization-code");
+    org.mockito.Mockito.verify(puiMetricService)
+        .incrementSecurityEvents("AUTHENTICATION_FAILURE", "FAILURE");
   }
 
   private void assertOnlyAnErrorCodeWasLogged(String payloadFragment) {
@@ -196,30 +316,32 @@ class SecurityEventsEndToEndTest {
   @Import({
     SecurityConfiguration.class,
     AuthorizationEventsConfiguration.class,
+    AuthenticationEventsConfiguration.class,
     SecurityEventLogger.class
   })
   static class Config {
 
+    /** Boot registers this at runtime; the slim test context needs it for Duration binding. */
     @Bean
-    RelyingPartyRegistrationRepository relyingPartyRegistrationRepository() throws Exception {
-      X509Certificate certificate =
-          (X509Certificate)
-              CertificateFactory.getInstance("X.509")
-                  .generateCertificate(
-                      new ByteArrayInputStream(
-                          Files.readAllBytes(
-                              Path.of("src/test/resources/saml/test-idp-certificate.pem"))));
-      return new InMemoryRelyingPartyRegistrationRepository(
-          RelyingPartyRegistration.withRegistrationId("idp")
-              .entityId("{baseUrl}/saml2/service-provider-metadata/{registrationId}")
-              .assertionConsumerServiceLocation("{baseUrl}/login/saml2/sso/{registrationId}")
-              .assertingPartyMetadata(
-                  party ->
-                      party
-                          .entityId("https://idp.example.test/metadata")
-                          .singleSignOnServiceLocation("https://idp.example.test/sso")
-                          .verificationX509Credentials(
-                              c -> c.add(Saml2X509Credential.verification(certificate))))
+    static ConversionService conversionService() {
+      return ApplicationConversionService.getSharedInstance();
+    }
+
+    @Bean
+    ClientRegistrationRepository clientRegistrationRepository() {
+      return new InMemoryClientRegistrationRepository(
+          ClientRegistration.withRegistrationId("silas-identity")
+              .clientId("caab")
+              .clientSecret("secret")
+              .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+              .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+              .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
+              .scope("openid")
+              .authorizationUri("https://idp.example.test/authorize")
+              .tokenUri("https://idp.example.test/token")
+              .jwkSetUri("https://idp.example.test/keys")
+              .issuerUri("https://idp.example.test")
+              .userNameAttributeName("sub")
               .build());
     }
   }
