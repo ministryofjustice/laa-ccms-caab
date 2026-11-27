@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
@@ -12,9 +13,12 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_D
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_REFERENCE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRIOR_AUTHORITY_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpSession;
@@ -88,5 +92,37 @@ class ApplicationEditorStateTest {
     assertNull(session.getAttribute(APPLICATION_ID));
     assertNull(session.getAttribute(CASE));
     assertNull(session.getAttribute(CURRENT_PROCEEDING));
+  }
+
+  @Test
+  void providerChangeKeepsOnlyTheLoginAndFrameworkState() {
+    MockHttpSession session = sessionEditing(1);
+    session.setAttribute("costAllocationFormData", new Object());
+    session.setAttribute("individualLiablePartyFlow", new Object());
+    session.setAttribute(USER_DETAILS, new Object());
+    session.setAttribute("SPRING_SECURITY_CONTEXT", new Object());
+    session.setAttribute("authenticatedAt", new Object());
+    session.setAttribute("org.springframework.security.web.csrf.CSRF_TOKEN", new Object());
+
+    ApplicationEditorState.clearOpenApplication(session);
+
+    assertThat(Collections.list(session.getAttributeNames()))
+        .containsExactlyInAnyOrder(
+            USER_DETAILS,
+            "SPRING_SECURITY_CONTEXT",
+            "authenticatedAt",
+            "org.springframework.security.web.csrf.CSRF_TOKEN");
+  }
+
+  @Test
+  void openingAnotherApplicationDropsTheSubmissionState() {
+    MockHttpSession session = sessionEditing(1);
+    session.setAttribute(SUBMISSION_TRANSACTION_ID, "transaction1");
+    session.setAttribute(SUBMISSION_RESULT, "confirmed");
+
+    ApplicationEditorState.clearWhenApplicationChanges(session, 2);
+
+    assertNull(session.getAttribute(SUBMISSION_TRANSACTION_ID));
+    assertNull(session.getAttribute(SUBMISSION_RESULT));
   }
 }

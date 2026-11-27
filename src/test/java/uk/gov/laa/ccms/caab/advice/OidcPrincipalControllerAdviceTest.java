@@ -17,6 +17,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -250,6 +251,8 @@ class OidcPrincipalControllerAdviceTest {
       sessionUser.setProvider(new BaseProvider().id(sessionProvider));
       userDetails.setProvider(new BaseProvider().id(reloadedProvider));
       when(session.getAttribute("user")).thenReturn(sessionUser);
+      when(session.getAttributeNames())
+          .thenReturn(Collections.enumeration(List.of(ACTIVE_CASE, APPLICATION_ID, "user")));
       HandlerMethod handler = mock(HandlerMethod.class);
       when(request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE))
           .thenReturn(handler);
@@ -260,6 +263,7 @@ class OidcPrincipalControllerAdviceTest {
 
         verify(session, times(cleared ? 1 : 0)).removeAttribute(ACTIVE_CASE);
         verify(session, times(cleared ? 1 : 0)).removeAttribute(APPLICATION_ID);
+        verify(session, never()).removeAttribute("user");
       } finally {
         SecurityContextHolder.clearContext();
       }

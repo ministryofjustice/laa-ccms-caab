@@ -104,7 +104,7 @@ class EvidenceSectionControllerTest {
   @ParameterizedTest
   @ValueSource(strings = {"application", "amendments"})
   void viewEvidenceRequired(String caseContext) throws Exception {
-    ActiveCase activeCase = buildActiveCase();
+    ActiveCase activeCase = buildActiveCase(caseContext);
 
     when(evidenceService.getDocumentsRequired(
             String.valueOf(activeCase.getApplicationId()),
@@ -142,7 +142,7 @@ class EvidenceSectionControllerTest {
   @ParameterizedTest
   @ValueSource(strings = {"application", "amendments"})
   void viewAddEvidenceScreen(String caseContext) throws Exception {
-    ActiveCase activeCase = buildActiveCase();
+    ActiveCase activeCase = buildActiveCase(caseContext);
 
     List<EvidenceRequired> evidenceRequired = List.of(new EvidenceRequired("code", "desc"));
 
@@ -189,7 +189,7 @@ class EvidenceSectionControllerTest {
     mockMvc
         .perform(
             post("/%s/evidence/add".formatted(caseContext))
-                .sessionAttr(ACTIVE_CASE, buildActiveCase())
+                .sessionAttr(ACTIVE_CASE, buildActiveCase(caseContext))
                 .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
                 .sessionAttr(EVIDENCE_REQUIRED, List.of())
                 .sessionAttr(USER_DETAILS, user))
@@ -228,7 +228,7 @@ class EvidenceSectionControllerTest {
     mockMvc
         .perform(
             post("/%s/evidence/add".formatted(caseContext))
-                .sessionAttr(ACTIVE_CASE, buildActiveCase())
+                .sessionAttr(ACTIVE_CASE, buildActiveCase(caseContext))
                 .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, user))
@@ -258,7 +258,7 @@ class EvidenceSectionControllerTest {
     mockMvc
         .perform(
             post("/%s/evidence/add".formatted(caseContext))
-                .sessionAttr(ACTIVE_CASE, buildActiveCase())
+                .sessionAttr(ACTIVE_CASE, buildActiveCase(caseContext))
                 .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, user))
@@ -291,7 +291,7 @@ class EvidenceSectionControllerTest {
     mockMvc
         .perform(
             post("/%s/evidence/add".formatted(caseContext))
-                .sessionAttr(ACTIVE_CASE, buildActiveCase())
+                .sessionAttr(ACTIVE_CASE, buildActiveCase(caseContext))
                 .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, user))
@@ -334,7 +334,7 @@ class EvidenceSectionControllerTest {
     mockMvc
         .perform(
             post("/%s/evidence/add".formatted(caseContext))
-                .sessionAttr(ACTIVE_CASE, buildActiveCase())
+                .sessionAttr(ACTIVE_CASE, buildActiveCase(caseContext))
                 .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, user))
@@ -368,7 +368,7 @@ class EvidenceSectionControllerTest {
     mockMvc
         .perform(
             post("/%s/evidence/add".formatted(caseContext))
-                .sessionAttr(ACTIVE_CASE, buildActiveCase())
+                .sessionAttr(ACTIVE_CASE, buildActiveCase(caseContext))
                 .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
                 .sessionAttr(EVIDENCE_REQUIRED, List.of(new EvidenceRequired("code", "desc")))
                 .sessionAttr(USER_DETAILS, user))
@@ -385,7 +385,7 @@ class EvidenceSectionControllerTest {
   @ValueSource(strings = {"application", "amendments"})
   void removeEvidenceRemovesDocument(String caseContext) throws Exception {
     final Integer tdsId = 123;
-    final ActiveCase activeCase = buildActiveCase();
+    final ActiveCase activeCase = buildActiveCase(caseContext);
 
     mockMvc
         .perform(
@@ -407,7 +407,7 @@ class EvidenceSectionControllerTest {
   @ValueSource(strings = {"application", "amendments"})
   void viewEvidenceDocumentStreamsContentInline(String caseContext) throws Exception {
     final Integer tdsId = 123;
-    final ActiveCase activeCase = buildActiveCase();
+    final ActiveCase activeCase = buildActiveCase(caseContext);
     final EvidenceDocumentDetail document =
         new EvidenceDocumentDetail()
             .fileName("originalName.pdf")
@@ -445,7 +445,7 @@ class EvidenceSectionControllerTest {
   @ValueSource(strings = {"application", "amendments"})
   void viewEvidenceDocumentRejectsDocumentNotInActiveCase(String caseContext) throws Exception {
     final Integer tdsId = 123;
-    final ActiveCase activeCase = buildActiveCase();
+    final ActiveCase activeCase = buildActiveCase(caseContext);
 
     // The active case only contains a different document id, so the requested id must be rejected
     // before the file content is ever fetched.
@@ -475,12 +475,33 @@ class EvidenceSectionControllerTest {
     return "amendments".equals(caseContext) ? AMENDMENT : APPLICATION;
   }
 
-  private ActiveCase buildActiveCase() {
+  private ActiveCase buildActiveCase(String caseContext) {
     return ActiveCase.builder()
         .applicationId(123)
         .caseReferenceNumber("caseRef")
         .providerId(789)
+        .amendment("amendments".equals(caseContext))
         .build();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"application", "amendments"})
+  @DisplayName("An evidence route for the other kind of case is refused")
+  void evidenceRouteMustMatchTheActiveCase(String caseContext) throws Exception {
+    final String otherContext = "amendments".equals(caseContext) ? "application" : "amendments";
+
+    // The refusal is handled like any other: back to a page the user may see.
+    mockMvc
+        .perform(
+            post("/%s/evidence/add".formatted(caseContext))
+                .sessionAttr(ACTIVE_CASE, buildActiveCase(otherContext))
+                .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, buildEvidenceUploadFormData())
+                .sessionAttr(EVIDENCE_REQUIRED, List.of())
+                .sessionAttr(USER_DETAILS, user))
+        .andExpect(status().is3xxRedirection());
+
+    verify(evidenceService, never())
+        .registerDocument(any(), any(), any(), any(), any(), any(), any());
   }
 
   private EvidenceUploadFormData buildEvidenceUploadFormData() {

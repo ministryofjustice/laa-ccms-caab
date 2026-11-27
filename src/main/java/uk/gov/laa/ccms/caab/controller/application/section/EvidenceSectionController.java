@@ -11,6 +11,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 import static uk.gov.laa.ccms.caab.util.FileUtil.getFileExtension;
 
+import jakarta.servlet.http.HttpSession;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -20,6 +21,7 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -74,6 +76,21 @@ public class EvidenceSectionController {
   private final EvidenceMapper evidenceMapper;
 
   private static final String CASE_CONTEXT = "caseContext";
+
+  /**
+   * The evidence pages act on the active case, so its kind must match the route: an amendment's
+   * evidence under /amendments, a draft's under /application.
+   */
+  @ModelAttribute
+  public void requireRouteMatchesActiveCase(
+      @PathVariable(value = CASE_CONTEXT, required = false) final CaseContext context,
+      final HttpSession session) {
+    if (context != null
+        && session.getAttribute(ACTIVE_CASE) instanceof ActiveCase activeCase
+        && context.isAmendment() != activeCase.isAmendment()) {
+      throw new AccessDeniedException("The active case does not belong to this route");
+    }
+  }
 
   /**
    * Handles the GET request for the evidence upload screen.

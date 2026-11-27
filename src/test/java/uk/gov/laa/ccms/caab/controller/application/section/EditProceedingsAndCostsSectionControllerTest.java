@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -70,6 +71,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -96,6 +99,7 @@ import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidat
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.scopelimitation.ScopeLimitationDetailsValidator;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
@@ -160,6 +164,39 @@ class EditProceedingsAndCostsSectionControllerTest {
         MockMvcBuilders.standaloneSetup(controller, scopeLimitationController)
             .setConversionService(getConversionService())
             .build();
+    loggedInWith(UserRole.ADD_PROCEEDING, UserRole.VIEW_PROCEEDING);
+  }
+
+  @AfterEach
+  void clearLogin() {
+    SecurityContextHolder.clearContext();
+  }
+
+  private static void loggedInWith(UserRole... roles) {
+    SecurityContextHolder.getContext()
+        .setAuthentication(
+            new TestingAuthenticationToken(
+                "user",
+                null,
+                java.util.Arrays.stream(roles).map(UserRole::getCode).toArray(String[]::new)));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"add, VIEW_PROCEEDING", "edit, ADD_PROCEEDING"})
+  @DisplayName("A scope limitation page needs the function of the proceeding flow in progress")
+  void scopeLimitationNeedsTheFlowsFunction(String action, UserRole held) {
+    loggedInWith(held);
+    final MockHttpSession session = new MockHttpSession();
+    session.setAttribute(PROCEEDING_FLOW_FORM_DATA, new ProceedingFlowFormData(action));
+
+    final Exception exception =
+        assertThrows(
+            ServletException.class,
+            () ->
+                mockMvc.perform(
+                    get("/application/proceedings/scope-limitations/1/remove").session(session)));
+
+    assertInstanceOf(AccessDeniedException.class, exception.getCause());
   }
 
   private static final UserDetail user =

@@ -33,12 +33,14 @@ import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails;
 import uk.gov.laa.ccms.caab.bean.validators.scopelimitation.ScopeLimitationDetailsValidator;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
+import uk.gov.laa.ccms.caab.security.HeldFunctions;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -70,6 +72,22 @@ public class ScopeLimitationController {
   private final LookupService lookupService;
   private final ScopeLimitationDetailsValidator scopeLimitationDetailsValidator;
   private final ProceedingAndCostsMapper proceedingAndCostsMapper;
+
+  /**
+   * Scope limitations are edited inside the add and the edit proceeding flows, which share their
+   * URLs, so the flow in progress decides the function: ADDPROC to add, VIEWPROC to edit.
+   */
+  @ModelAttribute
+  public void requireProceedingFlowFunction(final HttpSession session) {
+    if (session.getAttribute(PROCEEDING_FLOW_FORM_DATA) instanceof ProceedingFlowFormData flow) {
+      final UserRole required =
+          ACTION_ADD.equals(flow.getAction()) ? UserRole.ADD_PROCEEDING : UserRole.VIEW_PROCEEDING;
+      if (!HeldFunctions.holdsAll(required)) {
+        throw new AccessDeniedException(
+            "The %s proceeding flow needs %s".formatted(flow.getAction(), required.getCode()));
+      }
+    }
+  }
 
   /**
    * Starts editing an existing scope limitation.

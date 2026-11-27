@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
@@ -113,12 +114,13 @@ public class AmendCaseController {
   public String amendCaseSummary(
       @SessionAttribute(APPLICATION_SUMMARY) final BaseApplicationDetail tdsApplication,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       Model model,
       HttpSession httpSession) {
 
     final ApplicationDetail amendment =
         applicationService.getApplication(String.valueOf(tdsApplication.getId())).block();
+    // Built from the amendment, never from whatever case or draft was active before it.
+    final ActiveCase activeCase = ActiveCaseModelAdvice.forCase(amendment);
     final ApplicationDetail activeCaseDetail = (ApplicationDetail) httpSession.getAttribute(CASE);
     if (activeCaseDetail != null) {
       amendment.setAvailableFunctions(activeCaseDetail.getAvailableFunctions());
