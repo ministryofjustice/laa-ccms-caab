@@ -1765,6 +1765,22 @@ class ApplicationServiceTest {
   }
 
   @Test
+  void getApplication_rejectsRecordWithMissingProviderWhenProviderContextActive() {
+    final String applicationId = "12345";
+    final ApplicationDetail unownedApplication = new ApplicationDetail();
+    when(caabApiClient.getApplication(applicationId)).thenReturn(Mono.just(unownedApplication));
+
+    ProviderContext.setProviderId("12345");
+    try {
+      StepVerifier.create(applicationService.getApplication(applicationId))
+          .expectError(CaabApplicationException.class)
+          .verify();
+    } finally {
+      ProviderContext.clear();
+    }
+  }
+
+  @Test
   void getApplication_allowsMatchingProviderRecordWhenProviderContextActive() {
     final String applicationId = "12345";
     final ApplicationDetail ownApplication =

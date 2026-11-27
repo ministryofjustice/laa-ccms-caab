@@ -625,13 +625,20 @@ public class ApplicationService {
                         .map(ApplicationProviderDetails::getProvider)
                         .map(IntDisplayValue::getId)
                         .orElse(null);
-                if (activeProviderId != null
-                    && ownerId != null
-                    && !activeProviderId.equals(String.valueOf(ownerId))) {
-                  sink.error(
-                      new CaabApplicationException(
-                          "Application %s does not belong to active provider".formatted(id)));
-                  return;
+                if (activeProviderId != null) {
+                  if (ownerId == null) {
+                    sink.error(
+                        new CaabApplicationException(
+                            "Application %s does not contain an active provider owner"
+                                .formatted(id)));
+                    return;
+                  }
+                  if (!activeProviderId.equals(String.valueOf(ownerId))) {
+                    sink.error(
+                        new CaabApplicationException(
+                            "Application %s does not belong to active provider".formatted(id)));
+                    return;
+                  }
                 }
                 sink.next(application);
               });

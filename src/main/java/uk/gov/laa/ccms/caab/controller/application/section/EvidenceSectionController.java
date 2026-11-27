@@ -172,16 +172,19 @@ public class EvidenceSectionController {
 
     final Integer userProviderId =
         userDetail.getProvider() != null ? userDetail.getProvider().getId() : null;
-    if (userProviderId != null
-        && activeCase.getProviderId() != null
-        && !userProviderId.equals(activeCase.getProviderId())) {
+    if (userProviderId == null) {
+      throw new CaabApplicationException("Current provider could not be established");
+    }
+    if (activeCase.getProviderId() == null) {
+      throw new CaabApplicationException("Active case does not contain a provider");
+    }
+    if (!userProviderId.equals(activeCase.getProviderId())) {
       throw new CaabApplicationException("Active case does not belong to current provider");
     }
 
     evidenceUploadFormData.setApplicationOrOutcomeId(String.valueOf(activeCase.getApplicationId()));
     evidenceUploadFormData.setCaseReferenceNumber(activeCase.getCaseReferenceNumber());
-    evidenceUploadFormData.setProviderId(
-        userProviderId != null ? userProviderId : activeCase.getProviderId());
+    evidenceUploadFormData.setProviderId(userProviderId);
     evidenceUploadFormData.setDocumentSender(userDetail.getLoginId());
     evidenceUploadFormData.setCcmsModule(resolveCcmsModule(context));
     evidenceUploadFormData.setRegisteredDocumentId(null);

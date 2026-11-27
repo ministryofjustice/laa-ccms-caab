@@ -169,6 +169,42 @@ class EvidenceServiceTest {
   }
 
   @Test
+  void getEvidenceDocument_rejectsDocumentWithMissingProviderWhenProviderContextActive() {
+    final Integer evidenceDocumentId = 123;
+    final EvidenceDocumentDetail unownedDocument =
+        new EvidenceDocumentDetail().id(evidenceDocumentId);
+    when(caabApiClient.getEvidenceDocument(evidenceDocumentId))
+        .thenReturn(Mono.just(unownedDocument));
+
+    ProviderContext.setProviderId("456");
+    try {
+      StepVerifier.create(evidenceService.getEvidenceDocument(evidenceDocumentId))
+          .expectError(CaabApplicationException.class)
+          .verify();
+    } finally {
+      ProviderContext.clear();
+    }
+  }
+
+  @Test
+  void getEvidenceDocument_rejectsDocumentWithBlankProviderWhenProviderContextActive() {
+    final Integer evidenceDocumentId = 123;
+    final EvidenceDocumentDetail unownedDocument =
+        new EvidenceDocumentDetail().id(evidenceDocumentId).providerId("   ");
+    when(caabApiClient.getEvidenceDocument(evidenceDocumentId))
+        .thenReturn(Mono.just(unownedDocument));
+
+    ProviderContext.setProviderId("456");
+    try {
+      StepVerifier.create(evidenceService.getEvidenceDocument(evidenceDocumentId))
+          .expectError(CaabApplicationException.class)
+          .verify();
+    } finally {
+      ProviderContext.clear();
+    }
+  }
+
+  @Test
   void getEvidenceDocument_allowsMatchingProviderDocumentWhenProviderContextActive() {
     final Integer evidenceDocumentId = 123;
     final EvidenceDocumentDetail ownDocument =

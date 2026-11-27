@@ -90,7 +90,11 @@ class EvidenceSectionControllerTest {
   private MockMvc mockMvc;
 
   private final UserDetail user =
-      new UserDetail().userId(1).userType("testUserType").loginId("testLoginId");
+      new UserDetail()
+          .userId(1)
+          .userType("testUserType")
+          .loginId("testLoginId")
+          .provider(new BaseProvider().id(789).name("Firm 789"));
 
   @BeforeEach
   void setUp() {
@@ -425,6 +429,55 @@ class EvidenceSectionControllerTest {
                 .sessionAttr(ACTIVE_CASE, activeCase)
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, switchedFirmUser))
+        .andExpect(status().isOk())
+        .andExpect(view().name("error"));
+
+    verify(evidenceService, never())
+        .registerDocument(any(), any(), any(), any(), any(), any(), any());
+    verify(evidenceService, never())
+        .addDocument(any(EvidenceDocumentDetail.class), any(String.class));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"application", "amendments"})
+  void postAddEvidenceRejectsWhenUserHasNoProvider(String caseContext) throws Exception {
+    final EvidenceUploadFormData formData = buildEvidenceUploadFormData();
+    final ActiveCase activeCase = buildActiveCase();
+    final UserDetail userWithoutProvider =
+        new UserDetail().userId(1).userType("testUserType").loginId("noProviderUser");
+    final List<EvidenceRequired> evidenceRequired = List.of(new EvidenceRequired("code", "desc"));
+
+    mockMvc
+        .perform(
+            post("/%s/evidence/add".formatted(caseContext))
+                .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
+                .sessionAttr(USER_DETAILS, userWithoutProvider))
+        .andExpect(status().isOk())
+        .andExpect(view().name("error"));
+
+    verify(evidenceService, never())
+        .registerDocument(any(), any(), any(), any(), any(), any(), any());
+    verify(evidenceService, never())
+        .addDocument(any(EvidenceDocumentDetail.class), any(String.class));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"application", "amendments"})
+  void postAddEvidenceRejectsWhenActiveCaseHasNoProvider(String caseContext) throws Exception {
+    final EvidenceUploadFormData formData = buildEvidenceUploadFormData();
+    final ActiveCase activeCase = buildActiveCase();
+    activeCase.setProviderId(null);
+    final List<EvidenceRequired> evidenceRequired = List.of(new EvidenceRequired("code", "desc"));
+
+    mockMvc
+        .perform(
+            post("/%s/evidence/add".formatted(caseContext))
+                .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
+                .sessionAttr(USER_DETAILS, user))
         .andExpect(status().isOk())
         .andExpect(view().name("error"));
 
