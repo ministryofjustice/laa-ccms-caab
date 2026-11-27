@@ -413,6 +413,44 @@ public class CaseOutcomeService {
   }
 
   /**
+   * Removes one liable-party link from an award after resolving its opponent id. A party that is no
+   * longer linked to the award (for example after a repeated submission) is treated as already
+   * removed.
+   */
+  public void removePartyFromAward(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String awardPath,
+      final Integer awardId,
+      final Integer partyId,
+      final String loginId) {
+    final CaseOutcomeDetail caseOutcome = requireCaseOutcome(caseReferenceNumber, providerId);
+    final String awardType = awardTypeForPath(awardPath);
+    final BaseAwardDetail award = requireAward(caseOutcome, awardType, awardId);
+    final var party =
+        Optional.ofNullable(award.getLiableParties()).orElse(Collections.emptyList()).stream()
+            .filter(Objects::nonNull)
+            .filter(p -> partyId.equals(p.getId()))
+            .findFirst();
+    if (party.isEmpty()) {
+      log.info("Party {} is already removed from {} award {}", partyId, awardType, awardId);
+      return;
+    }
+    final Integer opponentId =
+        Optional.ofNullable(party.get().getOpponentId())
+            .orElseThrow(
+                () -> new CaabApplicationException("Party has no opponent id on the award"));
+    caabApiClient
+        .removeAwardParty(
+            requireCaseOutcomeId(caseOutcome, caseReferenceNumber),
+            awardType,
+            awardId,
+            opponentId,
+            loginId)
+        .block();
+  }
+
+  /**
    * Loads the case outcome for Outcome and Awards, creating a bootstrap record when one does not
    * already exist.
    */

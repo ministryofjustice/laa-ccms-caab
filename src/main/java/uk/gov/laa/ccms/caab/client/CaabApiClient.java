@@ -1302,6 +1302,39 @@ public class CaabApiClient {
                     e, RESOURCE_TYPE_CASE_OUTCOME, "id", String.valueOf(caseOutcomeId)));
   }
 
+  /**
+   * Removes a party from an award.
+   *
+   * @param caseOutcomeId the ID of the case outcome
+   * @param awardType the type of the award (e.g., COST, DAMAGE, LAND, ASSET)
+   * @param awardId the ID of the award
+   * @param opponentId the ID of the opponent to be removed from the award
+   * @param loginId the ID associated with the user login
+   * @return a Mono Void indicating the completion of the remove operation
+   */
+  public Mono<Void> removeAwardParty(
+      final Integer caseOutcomeId,
+      final String awardType,
+      final Integer awardId,
+      final Integer opponentId,
+      final String loginId) {
+    return caabApiWebClient
+        .delete()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/liable-parties/{opponent-id}",
+            caseOutcomeId,
+            awardType,
+            awardId,
+            opponentId)
+        .header("Caab-User-Login-Id", loginId)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiDeleteError(
+                    e, RESOURCE_TYPE_LIABLE_PARTY, "opponent id", String.valueOf(opponentId)));
+  }
+
   /** Deletes an award belonging to a case outcome, including its dependent records. */
   public Mono<Void> deleteAward(
       final Integer caseOutcomeId,

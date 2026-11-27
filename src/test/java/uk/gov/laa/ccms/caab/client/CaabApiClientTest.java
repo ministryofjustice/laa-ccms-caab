@@ -357,6 +357,26 @@ class CaabApiClientTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"COST", "DAMAGE", "LAND", "ASSET"})
+  void removeAwardPartyUsesScopedDeleteAndUserHeader(String type) {
+    when(caabApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/liable-parties/{opponent-id}",
+            42,
+            type,
+            7,
+            11))
+        .thenReturn(requestHeadersMock);
+    when(requestHeadersMock.header("Caab-User-Login-Id", "user1")).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    StepVerifier.create(caabApiClient.removeAwardParty(42, type, 7, 11, "user1")).verifyComplete();
+
+    verify(requestHeadersMock).header("Caab-User-Login-Id", "user1");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"COST", "DAMAGE", "LAND", "ASSET"})
   void createAwardPartySendsBothPagesToAwardScopedEndpoint(String type) {
     final var opponent =
         new OpponentDetail().type("Individual").firstName("Jane").employerName("Acme");

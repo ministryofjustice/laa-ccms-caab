@@ -85,6 +85,7 @@ import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.model.sections.LiablePartiesDisplay;
+import uk.gov.laa.ccms.caab.model.sections.LiablePartyDisplay;
 import uk.gov.laa.ccms.caab.model.sections.PartyListRow;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -181,6 +182,61 @@ class AwardControllerTest {
 
       verify(caseOutcomeService).getLiablePartiesDisplay("300000001", 123, awardPath, 7);
       verifyNoMoreInteractions(caseOutcomeService);
+    }
+
+    @Test
+    void removePartyConfirmationIncludesPartyIdInModel() {
+      final var award =
+          new LiablePartiesDisplay(
+              "LAND",
+              "Property",
+              BigDecimal.TEN,
+              false,
+              false,
+              List.of(
+                  new LiablePartyDisplay(
+                      101, 11, "Jane Smith", "Individual", "Owner", "", true, false)));
+      when(caseOutcomeService.getLiablePartiesDisplay("300000001", 123, "land", 7))
+          .thenReturn(award);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/101/remove")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/remove-party-confirmation-screen")
+          .model()
+          .containsEntry("partyId", 101)
+          .containsEntry("partyName", "Jane Smith");
+    }
+
+    @Test
+    void removePartyConfirmationRedirectsWhenPartyIsNotOnAward() {
+      final var award =
+          new LiablePartiesDisplay("LAND", "Property", BigDecimal.TEN, false, false, List.of());
+      when(caseOutcomeService.getLiablePartiesDisplay("300000001", 123, "land", 7))
+          .thenReturn(award);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/999/remove")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasRedirectedUrl("/case/outcome-and-awards/land/7/liable-parties");
+    }
+
+    @Test
+    void confirmRemovePartyUsesAwardContextAndRedirectsToLiableParties() {
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/land/7/liable-parties/101/remove")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasRedirectedUrl("/case/outcome-and-awards/land/7/liable-parties");
+
+      verify(caseOutcomeService)
+          .removePartyFromAward("300000001", 123, "land", 7, 101, "testLoginId");
     }
 
     @Test

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
+<head>
+    <title th:text="|#{service.name} - #{case.removeParty.title(${partyName ?: #messages.msg('case.liableParties.partyDetailsUnavailable')})}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a class="govuk-back-link" th:href="@{/case/outcome-and-awards/{awardPath}/{awardId}/liable-parties(awardPath=${awardPath},awardId=${awardId})}"
+           th:text="#{site.cancelAndReturnToLiableParties}"></a>
+    </div>
+    <div id="main-content">
+        <h1 class="govuk-heading-l" th:text="#{case.removeParty.title(${partyName ?: #messages.msg('case.liableParties.partyDetailsUnavailable')})}"></h1>
+        <p class="govuk-body-l" th:text="#{case.removeParty.information(${partyName ?: #messages.msg('case.liableParties.partyDetailsUnavailable')})}"></p>
+        <form th:action="@{/case/outcome-and-awards/{awardPath}/{awardId}/liable-parties/{partyId}/remove(awardPath=${awardPath},awardId=${awardId},partyId=${partyId})}"
+              method="post">
+            <div class="govuk-button-group">
+                <govuk:button type="submit" id="confirmRemoveParty" th:text="#{site.confirm}"/>
+                <a class="govuk-button govuk-button--secondary" id="cancelRemoveParty"
+                   th:text="#{site.cancel}" th:href="@{/case/outcome-and-awards/{awardPath}/{awardId}/liable-parties(awardPath=${awardPath},awardId=${awardId})}"></a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

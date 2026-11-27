@@ -69,6 +69,7 @@ import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
+import uk.gov.laa.ccms.caab.model.sections.LiablePartyDisplay;
 import uk.gov.laa.ccms.caab.model.sections.PartyListRow;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -728,6 +729,64 @@ public class AwardController {
                 + "/"
                 + awardId);
     return "application/liable-parties";
+  }
+
+  /** Displays the confirmation screen for removing a party from an award. */
+  @GetMapping(
+      "/case/outcome-and-awards/{awardPath:cost-award|financial-award|land|asset}/{awardId}/liable-parties/{partyId}/remove")
+  public String removeParty(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @PathVariable final String awardPath,
+      @PathVariable final Integer awardId,
+      @PathVariable final Integer partyId,
+      final Model model) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn("Rejecting party removal confirmation for a read-only case");
+      return "redirect:/case/outcome-and-awards";
+    }
+    final var award =
+        caseOutcomeService.getLiablePartiesDisplay(
+            ebsCase.getCaseReferenceNumber(),
+            user.getProvider().getId().intValue(),
+            awardPath,
+            awardId);
+    final var party = award.parties().stream().filter(p -> partyId.equals(p.id())).findFirst();
+    if (party.isEmpty()) {
+      log.info("Party {} is not linked to {} award {}", partyId, awardPath, awardId);
+      return "redirect:/case/outcome-and-awards/" + awardPath + "/" + awardId + "/liable-parties";
+    }
+
+    model.addAttribute("award", award);
+    model.addAttribute("awardPath", awardPath);
+    model.addAttribute("awardId", awardId);
+    model.addAttribute("partyId", partyId);
+    model.addAttribute("partyName", party.map(LiablePartyDisplay::name).orElse(null));
+
+    return "application/remove-party-confirmation-screen";
+  }
+
+  @PostMapping(
+      "/case/outcome-and-awards/{awardPath:cost-award|financial-award|land|asset}/{awardId}/liable-parties/{partyId}/remove")
+  public String confirmRemoveParty(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @PathVariable final String awardPath,
+      @PathVariable final Integer awardId,
+      @PathVariable final Integer partyId) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn("Rejecting party removal for a read-only case");
+      return "redirect:/case/outcome-and-awards";
+    }
+    caseOutcomeService.removePartyFromAward(
+        ebsCase.getCaseReferenceNumber(),
+        user.getProvider().getId().intValue(),
+        awardPath,
+        awardId,
+        partyId,
+        user.getLoginId());
+
+    return "redirect:/case/outcome-and-awards/" + awardPath + "/" + awardId + "/liable-parties";
   }
 
   /**
