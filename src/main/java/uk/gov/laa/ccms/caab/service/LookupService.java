@@ -64,6 +64,8 @@ import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
 @Slf4j
 public class LookupService {
 
+  private static final int AVAILABLE_PROCEEDINGS_PAGE_SIZE = 1;
+
   private final EbsApiClient ebsApiClient;
 
   /**
@@ -132,7 +134,7 @@ public class LookupService {
   }
 
   /**
-   * Get proceedings available for selection using the application's legacy scope-control context.
+   * Get proceedings available for selection using the application's scope context.
    *
    * @param categoryOfLaw The application's category of law.
    * @param matterType The selected matter type.
@@ -148,13 +150,78 @@ public class LookupService {
       final Boolean larScopeFlag,
       final String applicationType) {
 
-    if (!StringUtils.hasText(categoryOfLaw)
-        || !StringUtils.hasText(matterType)
-        || larScopeFlag == null
-        || !StringUtils.hasText(applicationType)) {
+    return buildAvailableProceedingsCriteria(
+            categoryOfLaw, matterType, amendment, larScopeFlag, applicationType)
+        .map(
+            searchCriteria ->
+                ebsApiClient.getProceedings(
+                    searchCriteria, larScopeFlag, applicationType, Boolean.TRUE))
+        .orElseGet(() -> Mono.just(new ProceedingDetails().content(Collections.emptyList())));
+  }
+
+  /**
+   * Checks whether any proceeding is available for a matter type using the same scoped criteria as
+   * {@link #getAvailableProceedings}.
+   *
+   * @param categoryOfLaw The application's category of law.
+   * @param matterType The matter type.
+   * @param amendment Whether the application is an amendment.
+   * @param larScopeFlag The application's Legal Aid Representation scope flag.
+   * @param applicationType The application's type.
+   * @return Whether at least one eligible proceeding exists.
+   */
+  public Mono<Boolean> hasAvailableProceedings(
+      final String categoryOfLaw,
+      final String matterType,
+      final Boolean amendment,
+      final Boolean larScopeFlag,
+      final String applicationType) {
+
+    return buildAvailableProceedingsCriteria(
+            categoryOfLaw, matterType, amendment, larScopeFlag, applicationType)
+        .map(
+            searchCriteria ->
+                ebsApiClient
+                    .getProceedings(
+                        searchCriteria,
+                        larScopeFlag,
+                        applicationType,
+                        Boolean.TRUE,
+                        AVAILABLE_PROCEEDINGS_PAGE_SIZE)
+                    .map(
+                        proceedingDetails ->
+                            proceedingDetails.getContent() != null
+                                && !proceedingDetails.getContent().isEmpty())
+                    .defaultIfEmpty(Boolean.FALSE))
+        .orElseGet(() -> Mono.just(Boolean.FALSE));
+  }
+
+  /**
+   * Checks whether required application-level context is present for proceeding lookups.
+   *
+   * @param categoryOfLaw The application's category of law.
+   * @param larScopeFlag The application's Legal Aid Representation scope flag.
+   * @param applicationType The application's type.
+   * @return Whether the application-level lookup context is complete.
+   */
+  public boolean hasRequiredAvailableProceedingsContext(
+      final String categoryOfLaw, final Boolean larScopeFlag, final String applicationType) {
+    return StringUtils.hasText(categoryOfLaw)
+        && larScopeFlag != null
+        && StringUtils.hasText(applicationType);
+  }
+
+  private Optional<ProceedingDetail> buildAvailableProceedingsCriteria(
+      final String categoryOfLaw,
+      final String matterType,
+      final Boolean amendment,
+      final Boolean larScopeFlag,
+      final String applicationType) {
+    if (!hasRequiredAvailableProceedingsContext(categoryOfLaw, larScopeFlag, applicationType)
+        || !StringUtils.hasText(matterType)) {
       log.warn(
           "Cannot retrieve available proceedings because required application selection context is incomplete");
-      return Mono.just(new ProceedingDetails().content(Collections.emptyList()));
+      return Optional.empty();
     }
 
     final ProceedingDetail searchCriteria =
@@ -167,8 +234,7 @@ public class LookupService {
       searchCriteria.amendmentOnly(Boolean.FALSE);
     }
 
-    // The Data API's lead flag selects the scoped query; it does not set proceeding lead status.
-    return ebsApiClient.getProceedings(searchCriteria, larScopeFlag, applicationType, Boolean.TRUE);
+    return Optional.of(searchCriteria);
   }
 
   /**

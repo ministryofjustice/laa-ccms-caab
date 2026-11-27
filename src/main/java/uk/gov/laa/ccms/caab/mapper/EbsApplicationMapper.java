@@ -171,7 +171,7 @@ public interface EbsApplicationMapper {
   @Mapping(target = "meansAssessmentAmended", ignore = true)
   @Mapping(target = "undertakingAmount", ignore = true)
   @Mapping(target = "undertakingMaximumAmount", ignore = true)
-  @Mapping(target = "leadProceedingChanged", ignore = true)
+  @Mapping(target = "leadProceedingChanged", constant = "false")
   @Mapping(target = "editProceedingsAndCostsAllowed", ignore = true)
   @Mapping(target = "costLimit", ignore = true)
   @Mapping(target = "award", ignore = true)

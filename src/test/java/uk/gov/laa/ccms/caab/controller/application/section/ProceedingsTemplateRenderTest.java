@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.HashMap;
 import java.util.List;
@@ -13,19 +15,30 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
+import org.springframework.stereotype.Controller;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.ui.Model;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.thymeleaf.context.WebContext;
 import org.thymeleaf.spring6.SpringTemplateEngine;
+import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.thymeleaf.web.IWebExchange;
 import org.thymeleaf.web.servlet.JakartaServletWebApplication;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
+import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.model.BooleanDisplayValue;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
+import uk.gov.laa.ccms.data.model.MatterTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.springboot.dialect.GovUkDialect;
 
 @DisplayName("Proceedings template render tests")
 class ProceedingsTemplateRenderTest {
@@ -47,6 +60,7 @@ class ProceedingsTemplateRenderTest {
     engine = new SpringTemplateEngine();
     engine.setTemplateResolver(resolver);
     engine.setTemplateEngineMessageSource(messageSource);
+    engine.addDialect(new GovUkDialect());
   }
 
   @Test
@@ -138,18 +152,93 @@ class ProceedingsTemplateRenderTest {
         .contains("disabled=\"disabled\"");
   }
 
+  @Test
+  @DisplayName("Matter type page renders the selector and Next when options are available")
+  void matterTypePageRendersAvailableOptions() throws Exception {
+    final String html = renderMatterTypePage(true, false, false);
+
+    assertThat(html)
+        .contains("id=\"matterType\"")
+        .contains("Next")
+        .contains("Cancel and return to proceedings and costs")
+        .contains(">Back</a>")
+        .doesNotContain("There are no available proceedings for this application.");
+  }
+
+  @Test
+  @DisplayName("Matter type page retains validation errors when options are available")
+  void matterTypePageRendersValidationErrorsWithOptions() throws Exception {
+    final String html = renderMatterTypePage(true, false, true);
+
+    assertThat(html)
+        .contains("id=\"matterType\"")
+        .contains("Next")
+        .contains("Matter type is required")
+        .contains("govuk-error-summary");
+  }
+
+  @Test
+  @DisplayName("Matter type page explains an empty lookup and suppresses hidden-field errors")
+  void matterTypePageRendersEmptyOptionsState() throws Exception {
+    final String html = renderMatterTypePage(false, false, true);
+
+    assertThat(html)
+        .contains("There are no available proceedings for this application.")
+        .contains("Cancel and return to proceedings and costs")
+        .contains(">Back</a>")
+        .doesNotContain("id=\"matterType\"")
+        .doesNotContain("Next")
+        .doesNotContain("Matter type is required")
+        .doesNotContain("govuk-error-summary");
+  }
+
+  @Test
+  @DisplayName("Matter type page explains when required application context is missing")
+  void matterTypePageRendersMissingContextState() throws Exception {
+    final String html = renderMatterTypePage(false, true, false);
+
+    assertThat(html)
+        .contains("information about this application is missing")
+        .contains("contact support")
+        .contains("Cancel and return to proceedings and costs")
+        .contains(">Back</a>")
+        .doesNotContain("id=\"matterType\"")
+        .doesNotContain("Next")
+        .doesNotContain("There are no available proceedings for this application.");
+  }
+
+  private String renderMatterTypePage(
+      final boolean optionsAvailable, final boolean contextMissing, final boolean validationError)
+      throws Exception {
+    final ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
+    viewResolver.setTemplateEngine(engine);
+    viewResolver.setCharacterEncoding("UTF-8");
+    viewResolver.setCache(false);
+    final MockMvc mockMvc =
+        MockMvcBuilders.standaloneSetup(
+                new MatterTypePageHarnessController(
+                    optionsAvailable, contextMissing, validationError))
+            .setViewResolvers(viewResolver)
+            .build();
+    return mockMvc
+        .perform(get("/test/proceedings-matter-type"))
+        .andExpect(status().isOk())
+        .andReturn()
+        .getResponse()
+        .getContentAsString();
+  }
+
   private String render(final String template, final Map<String, Object> model) {
     final MockServletContext servletContext = new MockServletContext();
     final JakartaServletWebApplication application =
         JakartaServletWebApplication.buildApplication(servletContext);
-    final IWebExchange exchange =
-        application.buildExchange(
-            new MockHttpServletRequest(servletContext), new MockHttpServletResponse());
-
     final Map<String, Object> variables = new HashMap<>(model);
     variables.put("cspNonce", "test-nonce");
     variables.put("researchPanelLink", "/research");
     variables.put("user", new UserDetail().functions(List.of()));
+    final MockHttpServletRequest request = new MockHttpServletRequest(servletContext);
+    variables.forEach(request::setAttribute);
+    final IWebExchange exchange = application.buildExchange(request, new MockHttpServletResponse());
 
     return engine.process(template, new WebContext(exchange, Locale.UK, variables));
   }
@@ -198,5 +287,52 @@ class ProceedingsTemplateRenderTest {
     final int start = html.lastIndexOf("<input", idIndex);
     final int end = html.indexOf('>', idIndex);
     return html.substring(start, end + 1);
+  }
+
+  @Controller
+  private static class MatterTypePageHarnessController {
+
+    private final boolean optionsAvailable;
+    private final boolean contextMissing;
+    private final boolean validationError;
+
+    private MatterTypePageHarnessController(
+        final boolean optionsAvailable,
+        final boolean contextMissing,
+        final boolean validationError) {
+      this.optionsAvailable = optionsAvailable;
+      this.contextMissing = contextMissing;
+      this.validationError = validationError;
+    }
+
+    @GetMapping("/test/proceedings-matter-type")
+    private String renderPage(final Model model) {
+      final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData("add");
+      final ProceedingFormDataMatterTypeDetails matterTypeDetails =
+          proceedingFlow.getMatterTypeDetails();
+      model.addAttribute("caseContext", CaseContext.APPLICATION);
+      model.addAttribute("proceedingFlow", proceedingFlow);
+      model.addAttribute("matterTypeDetails", matterTypeDetails);
+      model.addAttribute(
+          "matterTypes",
+          optionsAvailable
+              ? List.of(
+                  new MatterTypeLookupValueDetail()
+                      .matterType("availableMatterType")
+                      .description("Available matter type"))
+              : List.of());
+      model.addAttribute("matterTypeOptionsAvailable", optionsAvailable);
+      model.addAttribute("matterTypeContextMissing", contextMissing);
+      model.addAttribute("cspNonce", "test-nonce");
+      model.addAttribute("researchPanelLink", "/research");
+      model.addAttribute("user", new UserDetail().functions(List.of()));
+      if (validationError) {
+        final BeanPropertyBindingResult errors =
+            new BeanPropertyBindingResult(matterTypeDetails, "matterTypeDetails");
+        errors.rejectValue("matterType", "required", "Matter type is required");
+        model.addAttribute(BindingResult.MODEL_KEY_PREFIX + "matterTypeDetails", errors);
+      }
+      return "application/proceedings-matter-type";
+    }
   }
 }

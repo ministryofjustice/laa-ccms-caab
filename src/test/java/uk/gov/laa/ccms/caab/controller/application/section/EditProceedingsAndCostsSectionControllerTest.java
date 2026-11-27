@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -360,12 +361,25 @@ class EditProceedingsAndCostsSectionControllerTest {
     void shouldReturnExpectedResult_Add(String caseContext) throws Exception {
       final ApplicationDetail application = new ApplicationDetail();
       application.setCategoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
+      application.setLarScopeFlag(false);
+      application.setApplicationType(new ApplicationType().id("applicationTypeId"));
+      when(lookupService.hasRequiredAvailableProceedingsContext(
+              "categoryOfLawId", false, "applicationTypeId"))
+          .thenReturn(true);
       final List<MatterTypeLookupValueDetail> matterTypes =
-          List.of(new MatterTypeLookupValueDetail());
+          List.of(
+              new MatterTypeLookupValueDetail().matterType("availableMatterType"),
+              new MatterTypeLookupValueDetail().matterType("unavailableMatterType"));
 
       // Mock the lookupService to return matter types
       when(lookupService.getMatterTypes(anyString()))
           .thenReturn(Mono.just(new MatterTypeLookupDetail().content(matterTypes)));
+      when(lookupService.hasAvailableProceedings(
+              "categoryOfLawId", "availableMatterType", null, false, "applicationTypeId"))
+          .thenReturn(Mono.just(true));
+      when(lookupService.hasAvailableProceedings(
+              "categoryOfLawId", "unavailableMatterType", null, false, "applicationTypeId"))
+          .thenReturn(Mono.just(false));
 
       mockMvc
           .perform(
@@ -373,10 +387,18 @@ class EditProceedingsAndCostsSectionControllerTest {
                   .sessionAttr(APPLICATION, application))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-matter-type"))
-          .andExpect(model().attributeExists("matterTypes"))
+          .andExpect(model().attribute("matterTypes", is(List.of(matterTypes.getFirst()))))
+          .andExpect(model().attribute("matterTypeOptionsAvailable", true))
+          .andExpect(model().attribute("matterTypeContextMissing", false))
           .andExpect(model().attributeExists(PROCEEDING_FLOW_FORM_DATA));
 
       verify(lookupService, times(1)).getMatterTypes(application.getCategoryOfLaw().getId());
+      verify(lookupService)
+          .hasAvailableProceedings(
+              "categoryOfLawId", "availableMatterType", null, false, "applicationTypeId");
+      verify(lookupService)
+          .hasAvailableProceedings(
+              "categoryOfLawId", "unavailableMatterType", null, false, "applicationTypeId");
     }
 
     @ParameterizedTest
@@ -385,17 +407,32 @@ class EditProceedingsAndCostsSectionControllerTest {
     void shouldReturnExpectedResult_Edit(String caseContext) throws Exception {
       final ApplicationDetail application = new ApplicationDetail();
       application.setCategoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
+      application.setLarScopeFlag(true);
+      application.setApplicationType(new ApplicationType().id("applicationTypeId"));
+      when(lookupService.hasRequiredAvailableProceedingsContext(
+              "categoryOfLawId", true, "applicationTypeId"))
+          .thenReturn(true);
       final ProceedingDetail proceeding =
           new ProceedingDetail().typeOfOrder(new StringDisplayValue().id("typeOfOrderId"));
       proceeding.setScopeLimitations(List.of(new ScopeLimitationDetail()));
       final List<MatterTypeLookupValueDetail> matterTypes =
-          List.of(new MatterTypeLookupValueDetail());
+          List.of(
+              new MatterTypeLookupValueDetail().matterType("availableMatterType"),
+              new MatterTypeLookupValueDetail().matterType("unavailableMatterType"));
+      final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData("edit");
+      proceedingFlow.setLeadProceeding(true);
+      proceedingFlow.getMatterTypeDetails().setMatterType("unavailableMatterType");
 
       // Mock the lookupService to return matter types
       when(lookupService.getMatterTypes(anyString()))
           .thenReturn(Mono.just(new MatterTypeLookupDetail().content(matterTypes)));
-      when(proceedingAndCostsMapper.toProceedingFlow(any(), any()))
-          .thenReturn(new ProceedingFlowFormData("edit"));
+      when(proceedingAndCostsMapper.toProceedingFlow(any(), any())).thenReturn(proceedingFlow);
+      when(lookupService.hasAvailableProceedings(
+              "categoryOfLawId", "availableMatterType", null, true, "applicationTypeId"))
+          .thenReturn(Mono.just(true));
+      when(lookupService.hasAvailableProceedings(
+              "categoryOfLawId", "unavailableMatterType", null, true, "applicationTypeId"))
+          .thenReturn(Mono.just(false));
 
       mockMvc
           .perform(
@@ -404,11 +441,123 @@ class EditProceedingsAndCostsSectionControllerTest {
                   .sessionAttr(CURRENT_PROCEEDING, proceeding))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-matter-type"))
-          .andExpect(model().attributeExists("matterTypes"))
+          .andExpect(model().attribute("matterTypes", is(List.of(matterTypes.getFirst()))))
+          .andExpect(model().attribute("matterTypeOptionsAvailable", true))
+          .andExpect(model().attribute("matterTypeContextMissing", false))
           .andExpect(model().attributeExists(PROCEEDING_FLOW_FORM_DATA))
           .andExpect(model().attributeExists(PROCEEDING_SCOPE_LIMITATIONS));
 
       verify(lookupService, times(1)).getMatterTypes(application.getCategoryOfLaw().getId());
+      verify(lookupService)
+          .hasAvailableProceedings(
+              "categoryOfLawId", "availableMatterType", null, true, "applicationTypeId");
+      verify(lookupService)
+          .hasAvailableProceedings(
+              "categoryOfLawId", "unavailableMatterType", null, true, "applicationTypeId");
+    }
+
+    @Test
+    @DisplayName("Should show an empty state when no matter types have proceedings")
+    void shouldShowEmptyStateWhenNoMatterTypesHaveProceedings() throws Exception {
+      final ApplicationDetail application =
+          new ApplicationDetail()
+              .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+              .larScopeFlag(false)
+              .applicationType(new ApplicationType().id("applicationTypeId"));
+      final List<MatterTypeLookupValueDetail> matterTypes =
+          List.of(new MatterTypeLookupValueDetail().matterType("unavailableMatterType"));
+      when(lookupService.hasRequiredAvailableProceedingsContext(
+              "categoryOfLawId", false, "applicationTypeId"))
+          .thenReturn(true);
+      when(lookupService.getMatterTypes("categoryOfLawId"))
+          .thenReturn(Mono.just(new MatterTypeLookupDetail().content(matterTypes)));
+      when(lookupService.hasAvailableProceedings(
+              "categoryOfLawId", "unavailableMatterType", null, false, "applicationTypeId"))
+          .thenReturn(Mono.just(false));
+
+      mockMvc
+          .perform(
+              get("/application/proceedings/add/matter-type").sessionAttr(APPLICATION, application))
+          .andExpect(status().isOk())
+          .andExpect(model().attribute("matterTypes", Collections.emptyList()))
+          .andExpect(model().attribute("matterTypeOptionsAvailable", false))
+          .andExpect(model().attribute("matterTypeContextMissing", false));
+    }
+
+    @Test
+    @DisplayName("Should preserve matter-type lookup order after filtering")
+    void shouldPreserveMatterTypeLookupOrder() throws Exception {
+      final ApplicationDetail application =
+          new ApplicationDetail()
+              .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+              .larScopeFlag(false)
+              .applicationType(new ApplicationType().id("applicationTypeId"));
+      final List<MatterTypeLookupValueDetail> matterTypes =
+          List.of(
+              new MatterTypeLookupValueDetail().matterType("secondMatterType"),
+              new MatterTypeLookupValueDetail().matterType("firstMatterType"));
+      when(lookupService.hasRequiredAvailableProceedingsContext(
+              "categoryOfLawId", false, "applicationTypeId"))
+          .thenReturn(true);
+      when(lookupService.getMatterTypes("categoryOfLawId"))
+          .thenReturn(Mono.just(new MatterTypeLookupDetail().content(matterTypes)));
+      when(lookupService.hasAvailableProceedings(
+              "categoryOfLawId", "secondMatterType", null, false, "applicationTypeId"))
+          .thenReturn(Mono.just(true));
+      when(lookupService.hasAvailableProceedings(
+              "categoryOfLawId", "firstMatterType", null, false, "applicationTypeId"))
+          .thenReturn(Mono.just(true));
+
+      mockMvc
+          .perform(
+              get("/application/proceedings/add/matter-type").sessionAttr(APPLICATION, application))
+          .andExpect(status().isOk())
+          .andExpect(model().attribute("matterTypes", is(matterTypes)));
+    }
+
+    @Test
+    @DisplayName("Should show an empty state when the matter-type lookup has no candidates")
+    void shouldShowEmptyStateWhenMatterTypeLookupIsEmpty() throws Exception {
+      final ApplicationDetail application =
+          new ApplicationDetail()
+              .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+              .larScopeFlag(false)
+              .applicationType(new ApplicationType().id("applicationTypeId"));
+      when(lookupService.hasRequiredAvailableProceedingsContext(
+              "categoryOfLawId", false, "applicationTypeId"))
+          .thenReturn(true);
+      when(lookupService.getMatterTypes("categoryOfLawId"))
+          .thenReturn(Mono.just(new MatterTypeLookupDetail().content(Collections.emptyList())));
+
+      mockMvc
+          .perform(
+              get("/application/proceedings/add/matter-type").sessionAttr(APPLICATION, application))
+          .andExpect(status().isOk())
+          .andExpect(model().attribute("matterTypes", Collections.emptyList()))
+          .andExpect(model().attribute("matterTypeOptionsAvailable", false))
+          .andExpect(model().attribute("matterTypeContextMissing", false));
+
+      verify(lookupService, never())
+          .hasAvailableProceedings(anyString(), anyString(), any(), any(), anyString());
+    }
+
+    @Test
+    @DisplayName("Should show a missing-context state without querying matter types")
+    void shouldShowMissingContextState() throws Exception {
+      final ApplicationDetail application =
+          new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
+      when(lookupService.hasRequiredAvailableProceedingsContext("categoryOfLawId", null, null))
+          .thenReturn(false);
+
+      mockMvc
+          .perform(
+              get("/application/proceedings/add/matter-type").sessionAttr(APPLICATION, application))
+          .andExpect(status().isOk())
+          .andExpect(model().attribute("matterTypes", Collections.emptyList()))
+          .andExpect(model().attribute("matterTypeOptionsAvailable", false))
+          .andExpect(model().attribute("matterTypeContextMissing", true));
+
+      verify(lookupService, never()).getMatterTypes(anyString());
     }
   }
 
@@ -478,11 +627,17 @@ class EditProceedingsAndCostsSectionControllerTest {
     void shouldHaveValidationErrors(String caseContext) throws Exception {
       final String action = "add";
       final ApplicationDetail application =
-          new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
+          new ApplicationDetail()
+              .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+              .larScopeFlag(false)
+              .applicationType(new ApplicationType().id("applicationTypeId"));
       final ProceedingFormDataMatterTypeDetails matterTypeDetails =
           new ProceedingFormDataMatterTypeDetails();
       final List<MatterTypeLookupValueDetail> matterTypes =
-          List.of(new MatterTypeLookupValueDetail());
+          List.of(new MatterTypeLookupValueDetail().matterType("unavailableMatterType"));
+      when(lookupService.hasRequiredAvailableProceedingsContext(
+              "categoryOfLawId", false, "applicationTypeId"))
+          .thenReturn(true);
 
       // Simulate validation error
       doAnswer(
@@ -496,6 +651,9 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       when(lookupService.getMatterTypes(anyString()))
           .thenReturn(Mono.just(new MatterTypeLookupDetail().content(matterTypes)));
+      when(lookupService.hasAvailableProceedings(
+              "categoryOfLawId", "unavailableMatterType", null, false, "applicationTypeId"))
+          .thenReturn(Mono.just(false));
 
       mockMvc
           .perform(
@@ -505,6 +663,9 @@ class EditProceedingsAndCostsSectionControllerTest {
                   .flashAttr("matterTypeDetails", matterTypeDetails))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-matter-type"))
+          .andExpect(model().attribute("matterTypes", Collections.emptyList()))
+          .andExpect(model().attribute("matterTypeOptionsAvailable", false))
+          .andExpect(model().attribute("matterTypeContextMissing", false))
           .andExpect(model().attributeHasFieldErrors("matterTypeDetails", "matterType"));
 
       verify(matterTypeValidator, times(1))

@@ -6,7 +6,8 @@ import lombok.Getter;
 @Getter
 public enum AssessmentRelationship {
   OPPONENT("opponentotherparties"),
-  PROCEEDING("proceeding");
+  PROCEEDING("proceeding"),
+  LINKED_CASE("linkedcases");
 
   private final String relationship;
 

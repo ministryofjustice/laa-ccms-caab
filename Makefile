@@ -44,6 +44,10 @@ test:
 	@echo "🧪 Running unit tests..."
 	$(GRADLEW) test
 
+.PHONY: test-secrets
+test-secrets:
+	@./scripts/test-check-secrets.sh
+
 .PHONY: integration-test
 integration-test:
 	@echo "🧪 Running integration tests..."

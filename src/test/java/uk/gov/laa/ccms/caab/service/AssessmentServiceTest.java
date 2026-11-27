@@ -24,6 +24,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBST
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROGRESS_STATUS_TYPES;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.GLOBAL;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.LINKED_CASE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.OPPONENT;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS;
@@ -51,6 +52,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -93,6 +95,7 @@ import uk.gov.laa.ccms.data.model.AssessmentSummaryAttributeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.CaseAssessmentDetail;
+import uk.gov.laa.ccms.data.model.CaseAssessmentDetails;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -1307,6 +1310,210 @@ public class AssessmentServiceTest {
   }
 
   @Test
+  @DisplayName("removeLinkedCaseInstances empties LINKED_CASES and the global linkedcases link")
+  void removeLinkedCaseInstancesEmptiesEntityAndLink() {
+    final AssessmentEntityDetail globalEntity =
+        new AssessmentEntityDetail()
+            .name("300001749512")
+            .relations(
+                new ArrayList<>(
+                    List.of(
+                        new AssessmentRelationshipDetail()
+                            .name("linkedcases")
+                            .relationshipTargets(
+                                new ArrayList<>(
+                                    List.of(
+                                        new AssessmentRelationshipTargetDetail()
+                                            .targetEntityId("300001741940")))))));
+    final AssessmentDetail assessment =
+        new AssessmentDetail()
+            .caseReferenceNumber("300001749512")
+            .entityTypes(
+                new ArrayList<>(
+                    List.of(
+                        new AssessmentEntityTypeDetail()
+                            .name("global")
+                            .entities(new ArrayList<>(List.of(globalEntity))),
+                        new AssessmentEntityTypeDetail()
+                            .name("LINKED_CASES")
+                            .entities(
+                                new ArrayList<>(
+                                    List.of(new AssessmentEntityDetail().name("300001741940")))))));
+
+    assessmentService.removeLinkedCaseInstances(assessment);
+
+    assertTrue(getAssessmentEntitiesForEntityType(assessment, LINKED_CASE).isEmpty());
+    assertTrue(globalEntity.getRelations().getFirst().getRelationshipTargets().isEmpty());
+  }
+
+  @ParameterizedTest(name = "submitted before={0}")
+  @ValueSource(booleans = {true, false})
+  void refreshPersistedPrepopRefreshesStaleInputsAndKeepsTheCheckpoint(
+      final boolean submittedBefore) {
+    final AssessmentAttributeDetail staleCostLimitChanged =
+        new AssessmentAttributeDetail().id(11L).name("COST_LIMIT_CHANGED_FLAG").value(null);
+    final AssessmentAttributeDetail providerAnswer =
+        new AssessmentAttributeDetail().id(12L).name("FIRST_NAME").value("answered");
+    final List<AssessmentAttributeDetail> globalAttributes =
+        new ArrayList<>(List.of(staleCostLimitChanged, providerAnswer));
+    if (submittedBefore) {
+      globalAttributes.add(
+          new AssessmentAttributeDetail().name("MERITS_SUBMISSION_PAGE_CLEANSE").value("true"));
+    }
+    final AssessmentEntityDetail globalEntity =
+        new AssessmentEntityDetail()
+            .name("300001749512")
+            .attributes(globalAttributes)
+            .relations(new ArrayList<>());
+    final AssessmentDetail prepop =
+        new AssessmentDetail()
+            .name("meritsAssessment_PREPOP")
+            .caseReferenceNumber("300001749512")
+            .checkpoint(new uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail())
+            .entityTypes(
+                new ArrayList<>(
+                    List.of(
+                        new AssessmentEntityTypeDetail()
+                            .name("global")
+                            .entities(new ArrayList<>(List.of(globalEntity))),
+                        new AssessmentEntityTypeDetail()
+                            .name("LINKED_CASES")
+                            .entities(
+                                new ArrayList<>(
+                                    List.of(new AssessmentEntityDetail().name("300001741940")))))));
+
+    when(assessmentMapper.globalToAttributeList(any()))
+        .thenReturn(
+            List.of(
+                new AssessmentAttributeDetail().name("COST_LIMIT_CHANGED_FLAG").value("false"),
+                new AssessmentAttributeDetail().name("POST_CODE").value("No Fixed Abode"),
+                new AssessmentAttributeDetail().name("FIRST_NAME").value("mapped")));
+
+    assessmentService.refreshPersistedPrepop(prepop, AssessmentRulebase.MERITS, null);
+
+    assertEquals(11L, staleCostLimitChanged.getId());
+    assertEquals("false", staleCostLimitChanged.getValue());
+    assertTrue(
+        globalEntity.getAttributes().stream()
+            .anyMatch(
+                attribute ->
+                    "POST_CODE".equals(attribute.getName())
+                        && "No Fixed Abode".equals(attribute.getValue())));
+    assertEquals("answered", providerAnswer.getValue());
+    assertTrue(getAssessmentEntitiesForEntityType(prepop, LINKED_CASE).isEmpty());
+    // The checkpoint may hold answers newer than any submit, so the refresh never drops it.
+    assertNotNull(prepop.getCheckpoint());
+  }
+
+  @ParameterizedTest(name = "assessment-api deleted it={0}")
+  @ValueSource(booleans = {true, false})
+  @DisplayName(
+      "clearCheckpointAfterIncompleteSubmit deletes the checkpoint only if it is still the one read")
+  void clearCheckpointAfterIncompleteSubmitDeletesOnlyTheCheckpointItRead(final boolean deleted) {
+    // "abc", base64 encoded as assessment-api returns it; the checksum is SHA-256 of "abc".
+    final AssessmentDetail prepop =
+        new AssessmentDetail()
+            .id(7L)
+            .name("meritsAssessment_PREPOP")
+            .caseReferenceNumber("300001749512")
+            .checkpoint(
+                new uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail()
+                    .interviewData("YWJj"));
+    when(assessmentApiClient.getAssessments(
+            List.of(AssessmentRulebase.MERITS.getPrePopAssessmentName()), "26517", "300001749512"))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(prepop)));
+    when(assessmentApiClient.deleteAssessmentCheckpoint(any(), any(), any()))
+        .thenReturn(Mono.just(deleted));
+
+    assessmentService.clearCheckpointAfterIncompleteSubmit(
+        AssessmentRulebase.MERITS,
+        new AssessmentDetail()
+            .providerId("26517")
+            .caseReferenceNumber("300001749512")
+            .status("INCOMPLETE"),
+        "login");
+
+    // A checkpoint a newer launch rewrote is kept by assessment-api, which is not an error here.
+    verify(assessmentApiClient)
+        .deleteAssessmentCheckpoint(
+            7L, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad", "login");
+    verify(assessmentApiClient, never()).updateAssessment(any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("clearCheckpointAfterIncompleteSubmit leaves a checkpoint with no data alone")
+  void clearCheckpointAfterIncompleteSubmitLeavesACheckpointWithoutDataAlone() {
+    final AssessmentDetail prepop =
+        new AssessmentDetail()
+            .id(7L)
+            .name("meritsAssessment_PREPOP")
+            .caseReferenceNumber("300001749512")
+            .checkpoint(new uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail());
+    when(assessmentApiClient.getAssessments(
+            List.of(AssessmentRulebase.MERITS.getPrePopAssessmentName()), "26517", "300001749512"))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(prepop)));
+
+    assessmentService.clearCheckpointAfterIncompleteSubmit(
+        AssessmentRulebase.MERITS,
+        new AssessmentDetail()
+            .providerId("26517")
+            .caseReferenceNumber("300001749512")
+            .status("INCOMPLETE"),
+        "login");
+
+    verify(assessmentApiClient, never()).deleteAssessmentCheckpoint(any(), any(), any());
+  }
+
+  @ParameterizedTest(name = "{0} {1} -> checkpoint untouched")
+  @CsvSource({"MERITS,COMPLETE", "BILLING,INCOMPLETE"})
+  void clearCheckpointAfterIncompleteSubmitLeavesOtherSubmitsAlone(
+      final AssessmentRulebase rulebase, final String status) {
+    assessmentService.clearCheckpointAfterIncompleteSubmit(
+        rulebase,
+        new AssessmentDetail()
+            .providerId("26517")
+            .caseReferenceNumber("300001749512")
+            .status(status),
+        "login");
+
+    verify(assessmentApiClient, never()).getAssessments(any(), any(), any());
+    verify(assessmentApiClient, never()).deleteAssessmentCheckpoint(any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("refreshPersistedPrepop keeps the checkpoint when nothing changed")
+  void refreshPersistedPrepopKeepsCheckpointWhenUpToDate() {
+    final AssessmentDetail prepop =
+        new AssessmentDetail()
+            .name("meansAssessment_PREPOP")
+            .caseReferenceNumber("300001749512")
+            .checkpoint(new uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail())
+            .entityTypes(
+                new ArrayList<>(
+                    List.of(
+                        new AssessmentEntityTypeDetail()
+                            .name("global")
+                            .entities(
+                                new ArrayList<>(
+                                    List.of(
+                                        new AssessmentEntityDetail()
+                                            .name("300001749512")
+                                            .attributes(
+                                                new ArrayList<>(
+                                                    List.of(
+                                                        new AssessmentAttributeDetail()
+                                                            .name("POST_CODE")
+                                                            .value("SW1A 1AA"))))))))));
+
+    when(assessmentMapper.globalToAttributeList(any()))
+        .thenReturn(List.of(new AssessmentAttributeDetail().name("POST_CODE").value("SW1A 1AA")));
+
+    assessmentService.refreshPersistedPrepop(prepop, AssessmentRulebase.MEANS, null);
+
+    assertNotNull(prepop.getCheckpoint());
+  }
+
+  @Test
   void testGetAssessmentOpponentMappingContexts() {
     final ApplicationDetail application = new ApplicationDetail();
     final OpponentDetail opponent1 = new OpponentDetail().title("MR");
@@ -1756,6 +1963,74 @@ public class AssessmentServiceTest {
     // Only the working assessment is mapped; the unchanged prepop is left as-is.
     verify(assessmentMapper, never()).toAssessmentDetail(eq(existingPrepop), any());
     verify(assessmentMapper, times(1)).toAssessmentDetail(any(), any());
+  }
+
+  @Test
+  @DisplayName(
+      "startNewAssessment keeps the answers an amendment's existing prepop already holds and "
+          + "leaves the do-not-reuse EBS answers out of it")
+  void startNewAssessmentKeepsAnExistingPrepopsOwnDoNotReuseAnswers() {
+    final String caseRef = "CASE-123";
+    final String providerId = String.valueOf(user.getProvider().getId());
+    final String providerAnswer = "ADDPROPERTY_INFER_B_4WP2_52A";
+    final String inheritedAnswer = "ADDPROPERTY_INFER_C_20WP2_1A";
+
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .id(1)
+            .caseReferenceNumber(caseRef)
+            .amendment(true)
+            .applicationType(new ApplicationType().id(APP_TYPE_SUBSTANTIVE))
+            .proceedings(new ArrayList<>())
+            .opponents(new ArrayList<>());
+
+    when(assessmentApiClient.getAssessments(List.of(MEANS.getName()), providerId, caseRef))
+        .thenReturn(just(new AssessmentDetails().content(new ArrayList<>())));
+
+    final AssessmentDetail existingPrepop = globalAssessment(caseRef);
+    existingPrepop
+        .id(99L)
+        .name(AssessmentRulebase.MEANS.getPrePopAssessmentName())
+        .caseReferenceNumber(caseRef)
+        .auditDetail(new AuditDetail().lastSaved(auditDate));
+    existingPrepop
+        .getEntityTypes()
+        .getFirst()
+        .getEntities()
+        .getFirst()
+        .addAttributesItem(new AssessmentAttributeDetail().name(providerAnswer).value("provider"));
+    when(assessmentApiClient.getAssessments(
+            List.of(AssessmentRulebase.MEANS.getPrePopAssessmentName()), providerId, caseRef))
+        .thenReturn(
+            just(new AssessmentDetails().content(new ArrayList<>(List.of(existingPrepop)))));
+
+    when(ebsApiClient.getCaseAssessment(eq(caseRef), any()))
+        .thenReturn(
+            just(
+                new CaseAssessmentDetails()
+                    .assessmentDetails(
+                        List.of(
+                            ebsRow("global", caseRef, inheritedAnswer, "inherited", false),
+                            ebsRow("global", caseRef, "REUSABLE_EBS_ANSWER", "kept", false)))));
+    when(assessmentApiClient.createAssessment(any(), eq(user.getLoginId())))
+        .thenReturn(Mono.empty());
+    when(assessmentApiClient.updateAssessment(any(), any(), eq(user.getLoginId())))
+        .thenReturn(Mono.empty());
+
+    assessmentService.startNewAssessment(
+        AssessmentRulebase.MEANS, application, null, user, false, null, null);
+
+    final List<AssessmentAttributeDetail> attributes =
+        existingPrepop.getEntityTypes().getFirst().getEntities().getFirst().getAttributes();
+    assertEquals(
+        "provider",
+        attributes.stream()
+            .filter(attribute -> providerAnswer.equals(attribute.getName()))
+            .findFirst()
+            .orElseThrow()
+            .getValue());
+    assertTrue(attributes.stream().noneMatch(a -> inheritedAnswer.equals(a.getName())));
+    assertTrue(attributes.stream().anyMatch(a -> "REUSABLE_EBS_ANSWER".equals(a.getName())));
   }
 
   @Test
