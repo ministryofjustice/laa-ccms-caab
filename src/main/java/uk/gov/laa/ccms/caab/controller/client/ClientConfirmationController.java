@@ -7,6 +7,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
 import java.text.ParseException;
+import java.util.Objects;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -36,6 +38,9 @@ public class ClientConfirmationController {
   private final ApplicationService applicationService;
 
   private final ResultDisplayMapper resultDisplayMapper;
+
+  /** Guards the reference before it reaches a redirect, since it arrives from the form. */
+  private static final Pattern CLIENT_REFERENCE = Pattern.compile("[A-Za-z0-9-]{1,30}");
 
   /**
    * Handles the GET request for client confirmation page.
@@ -80,8 +85,16 @@ public class ClientConfirmationController {
       HttpSession session)
       throws ParseException {
 
-    if (!confirmedClientReference.equals(clientInformation.getClientReferenceNumber())) {
-      throw new RuntimeException("Client information does not match");
+    if (!Objects.equals(confirmedClientReference, clientInformation.getClientReferenceNumber())) {
+      // The confirmation page was rendered for one client and the session now holds another, so the
+      // page was submitted after the session moved on. No application is created, and rather than
+      // failing the request the user is returned to confirm the client they submitted.
+      log.warn("Client confirmation did not match the client held in the session");
+      return Mono.just(
+          confirmedClientReference != null
+                  && CLIENT_REFERENCE.matcher(confirmedClientReference).matches()
+              ? "redirect:/application/client/" + confirmedClientReference + "/confirm"
+              : "redirect:/application/client/search");
     }
 
     return applicationService
