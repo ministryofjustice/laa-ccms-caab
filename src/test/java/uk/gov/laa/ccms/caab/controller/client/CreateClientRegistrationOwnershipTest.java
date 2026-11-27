@@ -64,6 +64,7 @@ import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -78,6 +79,7 @@ class CreateClientRegistrationOwnershipTest {
   @Mock private AddressService addressService;
   @Mock private LookupService lookupService;
   @Mock private ClientService clientService;
+  @Mock private SecurityEventLogger securityEventLogger;
   @Mock private ClientBasicDetailsValidator basicValidator;
   @Mock private ClientContactDetailsValidator contactValidator;
   @Mock private ClientEqualOpportunitiesMonitoringDetailsValidator monitoringValidator;
@@ -101,7 +103,8 @@ class CreateClientRegistrationOwnershipTest {
                 new ClientAddressDetailsSearchController(
                     addressService, new AddressSearchValidator()),
                 new CancelClientRegistrationController(),
-                new ClientSearchResultsController(clientService, resultMapper, searchConstants),
+                new ClientSearchResultsController(
+                    clientService, securityEventLogger, resultMapper, searchConstants),
                 new ClientBasicDetailsController(lookupService, basicValidator),
                 new ClientContactDetailsController(lookupService, contactValidator),
                 new ClientEqualOpportunitiesMonitoringDetailsController(
